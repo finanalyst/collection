@@ -1,0 +1,10 @@
+=begin pod
+=TITLE Changlog
+=SUBTITLE Changes in the ContentCollection distribution
+
+=head1 2021-01-22 Collection spun out of Raku-Alt-Documentation
+
+=item this had been planned.
+=item tests are needed for Collection.pm6
+
+=end pod

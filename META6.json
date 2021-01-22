@@ -1,21 +1,33 @@
 {
   "name": "ContentCollection",
-  "description": "Write me!",
+  "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
   "version": "0.1",
   "perl": "6.*",
   "authors": [
-    "Write me!"
+    "Richard Hainsworth, aka finanalyst"
   ],
-  "auth": "Write me!",
-  "depends": [],
+  "auth": "github:finanalyst",
+  "depends": [
+    "Raku::Pod::Render",
+    "Pod::From::Cache",
+    "File::Temp",
+    "Terminal::Spinners",
+    "RakuConfig"
+  ],
   "build-depends": [],
   "test-depends": [
     "Test::META"
   ],
   "provides": {
-    "ContentCollection": "lib/ContentCollection.pm6"
+    "Collection": "lib/Collection.pm6"
   },
   "resources": [],
-  "license": "Write me!",
-  "source-url": "Write me!"
+  "support": {
+    "source": "https://github.com/finanalyst/content-collection.git",
+    "bugtracker": "https://github.com/finanalyst/content-collection/issues",
+    "email": "richard@hainsworth.wales"
+  },
+  "license": "Artistic-2.0",
+  "source-url": "git://github.com/finanalyst/content-collection.git",
+  "source-type": "git"
 }
