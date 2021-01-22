@@ -1,0 +1,28 @@
+=begin pod
+
+=TITLE Raku Collection Module
+
+=SUBTITLE A collection of subroutines to collect, cache, render, and output content files written in POD6. Output can
+a CRO app creating a website available in a browser at localhost:3000, or an epub.
+
+=LISCENSE Artist 2.0
+
+=AUTHOR Richard Hainsworth aka finanalyst
+
+This module is used by Raku-Alt-Documentation, but is intended to be more general, such as builing a blog site.
+
+=head Installation
+
+    zef install Document-Collection
+
+=head Usage
+
+The Raku-Alt-Documentation module should be viewed for a concrete example.
+
+The Collection module expects there to be a config.raku file in the root of the collection, which provides information
+about how to obtain the Pod6 sources, a default Mode to render and output the collection.
+
+If no 'config.raku' file exists in the current directory, then it will call MAIN('init'). So a collection module would
+be used by a program that has a C<multi sub MAIN('Init', @*)> defined.
+
+=end pod
