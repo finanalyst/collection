@@ -2,27 +2,517 @@
 
 =TITLE Raku Collection Module
 
-=SUBTITLE A collection of subroutines to collect, cache, render, and output content files written in POD6. Output can
+=DESCRIPTION A collection of subroutines to collect, cache, render, and output content files written in POD6. Output can
 a CRO app creating a website available in a browser at localhost:3000, or an epub.
-
-=LISCENSE Artist 2.0
 
 =AUTHOR Richard Hainsworth aka finanalyst
 
-This module is used by Raku-Alt-Documentation, but is intended to be more general, such as builing a blog site.
+This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
 
-=head Installation
+=head1 Installation
 
-    zef install Document-Collection
+    zef install Collection
 
-=head Usage
+=head1 Usage
 
-The Raku-Alt-Documentation module should be viewed for a concrete example.
+The Collection module expects there to be a C<config.raku >file in the root of the collection, which provides information
+about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration,
+template, and plugin files described below are B<Raku> programs that evaluate to a Hash. They are described in the
+documentation for the C<RakuConfig> module.
 
-The Collection module expects there to be a config.raku file in the root of the collection, which provides information
-about how to obtain the Pod6 sources, a default Mode to render and output the collection.
+A concrete example of C<Collection> is the L<Collection-Raku-Documentation|https://github.com/finanalyst/collection-raku-documentation.git>
+module. It provides the C<Raku-Doc> executable, which
+copies a C<config.raku> file and a mode called C<Website>. The configuration describes how to get the B<Raku Doc> files
+from the B<Raku.org> repository, and the B<Website> mode contains default templates and plugins to create a website
+that shows the collection, using a C<Cro> app.
 
-If no 'config.raku' file exists in the current directory, then it will call MAIN('init'). So a collection module would
-be used by a program that has a C<multi sub MAIN('Init', @*)> defined.
+The C<Collection> module provides the infrastructure, whilst C<Collection-Raku-Documentation> provides the concrete configuration
+and specifies how files are rendered. However, C<Collection> has been designed so that B<Templates> and B<Plugins>
+for C<Collection-Raku-Documentation>
+can be used for other collections, while other Collection distributions that only provide B<Plugins> and/or B<Templates>.
+Once the Raku-Documentation
+collection has been initialised, Raku-Doc calls C<collect>, which is the entry point for C<Collection>.
+
+=head1 Life cycle of processing
+
+After initialisation, which should only occur once, then the content files are processed in several stages separated
+by milestones. At each milestone, the content files, or the intermediary data can be inspected and reprocessed
+using plugins.
+
+C<collect> can be called with option flags, which have the same effect as configuration options. The run-time values
+of the L<Control flags> take precedence over the configuration options.
+
+In B<Collection-Raku-Documentation> C<Raku-Doc> is an Command Line Interface for giving run time options to C<collect>.
+
+C<collect> can also be called with a L<Mode>. A B<Mode> is the name of a set of configuration files, templates,
+and plugins that control the way the source files are processed and rendered. The main configuration file must
+contain a key called C<mode>, which defines the default mode that C<collect> uses if called with no explicit
+mode.
+
+For example, the B<Collection-Raku-Documentation> is set up with a
+default C<mode> called B<Website>. C<Raku-Doc> just calls C<collect> and passes on to C<collect> all of
+its arguments, with the exception of the string B<Init>, which C<Raku-Doc> traps so that processing can stop before
+calling C<collect>.
+
+If C<Raku-Doc> is called with a string other than 'Init' or 'Website', then the string is interpreted as another B<Mode>,
+with its own sub-directory and L<Configuration> for the collection. For example,
+
+    Raku-Doc Book
+
+would create the collection output defined by the configuration in the sub-directory C<Book/config/>. This design
+is to allow for the creation of different Collection outputs to be defined for the same content files.
+
+=head1 Milestones
+
+The C<collect> sub can B<only> be called cnce the collection directory contains a C<config.raku>,
+which in turn contains the location of a directory, which must contain recursively at least on source.
+
+The process of collecting, rendering and outputting the collection has a number of defined milestones. A milestone
+will have an inspection point, at which the processing can be stopped and the intermediate data inspected, eg.
+
+    my $rv = collect(:end<post-cache>);
+
+The C<end> option is set to a (case-insensitive) name of the inspection point for the milestone.
+
+A milestone may also be where plugins (aka call-backs) can be defined.
+Plugins are described in more detail in L<Plugin management>.
+
+The return value of C<collect> at a milestone is the object
+provided to the plugins after all the plugins have been evaluated. The aim of this design is to give to
+developers the ability to test the effect of plugins at each stage on the object to be modified by
+the plugins.
+
+Processing occurs during a stage, which is defined to be between two milestones and is called by the
+I<Pre-> name of the first milestone. Each stage is controlled via a set of L<Control flags>.
+Certain flags will be passed to the underlying objects, eg. C<RakuConfig> and C<Raku::Pod::Render>.
+
+Each milestone has two names, either of which may be used for the inspection point, the plugin objects, and the control flags
+for the stage are as follows (other configuration options for plugins are described later).
+
+=head2 Zeroth
+
+Since this is the start of the processing, no plugins are defined as there are no objects for them to operate on.
+
+The C<config.raku> file must exist and must contain a minumum set of keys. It may optionally contain keys for
+the control flags that control the stage, see below. The intent is to keep the options for the root configuration file
+as small as possible and only refer to the source files. Most other options are configured by the Mode.
+
+During the subsequent B<Source> stage, the source files in the collection are brought in, if the collection has not been
+fully initiated, using the C<source-obtain> configaturation list. Alternatively, any updates are brought in
+using the C<source-refresh> list. Commonly, sources will be in a I<git> repository, which has separate commands for
+C<clone> and C<pull>. If the C<source-obtain> and C<source-refresh> options are not given (for example during a test),
+no changes will be made to the source directory.
+
+Any changes to the source files are cached by default.
+
+The control flags for the subsequent process are:
+=begin item
+B<no-status> (default False)
+
+The compilation and caching of source files is slow, so a progress bar is provided by default. This is not useful when
+testing or batch processing, so C<:no-status> prevents the progress bar.
+
+=end item
+=begin item
+B<no-refresh> (default False)
+
+Prevents source file updates from being brought in.
+
+An explicit configuration or run-time B<no-refresh> = False is over-ridden by
+an explicit run-time or configuration B<without-processing> = True.
+=end item
+=begin item
+B<without-processing> (default False)
+
+This option is used to skip every stage upto the B<Completion>, for example starting the document server without
+checking for documentation updates or re-rendering templates.
+
+B<without-processing> implies B<no-refresh>, and over-rides any configuration option,
+but with the caveat that the caches must exist.
+=end item
+=begin item
+B<recompile>
+
+Forces all the source files to be recompiled into the cache.
+
+B<without-processing> over-rides B<recompile>.
+=end item
+
+=head2 Source [Post-Source | Pre-Mode]
+
+At this milestone, the source files have been cached. The B<mode> sub-directory has not been tested, and the configuration
+for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugins can be called.
+
+The B<return value> of C<collect> with inspection I<source> inspection points is a single
+C<Pod::From::Cache> object that does a C<Post-Cache> role.
+
+A C<Pod::From::Cache> object provides a list of updated files, and a full set of source files. It will
+provide a list of Pod::Blocks contained in each content files, using the filename as the key.
+
+A B<source> plugin can associate a C<Pod::Block> with
+a key, interpreted as a source filename. Thus the Pod lists can be processed, eg. looking for search keys,
+and new pod files can be created that can then be rendered. The filtering is done with the C<Pod-Cache> role. For example,
+
+=begin code
+for $cache.list-files {
+    my $pod-tree = $cache.pod($_);
+    # process pod-tree
+    my Pod::Block $processed = something($pod-tree);
+    $cache.add("$_\-processed", [ $processed ]); # must be an Array
+    $cache.add($_); # omit this step if the unprocessed file is to be rendered
+}
+=end code
+
+When pod is extracted from the cache in the rendering phase, the C<$_-processed> files will be available, but
+the C<$_> files will return an undefined (False in Bool context) and not be rendered.
+
+The next, Mode, stage is when the source files for the Mode are obtained, compiled and cached. The process is controlled by the
+same options as the Source stage.
+
+If a sub-directory with the same name as I<mode> does not exist, or there are no config files in the C< <mode>/config> directory,
+C<collect> will throw an C<X::Collection::NoMode> exception during this stage.
+
+Mode source files are stored under the mode sub-directory and cached there. If the mode source files are stored remotely and
+updated independently of the collection, then the C<mode-obtain> and C<mode-refresh> keys are used.
+
+=head2 Set-up [Post-Cache | Pre-Setup]
+
+If B<setup> plugins are defined and in the mode's plugins-required<setup> list, then the cache objects for
+the sources and the mode's sources (and the B<full-render> value)
+are passed to the program defined by the plugin's B<processor> key.
+
+The purpose of this milestone
+is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine
+files in some way, or to gather information for a search algorithm.
+
+During the setup stage, the C<Raku::Pod::Render> object is prepared, adding templates to it.
+
+The Setup stage depends on the following options:
+=item B<no-status> as before, turns off a progress bar
+=item B<without-processing> skips the B<setup> stage, unless the caches did not previously exist.
+=begin item
+B<full-render>
+
+By default, only files that are changed are re-rendered, which includes an assumption that if any source file
+is changed, then all the B<mode> sources must be re-rendered as well.
+
+When B<full-render> is True, the output directory is emptied of content, forcing all files to be rendered.
+
+B<full-render> may be combined with B<no-refresh>, for example when templates or plugins are changed and the aim
+is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but
+the cache object will not contain any files generated by B<setup> plugins.
+
+B<without-processsing> takes precedence over B<full-render>, unless there is no output directory.
+=end item
+
+=head2 Render [post-setup | pre-render]
+
+At this milestone C<render> plugins are supplied to the
+C<ProcessedPod> object. New Pod::Blocks can be defined, and the templates associated with them can be created.
+
+The source files (by default only those that have been changed) are rendered. 
+
+The stage is controlled by the same options as I<Setup>. So, it can be skipped by setting B<without-processing>.
+
+=head2 Compilation [post-render | pre-compilation ]
+
+This milestone is used to provide an inspection point, and no plugins are added.
+
+The return value of C<collect> at the inspection point is the C<Raku::Pod::Render> object after the compilation data
+has been added to it.
+
+At this stage, page component data (eg., Table of Contents, Glossaries, Footnotes, Links) are collected from each source file.
+This data is filtered, then passed to source files written for the Collection. Since content files are rendered,
+the plugins are also C<render> type.
+
+=head2 Report [post-compilation | pre-report ]
+
+Once a collection has been rendered, all the links between files, and to outside targets can be subject to various
+tests. It is also possible to subject all the rendered files to tests. This is accomplished using C<report> plugins.
+
+In addition, all the plugins that have been used at each stage (except for the Report stage itself) are available.
+
+The report stage is intended for testing the outputs and producing reports on the tests.
+
+=head2 Completion [post-report | pre-completion ]
+
+Once the collection has been tested, it can be activated. For example, a collection could be processed into a book,
+or a C<Cro> App run that makes the rendered files available on a browser. This is done using C<completion> plugins.
+
+=head1 Distribution Structure
+
+A distribution contains content files, which may be updated on a regular basis, a cache,
+templates, and one or more modes.
+
+=head2 Content
+
+The content of the distribution is contained in B<POD6> files. In addition to the source files, there are
+Collection content files which express things like the Table of Contents for the whole collection.
+
+Collection content are held separately to the source content, so that each mode may have different pages.
+
+This allows for active search pages for a Website, not needed for an epub, or publisher data for an output
+formation that will be printed.
+
+=head2 Cache
+
+The B<cache> is a Precomp structure into which the content files are pre-preprocessed.
+
+=head2 Mode
+
+The B<Mode> is the collection of templates and configuration for some output.
+
+The default Mode for B<Collection-Raku-Documentation> is B<Website>, for example.
+
+The string defining C<mode> must refer to an immediate directory of the root of the collection,
+so it is compared to C</ ^ \W+ (\w+) '/'? .* $ /> and
+only the inner C<\w> chars are used.
+
+The templates, configuration, output files, and other assets used by a Mode are associated with the Mode, and should
+reside beneath the Mode sub-directory.
+
+=head2 Templates
+
+The B<templates>, which may be any format (currently RakuClosure or Mustache) accepted by
+C<Raku::Pod::Render>, define how the following are expressed in the output:
+=item the elements of the content files, eg. paragraphs, headers
+=item the files as entities, eg, whether as single files, or chapters of a book
+=item the collective components of content files, viz, Table of Contents, footnotes, Glossary, Meta data
+=item All the templates may be in one file, or distributed between files.
+=item2 If there are no templates in the directory, the default files in C<Raku::Pod::Render> are used.
+=item2 If there are multiple files in the directory, they will all be evaluated in alphanumeric order.
+Note that existing keys will be over-written if they exist in later templates. This is B<not> the same
+behaviour as for Configuration files.
+
+=head1 Configuration
+
+There are two levels of configuration. The top-level resides in C<config.raku> in the root directory of the
+Collection. The C<collect> sub will fail without this file.
+
+=head2 Top level configuration
+
+C<config.raku> B<must> contain the following keys:
+=item the B<cache> directory, relative to the root directory of the collection
+=item2 C<Collection-Raku-Documentation> default: 'doc-cache',
+=item the B<sources> directory, relative to the root of the collection and must contain at least one content file
+=item2 C<Collection-Raku-Documentation> default: 'raku-docs'
+=item B<mode> is the default mode for the collection, and must be a sub-directory, which must exist and contain
+a C<configs> sub-directory (note the plural ending).
+=item2 C<Collection-Raku-Documentation> default: 'Website'
+
+The following are optional keys, together with the defaults 
+=item the allowed B<extensions> for content files. These are provided to the C<Pod::From::Cache> object.
+=item2 < rakudoc pod pod6 p6 pm pm6 >
+=item no-status This option controls whether a progress bar is provided in the terminal
+=item2 False
+=item B<source-obtain> is the array of strings sent to the OS by C<run> to obtain sources, eg git clone
+and assumes CWD is set to the directory of collection. Without this key, there must already be files
+in C<sources>.
+
+=item2 ()
+=item B<source-refresh> is the array of strings run to refresh the sources, assumes CWD set to the directory of sources.
+No key assumes the sources never change.
+
+=item2 ()
+=item B<ignore> is a list of files in the B<sources> directory that are not cached.
+=item2 ()
+=item B<no-status> as described in Milestones
+=item2 False
+=item B<without-processing> as described in Milestones
+=item2 False
+=item B<no-refresh> as described in Milestones
+=item2 False
+=item B<recompile> as described in Milestones
+=item2 False
+
+=head2 Second-level configuration
+
+The second-level configuration resides in one or more B<files> that are under the B<configs/> sub-directory of the
+C<mode> directory. This arrangement is used to allow for configuration to be separated into different named
+files for ease of management.
+
+The following rules apply:
+=item If the B<configs> directory for a mode does not exist or is empty, B<Raku-Doc> (C<collect> sub) will fail.
+=item The Configuration consists of one or more C<Raku> files that each evaluate to a hash.
+=item2 Each Config file in the B<Configs> directory will be evaluated in alphabetical order.
+=item2 Configuration keys may not be over-written. An C<X::RakuConfig::OverwriteKey> exception will be thrown if
+an attempt is made to redefine a key.
+
+All the following keys are mandatory.
+Where a key refers to a directory (path), it should normally be relative to the C<mode> sub-directory.
+=item B<mode-sources> location of the source files for the Collection pages, eg., TOC.
+=item B<mode-cache> location of the cache files
+=item the B<templates> subdirectory, which must contain raku files as described in C<Raku::Pod::Render>.
+These are all passed at the B<Pre-Render> milestone directly to the C<ProcessedPod> object.
+
+=item B<output> directory where the output files are rendered
+=item B<plugins> is a string with the location of the plugins directory, either relative to
+root of the mode directory, or an absolute path. It is possible for the plugins directory to contain
+unused plugins. See L<Plugin management>
+
+=item B<report-path> is the path to which C<report> plugins should output their reports.
+=item B<plugins-required> points to a hash whose keys are milestone names where plugins can be applied
+=item2 B<setup> a list of plugin names, see L<Plugin management>, for pre-processing cache contents
+=item2 B<render> plugins used to render Pod::Blocks
+=item2 B<report> plugins to test and report on the rendering process
+=item2 B<completion> plugins that define what happens after rendering
+=item2 B<cleanup> plugins if cleanup is needed.
+
+The following are optional control flags. All are False by default if not in the config files
+=item recompile
+=item no-refresh
+=item full-render
+=item no-report
+=item without-processing
+=item no-cache
+=item debug
+=item verbose
+
+=head1 Control flags
+
+The control flags have mostly been described in L<Milestones>. They are summarised here again, with some
+extra information.
+
+=begin item
+B<recompile>
+
+Controls the updating and caching of the content files. If true, then all files will be recompiled and cached.
+
+A True value is over-ridden by B<without-processing>
+
+Normally False, which allows for only changed files to be processed.
+
+=end item
+=begin item
+B<no-refresh>
+
+Prevents the updating of content files, so no changes will be made.
+
+=end item
+=begin item
+B<full-render>
+
+Forces all files to be rendered. Even if there are no changes to source files, plugins or templates
+may be added/changed, thus changing the output, so all files need to be re-rendered.
+
+A True value is over-ridden by B<without-processing>
+
+=end item
+=begin item
+B<no-report>
+
+Normally, report plugins report on the final state of the output files. No-report prevents
+report plugins from being loaded or run.
+
+If B<without-processing> is set, then the B<Report> stage is skipped. If, however,
+the caches do not exist (deleted or first run), then the value of B<without-processing> is ignored and
+the value of B<no-report> is observed.
+
+=end item
+=begin item
+B<without-processing>
+
+Unless the caches do not exist, setting B<without-processing> to True will skip all the stages except
+B<Completion>
+
+=end item
+=begin item
+B<no-cache>
+
+RakuConfig will cache the previous configuration data by default. When testing a module, this is not desirable,
+so no-cache = True prevents caching.
+
+=end item
+=begin item
+B<debug & verbose>
+
+Raku::Pod::Render uses both debug and verbose, so these flags are passed if set.
+
+The C<Collection::plugin-manager> sub also uses debug.
+=end item
+
+=head1 Plugin management
+
+Plugins are B<Raku> programs that are executed at specific milestones in the rendering process.
+The milestone are given in L<Milestones> above.
+
+The B<plugins-required> key in the Mode's configuration contains a hash with keys whose names are the
+milestone names. Each key points to a list of plugin names, which are called in the order
+given.
+
+All plugins must reside within the mode directory given by C<plugins>, but this directory may belong
+to another Collection so that plugins can and should be shared between collections & modes.
+
+All plugin names must be the name of a sub-directory of the B<plugins> path. Within each plugin sub-directory,
+there must be a C<config.raku> file containing information for the plugin, and for C<Collection>. 
+
+The required keys for a plugin's config file depends on the milestone for which they are called. Plugin's may
+need other configurable data, which should be kept in the config file for the plugin.
+
+They are as follows.
+
+=head2 Setup
+
+Required keys:
+=item setup (True)
+=begin item
+B<processor>
+
+A raku file that evaluates to a C<sub ( $source-cache, $mode-cache, Bool $f) { ... }> 
+=end item
+
+If C<$f> is True, then the sub should process the cache objects with C<.sources>, otherwise with C<.list-files>. 
+The C<.list-files> method only contains files that have changed.
+
+New files can be added to the cache object using the C<.add> method, see above.
+
+=head2 render
+
+Required keys:
+=item render (True)
+=item blocks => a Raku program that evaluates to an array of custom blocks
+=item templates => a Raku program that evaluates to a hash of RakuClosure templates
+=item name-space => a string that can be used to store data in the <Raku::Pod::Render> object
+
+These plugins provide three sets of configuration programs that alter the templates, custom blocks and plugin space
+of the C<ProcessPod> object. These are evaluated by the C<ProcessedPod> object.
+
+=head2 report
+
+Required keys
+=item report (True)
+=item reporter => a Raku file that evaluates to a C<sub (%processed, %plugins-used, $report-path) {...}> object.
+
+=defn %processed 
+is a hash whose keys are source file names with a hash values containing
+TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<Raku::Pod::Render>.
+
+=defn %plugins-used
+is a hash whose keys are milestones and values being a list of the plugins used.
+
+=defn $report-path
+is the path name relative to the C<mode> directory where report files are produced. The output format of the files
+is determined by the report plugin. 
+
+
+=head2 Completion
+
+Required keys:
+=item completion (True)
+=item completer => a Raku file that evaluates to a C<sub ($output-path, @filenames) {...}> object.
+
+=defn $output-path 
+is the name of the output path (defined in the mode configuration)
+
+=defn @filenames
+is a list of the output files (with paths relative to the output path) that are to be presented, in order
+of evaluation, if this is important. Eg. for a book, the entire order is important, for a website
+ony the first page is important.
+
+=head2 cleanup
+
+Currently, C<collect> just returns with the value of the %plugins-used hash.
+
+B<LICENSE> Artistic-2.0
 
 =end pod

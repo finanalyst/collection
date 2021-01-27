@@ -94,5 +94,93 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Pod::From::Cache" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:Pod::From::Cache!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="File::Directory::Tree" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:File::Directory::Tree!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Terminal::Spinners" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:Terminal::Spinners!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="RakuConfig" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:RakuConfig!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="PrettyDump" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:PrettyDump!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Pod::Load" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:Pod::Load!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="GTK::Simple" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:GTK::Simple!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Template::Mustache" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:Template::Mustache!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="Raku::Pod::Render" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:Raku::Pod::Render!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="LibCurl" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:LibCurl!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="File::Temp" type="perl6">
+        <CLASSES />
+        <SOURCES>
+          <root url="raku://1165951844:File::Temp!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>

@@ -1,0 +1,80 @@
+use Test;
+plan 10;
+use File::Directory::Tree;
+use Test::Deeply::Relaxed;
+
+use Collection;
+
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+
+if TMP.IO.d { empty-directory TMP }
+else { mktree TMP }
+my $orig = $*CWD;
+chdir TMP;
+
+throws-like { collect(:no-processing) },
+        X::Collection::BadOption,
+        'traps an incorrect option',
+        message => / 'passed' .+ 'no-processing' /;
+
+throws-like { collect(:end<pre-mode>, :no-cache) },
+        X::RakuConfig::NoFiles,
+        'traps lack of config file in root',
+        message => / 'config.raku' .+ 'is not a file or' /;
+
+'config.raku'.IO.spurt(qq:to/DATA/);
+    %(
+        cache => 'cache',
+        sources => 'sources',
+        :!no-status,
+        :!no-refresh,
+        :!recompile,
+        ignore => (),
+        source-obtain => (),
+        source-refresh => (),
+        mode => '{ MODE }',
+        extensions => <rakudoc pod6 pm6 pl6 >
+    )
+    DATA
+mktree 'sources';
+throws-like { collect(:end<pre-mode>, :no-cache, :no-status) },
+        X::Pod::From::Cache::NoSources,
+        'traps lack of sources',
+        message => / 'No pod sources in' /;
+
+for <file-a file-b file-c> -> $fn {
+    "sources/$fn.pod6".IO.spurt( qq:to/FILE/);
+    =begin pod
+    =TITLE File {$fn}
+    =head1 First title
+
+    Some text
+    =end pod
+    FILE
+}
+
+my $rv;
+
+lives-ok { $rv = collect(:end<pre-mode>, :no-status, :no-cache)},
+        'Collect with refresh produces a cache ';
+
+isa-ok $rv, Pod::From::Cache, 'cache object returned';
+
+$rv.add('new-file', [ Pod::Block.new( :contents<fixed growth> ) ]);
+$rv.add('sources/file-b.pod6');
+
+is-deeply-relaxed Set.new( $rv.list-files),
+        Set(<sources/file-a.pod6 sources/file-c.pod6 new-file>),
+        'expected files' ;
+
+isa-ok $rv.pod('new-file')[0], Pod::Block, 'adding file and getting back from cache';
+isa-ok $rv.pod('sources/file-a.pod6')[0], Pod::Block, 'existing files in cache available';
+nok $rv.pod('sources/file-b.pod6'), 'file-b blocked from cache access';
+
+throws-like { $rv = collect(MODE, :no-status, :no-cache) },
+        X::Collection::NoMode,
+        'traps no mode sub-directory',
+        message => / 'sub-directory' .+ ', not found'/ ;
+
+done-testing;

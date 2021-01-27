@@ -1,10 +1,21 @@
 =begin pod
 =TITLE Changlog
-=SUBTITLE Changes in the ContentCollection distribution
+=SUBTITLE Changes in the Collection distribution
 
 =head1 2021-01-22 Collection spun out of Raku-Alt-Documentation
 
 =item this had been planned.
 =item tests are needed for Collection.pm6
+
+=head1 2021-01-24 Adding tests
+=item t/01-sanity only has use-ok
+=item meta-ok in xt
+=item other tests
+
+=head1 2021-01-27 Redesign
+=item plugin management made constistent
+=item rewritten README to include new design
+=item test written for process upto milestone pre-render, passing
+=item Exceptions spun into separate file
 
 =end pod

@@ -1,5 +1,5 @@
 {
-  "name": "ContentCollection",
+  "name": "Collection",
   "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
   "version": "0.1",
   "perl": "6.*",
@@ -19,7 +19,8 @@
     "Test::META"
   ],
   "provides": {
-    "Collection": "lib/Collection.pm6"
+    "Collection": "lib/Collection.pm6",
+    "X::Collection": "lib/Collection/Exceptions.pm6"
   },
   "resources": [],
   "support": {
