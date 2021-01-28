@@ -25,16 +25,17 @@ throws-like { collect(:end<pre-mode>, :no-cache) },
 
 'config.raku'.IO.spurt(qq:to/DATA/);
     %(
-        cache => 'cache',
-        sources => 'sources',
+        :cache<cache>,
+        :sources<sources>,
         :!no-status,
         :!no-refresh,
         :!recompile,
-        ignore => (),
-        source-obtain => (),
-        source-refresh => (),
-        mode => '{ MODE }',
-        extensions => <rakudoc pod6 pm6 pl6 >
+        :ignore(),
+        :source-obtain(),
+        :source-refresh(),
+        :mode<{ MODE }>,
+        :templates<templates>,
+        :extensions<rakudoc pod6 pm6 pl6 >
     )
     DATA
 mktree 'sources';

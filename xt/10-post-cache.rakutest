@@ -6,7 +6,7 @@ use Collection;
 constant TMP = 'xt/test-dir';
 constant MODE = 'test-mode';
 
-bail-out "TMP must exit. Have pre-render tests been run?"
+bail-out "{ TMP } must exist. Have pre-render tests been run?"
 unless TMP.IO.d;
 
 my $orig = $*CWD;
@@ -23,11 +23,11 @@ mktree MODE ~ '/m-sources';
 my @pls = <setup1 setup_rend rend2 reporter completer unused>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
-(MODE ~ '/configs/01-basic.raku').IO.spurt( qq:to/CONF/);
+(MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
     %(
         mode-cache => 'm-cache',
         mode-sources => 'm-sources',
-        :no-refresh,
+        :no-refresh, # for test dont want to refresh or obtain
         :!recompile,
         mode-ignore => (),
         mode-obtain => (),
@@ -37,9 +37,12 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :!no-report,
         :!no-completion,
         plugins => 'some-plugs',
+        :destination<html>,
+        :report-path<reports>,
     );
     CONF
-(MODE ~ '/configs/02-plugin.raku').IO.spurt( qq:to/CONF/ );
+
+(MODE ~ '/configs/02-plugin.raku').IO.spurt(qq:to/CONF/);
     %(
         plugins-required => %(
             setup => ('{ @pls[0] }', '{ @pls[1] }',) ,
@@ -54,29 +57,52 @@ for @pls {
     (MODE ~ "/some-plugs/$_/config.raku").IO.spurt(qq:to/CONF/);
         %(
         { given $_ {
-        when 'setup1' {"setup => True, processor => \'proc.raku\' "}
-        when 'setup_rend' {"setup => True, render => True, processor => \'proc.raku\' "}
-        when 'reporter' {"report => True"}
-        when 'completer' {"complete => True "}
-        default {"name => \'{ $_ }\', report => True "}
-        }},
+        when 'setup1' { "setup => True, processor => \'proc.raku\' " }
+        when 'setup_rend' { "setup => True, render => True, processor => \'proc.raku\' " }
+        when 'reporter' { "report => True" }
+        when 'completer' { "completion => True " }
+        default { "name => \'{ $_ }\', report => True " }
+    } },
         );
         CONF
+
 }
+=begin pod
+=TITLE This is a test file
+
+Some stuff
+
+=head1 Header One
+
+Here an X<I have indexed this|index1> some stuff
+=end pod
+=begin pod
+=TITLE Another file
+
+A little rubbish
+
+=head1 Header Two
+
+This is a N<Footnote> for prosperity.
+
+=end pod
+
+my $p = 0;
 for <setup1 setup_rend> {
-        (MODE ~ "/some-plugs/$_/proc.raku").IO.spurt(qq:to/CONF/);
+    (MODE ~ "/some-plugs/$_/proc.raku").IO.spurt(qq:to/CONF/);
         sub ( \$a ) \{
-                \$a[0].add( 'first{$_}', [ Pod::Block.new(contents => ['abc',])] );
+                \$a[0].add( 'first_{ $_ }', [{ $=pod[$p++].raku }] );
         \}
         CONF
+
 }
-$rv = collect(MODE, :no-status, :no-cache, :end<post-cache>, :recompile );
+$rv = collect(MODE, :no-status, :no-cache, :end<post-cache>, :recompile);
 #recompile to ensure that the cache is emptied
 isa-ok $rv[0], Pod::From::Cache, 'first of list';
 isa-ok $rv[0], Pod::From::Cache, 'second of list';
 is-deeply-relaxed
         $rv[0].list-files.Set,
-        <sources/file-a.pod6 sources/file-b.pod6 sources/file-c.pod6 firstsetup1 firstsetup_rend>.Set,
+        <sources/file-a.pod6 sources/file-b.pod6 sources/file-c.pod6 first_setup1 first_setup_rend>.Set,
         'cache altered';
 
 done-testing;

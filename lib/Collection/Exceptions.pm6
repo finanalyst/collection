@@ -20,3 +20,11 @@ class X::Collection::BadOption is Exception {
         "Possible options are: { @.good-options.join(', ') }\nOptions passed were: {@.passed.join(', ')}"
     }
 }
+class X::Collection::Mandatory is Exception {
+    has @.got;
+    has @.required;
+    method message {
+        "A mandatory config option, eg. ({ @.required.join(',') }) is missing,\n"
+            ~ "Actually got: " ~ @.got.join(',')
+    }
+}

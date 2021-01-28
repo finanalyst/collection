@@ -1,0 +1,99 @@
+use v6.*;
+use Test;
+
+use File::Directory::Tree;
+use Test::Deeply::Relaxed;
+use ProcessedPod;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{MODE}/some-plugs";
+constant CONFS = "{MODE}/configs";
+constant TEMPLATES = "{MODE}/templates";
+
+plan 4;
+my $rv;
+
+bail-out "{TMP} and {TMP}/{ MODE } must exit. Have post-cache tests been run?"
+unless TMP.IO.d and "{TMP}/{ MODE }".IO.d;
+
+#my @pls = <setup1 setup_rend rend2 reporter completer unused>;
+
+my $orig = $*CWD;
+chdir TMP;
+bail-out "{PLUGS} and { CONFS } must exit. Have post-cache tests been run?"
+        unless PLUGS.IO.d and CONFS.IO.d;
+mktree TEMPLATES;
+# rewrite the config and plugin test files for render plugins
+(PLUGS ~ '/setup_rend/config.raku' ).IO.spurt(q:to/CONF/);
+        %(
+        :render,
+        :template-raku<templates.raku>,
+        :custom-raku<blocks.raku>,
+        :data-raku()
+        :setup,
+        :processor<proc.raku>
+        )
+        CONF
+
+(PLUGS ~ '/rend2/config.raku' ).IO.spurt(q:to/CONF/);
+        %(     
+        :render,
+        :name-space<frontmatter>,
+        :template-raku<templates.raku>,
+        :custom-raku<blocks.raku>,
+        :data-raku(),
+        )
+        CONF
+# template raku files
+(PLUGS ~ '/setup_rend/templates.raku' ).IO.spurt(q:to/CONF/);
+        %(
+        design => sub ( %a, %b ) {
+                '<designer-tag>' ~ %a<contents> ~ '</designer-tag'
+        },
+        diagram => sub (%a, %b ) {
+                '<diag>' ~ %a<contents> ~ '</diag>'
+        },
+        )
+        CONF
+
+(PLUGS ~ '/rend2/templates.raku' ).IO.spurt(q:to/CONF/);
+        %(
+        sorted-table => sub (%a, %b) {
+                '<table class="sorted">' ~ %a<contents> ~ '</table>'
+        },
+        )
+        CONF
+#block files
+(PLUGS ~ '/setup_rend/blocks.raku' ).IO.spurt(q:to/CONF/);
+        <design diagram>
+        CONF
+#its intentional to overwrite diagram. rend2 comes after setup_rend
+(PLUGS ~ '/rend2/blocks.raku' ).IO.spurt(q:to/CONF/);
+        <figure diagram sorted-table>
+        CONF
+# create full set of templates
+(TEMPLATES ~ '/templates.raku').IO.spurt( q:to/TEMPS/);
+        use v6.*;
+        use ProcessedPod;
+        my @templates = <block-code comment declarator defn dlist-end dlist-start escaped footnotes format-b format-c
+                format-i format-k format-l format-n format-p format-r format-t format-u format-x glossary heading
+                item list meta named output para pod raw source-wrap table toc >;
+        my %templates  = @templates Z=> @templates.map( { gen-closure-template( $_ ) });
+        %templates<escaped> = sub ( $str ) { $str };
+        %templates;
+        TEMPS
+
+$rv = collect(MODE, :no-status, :no-cache, :end<pre-render>, :recompile);
+isa-ok $rv, ProcessedPod, 'got the correct object';
+is-deeply-relaxed $rv.custom.Set,
+        <figure diagram sorted-table design>.Set,
+        'plugin added the custom blocks';
+ok $rv.tmpl<sorted-table>:exists,'template was added from rend2';
+ok $rv.tmpl<design>:exists, 'template was added from setup_rend';
+
+$rv = collect(MODE, :no-status, :no-cache, :end<post-render>, :full-render, :no-refresh);
+
+say $rv.plugin-date;
+done-testing;

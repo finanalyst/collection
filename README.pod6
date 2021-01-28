@@ -84,7 +84,8 @@ the plugins.
 
 Processing occurs during a stage, which is defined to be between two milestones and is called by the
 I<Pre-> name of the first milestone. Each stage is controlled via a set of L<Control flags>.
-Certain flags will be passed to the underlying objects, eg. C<RakuConfig> and C<Raku::Pod::Render>.
+Certain flags will be passed to the underlying objects, eg. C<RakuConfig> and C<ProcessedPod> (see
+C<Raku::Pod::Render>.
 
 Each milestone has two names, either of which may be used for the inspection point, the plugin objects, and the control flags
 for the stage are as follows (other configuration options for plugins are described later).
@@ -185,7 +186,7 @@ The purpose of this milestone
 is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine
 files in some way, or to gather information for a search algorithm.
 
-During the setup stage, the C<Raku::Pod::Render> object is prepared, adding templates to it.
+During the setup stage, the C<ProcessedPod> object is prepared, adding templates to it.
 
 The Setup stage depends on the following options:
 =item B<no-status> as before, turns off a progress bar
@@ -218,7 +219,7 @@ The stage is controlled by the same options as I<Setup>. So, it can be skipped b
 
 This milestone is used to provide an inspection point, and no plugins are added.
 
-The return value of C<collect> at the inspection point is the C<Raku::Pod::Render> object after the compilation data
+The return value of C<collect> at the inspection point is the C<ProcessedPod> object after the compilation data
 has been added to it.
 
 At this stage, page component data (eg., Table of Contents, Glossaries, Footnotes, Links) are collected from each source file.
@@ -274,12 +275,12 @@ reside beneath the Mode sub-directory.
 =head2 Templates
 
 The B<templates>, which may be any format (currently RakuClosure or Mustache) accepted by
-C<Raku::Pod::Render>, define how the following are expressed in the output:
+C<ProcessedPod>, define how the following are expressed in the output:
 =item the elements of the content files, eg. paragraphs, headers
 =item the files as entities, eg, whether as single files, or chapters of a book
 =item the collective components of content files, viz, Table of Contents, footnotes, Glossary, Meta data
 =item All the templates may be in one file, or distributed between files.
-=item2 If there are no templates in the directory, the default files in C<Raku::Pod::Render> are used.
+=item2 If there are no templates in the directory, the default files in C<ProcessedPod> are used.
 =item2 If there are multiple files in the directory, they will all be evaluated in alphanumeric order.
 Note that existing keys will be over-written if they exist in later templates. This is B<not> the same
 behaviour as for Configuration files.
@@ -342,10 +343,10 @@ All the following keys are mandatory.
 Where a key refers to a directory (path), it should normally be relative to the C<mode> sub-directory.
 =item B<mode-sources> location of the source files for the Collection pages, eg., TOC.
 =item B<mode-cache> location of the cache files
-=item the B<templates> subdirectory, which must contain raku files as described in C<Raku::Pod::Render>.
+=item the B<templates> subdirectory, which must contain raku files as described in C<ProcessedPod>.
 These are all passed at the B<Pre-Render> milestone directly to the C<ProcessedPod> object.
 
-=item B<output> directory where the output files are rendered
+=item B<destination> directory where the output files are rendered
 =item B<plugins> is a string with the location of the plugins directory, either relative to
 root of the mode directory, or an absolute path. It is possible for the plugins directory to contain
 unused plugins. See L<Plugin management>
@@ -367,7 +368,15 @@ The following are optional control flags. All are False by default if not in the
 =item no-cache
 =item debug
 =item verbose
+=begin item
+B<no-code-escape>
 
+C<ProcessedPod> has a special flag for turning off escaping in code sections
+when a highlighter is used to pre-process code. In some cases, the highlighter also
+does HTML escaping, so RPR has to avoid it.
+
+This has to be done at the Mode level and not left to C<render> plugins.
+=end item
 =head1 Control flags
 
 The control flags have mostly been described in L<Milestones>. They are summarised here again, with some
@@ -426,7 +435,7 @@ so no-cache = True prevents caching.
 =begin item
 B<debug & verbose>
 
-Raku::Pod::Render uses both debug and verbose, so these flags are passed if set.
+ProcessedPod uses both debug and verbose, so these flags are passed if set.
 
 The C<Collection::plugin-manager> sub also uses debug.
 =end item
@@ -472,7 +481,7 @@ Required keys:
 =item render (True)
 =item blocks => a Raku program that evaluates to an array of custom blocks
 =item templates => a Raku program that evaluates to a hash of RakuClosure templates
-=item name-space => a string that can be used to store data in the <Raku::Pod::Render> object
+=item name-space => a string that can be used to store data in the C<ProcessedPod> object
 
 These plugins provide three sets of configuration programs that alter the templates, custom blocks and plugin space
 of the C<ProcessPod> object. These are evaluated by the C<ProcessedPod> object.
@@ -485,7 +494,7 @@ Required keys
 
 =defn %processed 
 is a hash whose keys are source file names with a hash values containing
-TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<Raku::Pod::Render>.
+TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
 =defn %plugins-used
 is a hash whose keys are milestones and values being a list of the plugins used.
