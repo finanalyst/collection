@@ -1,0 +1,61 @@
+use Test;
+use Test::Deeply::Relaxed;
+use Test::Output;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{MODE}/some-plugs";
+constant CONFS = "{MODE}/configs";
+constant TEMPLATES = "{MODE}/templates";
+
+plan 4;
+my $rv;
+
+bail-out "{TMP} and {TMP}/{ MODE } must exit. Have source tests been run?"
+    unless TMP.IO.d and "{TMP}/{ MODE }".IO.d;
+
+#my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
+
+my $orig = $*CWD;
+chdir TMP;
+bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
+    unless TEMPLATES.IO.d;
+
+#rewrite the config for compiler plugin
+(PLUGS ~ '/compiler/config.raku').IO.spurt( q:to/CONF/);
+    %(
+        :compilation<frontmatter.raku>
+    )
+    CONF
+(PLUGS ~ '/compiler/frontmatter.raku').IO.spurt( q:to/CODE/);
+    sub ($pr, %processed) {
+        for <toc footnotes glossary meta> -> $component {
+            # %data contains keys for each source and sub-keys for each page component
+            # what is required is to make the structure pointed to by raw-component available
+            # to a collection structure with sub-keys of filenames
+            $pr.plugin-data{"collection-$component"} =
+                    %( |gather for %processed.keys {
+                        take $_ => %processed{$component}{"raw-$component"} })
+        }
+        for $pr.plugin-data.kv -> $k, $v { "$k => ", $v.raku }
+    }
+    CODE
+
+
+
+stdout-like  { $rv = collect(MODE, :collection-info, :no-status, :no-cache, :end<compilation>, :full-render, :no-refresh)},
+    / 'Passed Render milestone' .+ 'is listed for milestone' .+ 'compilation'/,
+    'got collection info';
+
+is-deeply-relaxed $rv[1].keys.Set,
+        <extra_0_setup1 extra_1_setup_rend file-a file-b file-c>.Set,
+        'got all the files in cache';
+is-deeply-relaxed $rv[0].plugin-data.keys.Set,
+        <collection-footnotes collection-toc collection-glossary collection-meta>.Set,
+        'name-spaces set up';
+is-deeply-relaxed "{MODE}/html".IO.dir(test => /'.html'/)>>.relative(MODE ~ '/html').Set,
+        (<extra_0_setup1 extra_1_setup_rend file-a file-b file-c> >>~>> '.html').Set,
+        'got all the files in cache';
+
+done-testing;

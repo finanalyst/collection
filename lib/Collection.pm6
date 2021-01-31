@@ -14,7 +14,7 @@ proto sub collect(|c) is export {
     unless all(|c.keys.grep(*~~ Str))
             eq
             any(<no-status without-processing no-refresh recompile full-render no-report no-completion no-cleanup
-                end debug verbose no-cache>);
+                end debug verbose no-cache collection-info>);
     {*}
 }
 
@@ -74,7 +74,7 @@ sub update-cache(:$no-status, :$recompile, :$no-refresh,
 }
 
 multi sub collect(:$no-cache = False, |c) {
-    my $mode = get-config(:$no-cache :required('mode',))<mode>;
+    my $mode = get-config(:$no-cache, :required('mode',))<mode>;
     collect($mode, :$no-cache, |c)
 }
 
@@ -87,6 +87,7 @@ multi sub collect(Str:D $mode, :$no-status,
                   :$no-completion is copy,
                   :$no-cleanup is copy,
                   Str :$end = 'all',
+                  :$collection-info = False,
                   :$debug = False, :$verbose = False,
                   Bool :$no-cache = False) {
     my %config = get-config(:$no-cache, :required< sources cache >);
@@ -105,9 +106,12 @@ multi sub collect(Str:D $mode, :$no-status,
         without $no-refresh {
             $no-refresh = %config<no-refresh> // False
         }
-        without $no-refresh {
+        without $full-render {
             $full-render = %config<full-render> // False
         }
+    }
+    without $no-completion {
+        $no-completion = %config<no-completion> // False
     }
     my $cache = update-cache(
         :cache-path(%config<cache>), :doc-source(%config<sources>),
@@ -120,14 +124,14 @@ multi sub collect(Str:D $mode, :$no-status,
         :extensions(%config<extensions> // <pod6 rakudoc>)
     );
     return $cache
-        if $end ~~ /:i 'Post-Source' | 'Pre-Mode' /;
-    note "At Post-Source milestone" if $debug;
-    # === Post-Source / Pre-Mode milestone ====================================
+        if $end ~~ /:i 'Source' /;
+    say "Passed Post-Source milestone" if $collection-info;
+    # === Source milestone ====================================
     # === no plugins because Mode config not available yet.
     X::Collection::NoMode.new(:$mode).throw
         unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
     %config ,= get-config(:$no-cache, :path("$mode/configs"),
-        :required<mode-cache mode-sources plugins-required>);
+        :required<mode-cache mode-sources plugins-required destination>);
 
     my $mode-cache = update-cache(
         :no-status($no-status // %config<no-status>),
@@ -148,11 +152,13 @@ multi sub collect(Str:D $mode, :$no-status,
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
     # value of full-render is moot.
-    %plugins-used<setup> = manage-plugins('setup', :with($cache, $mode-cache, $full-render), :%config, :$mode, :$debug)
+    %plugins-used<setup> = manage-plugins('setup',
+            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
+            :%config, :$mode, :$collection-info)
         if $cache-changes or $full-render;
-    return ($cache, $mode-cache) if $end ~~ /:i 'post-cache' | 'pre-setup'/;
-    # === Post-Cache | Pre-Setup milestone ==================================================
-    note "At Post-Cache milestone" if $debug;
+    return ($cache, $mode-cache) if $end ~~ /:i 'Setup' /;
+    # === Setup milestone ==================================================
+    say "Passed Setup milestone" if $collection-info;
     rmtree "$*CWD/$mode/%config<destination>" if $full-render;
     unless "$*CWD/$mode/%config<destination>".IO.d {
         "$*CWD/$mode/%config<destination>".IO.mkdir;
@@ -178,10 +184,10 @@ multi sub collect(Str:D $mode, :$no-status,
         $pr.templates(~@templates[0]);
         for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
 
-        %plugins-used<render> = manage-plugins('render', :with($pr), :%config, :$mode, :$debug);
-        return ($pr) if $end ~~ /:i 'post-setup' | 'pre-render' /;
-        # ======== Post-Setup | Pre-Render milestone =============================
-        note "At Post-Setup milestone" if $debug;
+        %plugins-used<render> = manage-plugins('render', :with($pr), :%config, :$mode, :$collection-info);
+        return ($pr) if $end ~~ /:i 'render' /;
+        # ======== Render milestone =============================
+        say "Passed Render milestone" if $collection-info;
         my @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
         my %processed;
         counter(:start(+@files), :header('Rendering content files')) unless $no-status;
@@ -201,7 +207,6 @@ multi sub collect(Str:D $mode, :$no-status,
             with "$mode/%config<destination>/$short".IO.dirname {
                 .IO.mkdir unless .IO.d
             }
-            say "At $?LINE fn is $fn, short $short, pod: ", $cache.pod($fn);
             with $pr {
                 .name = $short;
                 .process-pod($cache.pod($fn));
@@ -211,13 +216,13 @@ multi sub collect(Str:D $mode, :$no-status,
                         .grep({ .key ~~ / 'raw-' | 'links' | 'templates-used' / }));
             }
         }
-        # %processed containing Filename-> hash of raw-* and links
-        # We want to add to pr.plugin-data, the name-space raw-* links, with $fn-> raw-*.value
-        create-collection-data(:name-space($_), :key("raw-$_"), :data(%processed), :$pr)
-            for <toc footnotes glossary meta>;
-        return $pr if $end ~~ / 'post-render' | 'pre-compilation' /;
-        # ==== Post-Render / Pre-compilation Milestone ===================================
-        note "At Post-Render milestone" if $debug;
+
+        %plugins-used<compilation> = manage-plugins('compilation', :with($pr,%processed), :%config, :$mode, :$collection-info);
+        return ($pr,%processed) if $end ~~ / 'compilation' /;
+        # ==== compilation Milestone ===================================
+        say "Passed Compilation milestone" if $collection-info;
+        # Even if the compilation sources have not changed, they are assumed to depend
+        # on the collection files, which have changed (at a minimum) in order to get here.
         @files = $mode-cache.sources.list;
         counter(:start(+@files), :header("Rendering $mode content files")) unless $no-status;
         for @files -> $fn {
@@ -240,62 +245,61 @@ multi sub collect(Str:D $mode, :$no-status,
                         .grep({ .key ~~ / 'links' / }));
             }
         }
-        return (%processed, %plugins-used) if $end ~~ /:i 'post-compilation' | 'pre-report' /;
-        %plugins-used<report> = manage-plugins('report',:with(%processed,%plugins-used),:%config,:$mode,:$debug)
+        %plugins-used<report> = manage-plugins('report',:with(%processed,%plugins-used),:%config,:$mode,:$collection-info)
                 unless $no-report;
-        # ==== Post-Compilation / Pre-Report Milestone ===================================
-        note "At Post-Compilation milestone" if $debug;
+        return (%processed, %plugins-used) if $end ~~ /:i 'report' /;
+        # ==== Compilation Milestone ===================================
+        say "Passed Report milestone" if $collection-info;
         write-config( @output-files = %processed.keys, :path($mode), :fn<output-files.raku>) ;
     }
-    # === Post-Report / Pre-Completion Milestone ================================
-    note "At Post-Report milestone" if $debug;
-    return (:files(@output-files),:output(%config<output>),:landing(%config<landing-place>) )
-        if $end ~~ /:i 'post-report' | 'pre-completion' /;
+
     %plugins-used<completion> = manage-plugins('completion',
             :with(:files(@output-files),:output(%config<output>),:landing(%config<landing-place>) ),
-            :$mode,:%config,:$debug)
+            :$mode,:%config,:$collection-info)
             unless $no-completion;
+    return (:files(@output-files),:destination(%config<destination>),:landing(%config<landing-place>) )
+    if $end ~~ /:i 'completion'  /;
+    # === Report Completion Milestone ================================
+    say "Passed Post-Report milestone" if $collection-info;
 
-    #return %plugins-used if $end ~~ /:i 'post-completion' | 'pre-cleanup' /;
-    # === Post-Completion / Pre-Cleanup Milestone =============================
+    #return %plugins-used if $end ~~ /:i 'completion' /;
+    # === Completion Milestone =============================
+    say "Passed Post-Report milestone" if $collection-info;
 
     %plugins-used
     # inspection point end eq 'all'
     # === All milestone (nothing else must happen) ================================
 }
 
-sub plugin-confs(:$mile, :%config, :$mode, :$debug = False) {
+sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
     my %valid-confs;
-    say "At $?LINE mile: $mile, mode: $mode, plugins-required: ", %config<plugins-required>;
     for %config<plugins-required>{$mile}.list -> $plug {
+        say "Plugin ｢$plug｣ is listed for milestone ｢$mile｣ " if $collection-info;
         my $path = "$mode/{ %config<plugins> }/$plug/config.raku";
         next unless $path.IO.f;
         my %plugin-conf = get-config(:$path);
-        next unless %plugin-conf{$mile};
-        note "Plugin ｢$plug｣ is valid for milestone ｢$mile｣ " if $debug;
+        next unless %plugin-conf{$mile}:exists and %plugin-conf{$mile}.defined;
+        say "Plugin ｢$plug｣ is valid with keys ｢{%plugin-conf.keys.join(',')}｣" if $collection-info;
         %valid-confs{$plug} = %plugin-conf;
     }
     %valid-confs
 }
-multi sub manage-plugins(Str:D $mile where * eq 'setup',
+multi sub manage-plugins(Str:D $mile where * ~~ any( < setup report compilation completion>),
                          :$with,
                          :%config, :$mode,
-                         :$debug = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$debug);
+                         :$collection-info = False) {
+    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     for %valids.kv -> $plug, %plugin-conf {
-        my @got = %plugin-conf.keys;
-        X::Collection::MissingMandatory.new(:required('processor',), :@got).throw
-            unless any(@got) eq 'processor';
-        my $path = "$mode/%config<plugins>/$plug/{ %plugin-conf<processor> }".IO.absolute;
+        my $path = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure = EVALFILE $path;
-        &closure.($with)
+        &closure.(|$with)
     }
     %valids
 }
 multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ ProcessedPod,
                          :%config, :$mode,
-                         :$debug = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$debug);
+                         :$collection-info = False) {
+    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     for %valids.kv -> $plug, %plugin-conf {
         %plugin-conf<path> = "$mode/%config<plugins>/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
@@ -303,51 +307,6 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
     }
     %valids
 }
-multi sub manage-plugins(Str:D $mile where * eq 'report',
-                         :$with,
-                         :%config, :$mode,
-                         :$debug = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$debug);
-    for %valids.kv -> $plug, %plugin-conf {
-        my @got = %plugin-conf.keys;
-        X::Collection::MissingMandatory.new(:required('reporter',), :@got).throw
-            unless any(@got) eq 'reporter';
-        my $path = "$mode/%config<plugins>/$plug/{%plugin-conf<reporter>}".IO.absolute;
-        my &closure = EVALFILE $path;
-        &closure.($with)
-    }
-    %valids
-}
-multi sub manage-plugins(Str:D $mile where * eq 'completion',
-                         :$with,
-                         :%config, :$mode,
-                         :$debug = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$debug);
-    for %valids.kv -> $plug, %plugin-conf {
-        my @got = %plugin-conf.keys;
-        X::Collection::MissingMandatory.new(:required('completer',), :@got).throw
-            unless any(@got) eq 'completer';
-        my $path = "$mode/%config<plugins>/$plug/{%plugin-conf<completer>}".IO.absolute;
-        my &closure = EVALFILE $path;
-        &closure.($with)
-    }
-    %valids
-}
-#multi sub manage-plugins(Str:D $mile where *eq 'cleanup', :$with, :%config, :$mode, :$debug = False) {
-#
-#}
-
-#| places plugin data for collection page components, filtered by filename
-#| makes available to plugins Page component structures for whole collection
-sub create-collection-data(:$name-space, :$key, ProcessedPod :$pr, :%data) {
-    # %data contains keys for each source and sub-keys for each page component
-    # what is required is to make the structure pointed to by $key available
-    # to a collection structure with sub-keys of filenames
-    $pr.plugin-data{"collection-$name-space"} =
-            %( |gather for %data.keys {
-                take $_ => %data{$_}{$key} })
-}
-
 
 #| uses Terminal::Spinners to create a progress bar, with a starting value, that is decreased by 1 after an iteration.
 sub counter(:$start, :$dec, :$header = 'Caching files ') {

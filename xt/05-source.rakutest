@@ -57,7 +57,7 @@ for <file-a file-b file-c> -> $fn {
 
 my $rv;
 
-lives-ok { $rv = collect(:end<pre-mode>, :no-status, :no-cache)},
+lives-ok { $rv = collect(:end<source>, :no-status, :no-cache)},
         'Collect with refresh produces a cache ';
 
 isa-ok $rv, Pod::From::Cache, 'cache object returned';

@@ -18,4 +18,8 @@
 =item test written for process upto milestone pre-render, passing
 =item Exceptions spun into separate file
 
+=head1 2021-01-31
+=item Compilation milestone adds plugins to convert collected data into compiled data.
+=item tests working to Compilation milestone
+
 =end pod

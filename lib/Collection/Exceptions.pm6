@@ -15,7 +15,7 @@ class X::Collection::NoMode is Exception {
 class X::Collection::BadOption is Exception {
     has @.passed;
     has @.good-options = <no-status without-processing no-refresh recompile full-render no-report no-completion no-cleanup
-            end debug verbose no-cache>;
+            end debug verbose no-cache collection-info>;
     method message {
         "Possible options are: { @.good-options.join(', ') }\nOptions passed were: {@.passed.join(', ')}"
     }

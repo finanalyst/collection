@@ -16,13 +16,17 @@
   ],
   "build-depends": [],
   "test-depends": [
-    "Test::META"
+    "Test::META",
+    "Test::Deeply::Relaxed",
+    "Test::Output"
   ],
   "provides": {
     "Collection": "lib/Collection.pm6",
     "X::Collection": "lib/Collection/Exceptions.pm6"
   },
-  "resources": [],
+  "resources": [
+    "min-templates.raku"
+  ],
   "support": {
     "source": "https://github.com/finanalyst/content-collection.git",
     "bugtracker": "https://github.com/finanalyst/content-collection/issues",

@@ -12,7 +12,7 @@ unless TMP.IO.d;
 my $orig = $*CWD;
 chdir TMP;
 
-plan 3;
+plan 4;
 my $rv;
 
 # add a mode directory, with its config files, and plugins directory and some setup plugins
@@ -20,25 +20,26 @@ if MODE.IO.d { empty-directory MODE }
 else { mktree MODE }
 mktree MODE ~ '/m-sources';
 (MODE ~ '/m-sources/placeholder.pod6').IO.spurt('# nothing here');
-my @pls = <setup1 setup_rend rend2 reporter completer unused>;
+my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
 (MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
     %(
-        mode-cache => 'm-cache',
-        mode-sources => 'm-sources',
+        :mode-cache<m-cache>,
+        :mode-sources<m-sources>,
         :no-refresh, # for test dont want to refresh or obtain
         :!recompile,
-        mode-ignore => (),
-        mode-obtain => (),
-        mode-refresh => (),
+        :mode-ignore(),
+        :mode-obtain(),
+        :mode-refresh(),
         mode-extensions => <rakudoc pod6>,
         :!full-render,
         :!no-report,
         :!no-completion,
-        plugins => 'some-plugs',
+        :plugins<some-plugs>,
         :destination<html>,
         :report-path<reports>,
+        :output-ext<html>,
     );
     CONF
 
@@ -47,8 +48,9 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         plugins-required => %(
             setup => ('{ @pls[0] }', '{ @pls[1] }',) ,
             render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', ) ,
+            compilation => ('{ @pls[4] }',),
             report => ('{ @pls[3] }',),
-            completion => ('{ @pls[4] }',),
+            completion => ('{ @pls[5] }',),
         ),
     );
     CONF
@@ -57,15 +59,15 @@ for @pls {
     (MODE ~ "/some-plugs/$_/config.raku").IO.spurt(qq:to/CONF/);
         %(
         { given $_ {
-        when 'setup1' { "setup => True, processor => \'proc.raku\' " }
-        when 'setup_rend' { "setup => True, render => True, processor => \'proc.raku\' " }
+        when 'setup1' { "setup => \'proc.raku\' " }
+        when 'setup_rend' { "render => True, setup => \'proc.raku\' " }
         when 'reporter' { "report => True" }
+        when 'compiler' { "compilation => True" }
         when 'completer' { "completion => True " }
         default { "name => \'{ $_ }\', report => True " }
     } },
         );
         CONF
-
 }
 =begin pod
 =TITLE This is a test file
@@ -90,19 +92,20 @@ This is a N<Footnote> for prosperity.
 my $p = 0;
 for <setup1 setup_rend> {
     (MODE ~ "/some-plugs/$_/proc.raku").IO.spurt(qq:to/CONF/);
-        sub ( \$a ) \{
-                \$a[0].add( 'first_{ $_ }', [{ $=pod[$p++].raku }] );
+        sub ( \$cache, \$coll, \$full, \$s-root, \$m-root ) \{
+                \$cache.add( \"\$s-root/extra_{ $p }_{ $_ }\", [{ $=pod[$p++].raku }] );
         \}
         CONF
 
 }
-$rv = collect(MODE, :no-status, :no-cache, :end<post-cache>, :recompile);
+$rv = collect(MODE, :no-status, :no-cache, :end<setup>, :recompile);
 #recompile to ensure that the cache is emptied
 isa-ok $rv[0], Pod::From::Cache, 'first of list';
-isa-ok $rv[0], Pod::From::Cache, 'second of list';
+isa-ok $rv[1], Pod::From::Cache, 'second of list';
 is-deeply-relaxed
         $rv[0].list-files.Set,
-        <sources/file-a.pod6 sources/file-b.pod6 sources/file-c.pod6 first_setup1 first_setup_rend>.Set,
+        <sources/file-a.pod6 sources/file-b.pod6 sources/file-c.pod6 sources/extra_0_setup1 sources/extra_1_setup_rend>.Set,
         'cache altered';
+isa-ok $rv[0].pod('sources/extra_1_setup_rend')[0], Pod::Block, 'retrieved Pod::Block from first extra';
 
 done-testing;
