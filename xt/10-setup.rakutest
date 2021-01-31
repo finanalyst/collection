@@ -19,7 +19,15 @@ my $rv;
 if MODE.IO.d { empty-directory MODE }
 else { mktree MODE }
 mktree MODE ~ '/m-sources';
-(MODE ~ '/m-sources/placeholder.pod6').IO.spurt('# nothing here');
+(MODE ~ '/m-sources/index.pod6').IO.spurt(q:to/IND/);
+        =begin pod
+        =TITLE An index
+
+        =MyIndex :custom<header>
+
+        =end pod
+        IND
+
 my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
@@ -38,8 +46,10 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :!no-completion,
         :plugins<some-plugs>,
         :destination<html>,
+        :landing-place<index>,
         :report-path<reports>,
         :output-ext<html>,
+        :sorter( &() ),
     );
     CONF
 
@@ -84,6 +94,8 @@ Here an X<I have indexed this|index1> some stuff
 A little rubbish
 
 =head1 Header Two
+
+This is a link L<Somewhere stupid|https://nowhere.net.nul>.
 
 This is a N<Footnote> for prosperity.
 
