@@ -258,7 +258,7 @@ So this combination is useful to set up the collection and to get a report on th
 
 Cleanup comes after C<collect> has finished, so is not a part of C<collect>.
 
-Currently, C<collect> just returns with the value of the %plugins-used hash.
+Currently, C<collect> just returns with the value of the @plugins-used object.
 
 =head1 Distribution Structure
 
@@ -553,10 +553,12 @@ TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by
 =head2 Report
 
 The C<report> key points to a Raku file that evaluates to a
-C<sub (%processed, %plugins-used, $report-path) {...}> object.
 
-=defn %plugins-used
-is a hash whose keys are milestones and values being a list of the plugins used.
+    sub (%processed, @plugins-used, $report-path) {...}
+
+=defn @plugins-used
+is an array of Pairs whose key is the milestone and
+value is a hash of the plugins used and their config parameters.
 
 =defn $report-path
 is the path name relative to the C<mode> directory where report files are produced. The output format of the files
@@ -568,15 +570,19 @@ as in Compilation
 =head2 Completion
 
 The C<report> key points to a Raku file that evaluates to
-a C<sub ($output-path, @filenames) {...}> object.
+a C<sub (@output-files, $destination, $landing-place, $extension) {...}> object.
 
-=defn $output-path 
+=defn $destination
 is the name of the output path (defined in the mode configuration)
 
 =defn @filenames
 is a list of the output files (with paths relative to the output path) that are to be presented, in order
 of evaluation, if this is important. Eg. for a book, the entire order is important, for a website
 ony the first page is important.
+
+=defn $landing-place
+is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the
+destination directory.
 
 B<LICENSE> Artistic-2.0
 

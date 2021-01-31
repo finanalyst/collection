@@ -35,11 +35,15 @@
 
 *  Compilation milestone adds plugins to convert collected data into compiled data.
 
-*  tests working to Compilation milestone
+*  All tests working
+
+*  API mostly complete
+
+*  TODO add a sorting key to config where the order of the files to be completed is important.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-01-31T10:24:14Z
+Rendered from CHANGELOG at 2021-01-31T14:24:19Z

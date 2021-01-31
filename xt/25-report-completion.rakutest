@@ -1,0 +1,100 @@
+use Test;
+use Test;
+use Test::Deeply::Relaxed;
+use Test::Output;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{MODE}/some-plugs";
+constant CONFS = "{MODE}/configs";
+constant TEMPLATES = "{MODE}/templates";
+constant OUTPUT = "{MODE}/html";
+constant REPORT = "{MODE}/reports";
+
+plan 5;
+my $rv;
+
+bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exit. Have source tests been run?"
+unless TMP.IO.d and "{TMP}/{ MODE }".IO.d and "{TMP}/{PLUGS}".IO.d;
+
+#my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
+
+my $orig = $*CWD;
+chdir TMP;
+
+# rewrite the plugins for reporter and completer
+
+(PLUGS ~ '/reporter/config.raku').IO.spurt( q:to/CONF/);
+    %(
+        :report<link-test.raku>
+    )
+    CONF
+(PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
+    sub (%processed, @plugins-used, --> Pair ) {
+        #%.links{$entry}<target location>
+        my @report = 'Link report', ;
+        for %processed.kv -> $fn, %page {
+            next unless %page<links> and +%page<links>.keys;
+            @report.append: "$fn contains links";
+            for %page<links>.kv -> $entry, (:$target, :$location) {
+                @report.append: "\t$location target is: $target"
+            }
+        }
+        @report.append: "\n\nPlugin report";
+        for @plugins-used {
+            @report.append: "Plugins used at ｢{ .key }｣ milestone:";
+            for .value.kv -> $plug, %params {
+                @report.append: "\t｢$plug｣ called with: ", %params.gist;
+            }
+        }
+        @report.append("\n\nTemplates report");
+        for %processed.kv -> $fn, %page {
+            next unless %page<templates-used>;
+            @report.append("$fn used\n" ~ %page<templates-used>.raku);
+        }
+        'link-plugin-report.txt' => @report.join("\n")
+    }
+    CODE
+
+(PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/);
+    %(
+        :completion<run-app.raku>
+    )
+    CONF
+(PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
+    use Test;
+    sub (@output, $destination, $landing) {
+        is @output.elems, 6, 'got 6 output files';
+        ok $destination.IO.d, 'destination is a directory';
+        ok "$destination/$landing".IO.f, 'landing is a file';
+    }
+    CODE
+$rv = collect(MODE, :no-status, :no-cache,
+        :end<report>, :full-render, :no-refresh);
+my $rpt = REPORT ~ '/link-plugin-report.txt';
+ok $rpt.IO.f, 'a report file is generated';
+like $rpt.IO.slurp,
+        /
+        'Link report'
+        .+ setup_rend .+ 'external' .+ 'nowhere.net.nul'
+        .+ 'Plugin report'
+        .+ 'compilation'
+        .+ 'compiler'
+        .+ 'Templates report'
+        .+ 'file-c'
+        /, 'file contains expected info';
+
+# should call three tests
+collect(MODE, :no-status, :no-cache,
+        :end<completion>, :full-render, :no-refresh);
+
+done-testing;
+
+
+#sub (:@output, :$destination, :$landing) {
+#        note '@output has' ~ @output.elems ~ 'files';
+#        note 'destination $destination is a directory' if $destination.IO.d;
+#        note 'landing $landing is a file' if $landing.IO.f;
+#}
+#CODE

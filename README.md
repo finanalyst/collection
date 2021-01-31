@@ -209,7 +209,7 @@ So this combination is useful to set up the collection and to get a report on th
 ## Cleanup
 Cleanup comes after `collect` has finished, so is not a part of `collect`.
 
-Currently, `collect` just returns with the value of the %plugins-used hash.
+Currently, `collect` just returns with the value of the @plugins-used object.
 
 # Distribution Structure
 A distribution contains content files, which may be updated on a regular basis, a cache, templates, and one or more modes.
@@ -488,10 +488,13 @@ is the ProcessedPod object rendering the content files.
 is a hash whose keys are source file names with a hash values containing TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
 ## Report
-The `report` key points to a Raku file that evaluates to a `sub (%processed, %plugins-used, $report-path) {...}` object.
+The `report` key points to a Raku file that evaluates to a
 
-> **%plugins-used**  
-is a hash whose keys are milestones and values being a list of the plugins used.
+```
+sub (%processed, @plugins-used, $report-path) {...}
+```
+> **@plugins-used**  
+is an array of Pairs whose key is the milestone and value is a hash of the plugins used and their config parameters.
 
 > **$report-path**  
 is the path name relative to the C<mode> directory where report files are produced. The output format of the files is determined by the report plugin.
@@ -500,13 +503,16 @@ is the path name relative to the C<mode> directory where report files are produc
 as in Compilation
 
 ## Completion
-The `report` key points to a Raku file that evaluates to a `sub ($output-path, @filenames) {...}` object.
+The `report` key points to a Raku file that evaluates to a `sub (@output-files, $destination, $landing-place, $extension) {...}` object.
 
-> **$output-path**  
+> **$destination**  
 is the name of the output path (defined in the mode configuration)
 
 > **@filenames**  
 is a list of the output files (with paths relative to the output path) that are to be presented, in order of evaluation, if this is important. Eg. for a book, the entire order is important, for a website ony the first page is important.
+
+> **$landing-place**  
+is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
 
 **LICENSE** Artistic-2.0
 
@@ -517,4 +523,4 @@ is a list of the output files (with paths relative to the output path) that are 
 
 
 ----
-Rendered from README at 2021-01-31T10:22:23Z
+Rendered from README at 2021-01-31T14:24:19Z

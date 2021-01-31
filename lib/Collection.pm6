@@ -146,15 +146,15 @@ multi sub collect(Str:D $mode, :$no-status,
     # because had it was True, and changes bubble to here, then the caches were empty and had to
     # be recreated
     my Bool $cache-changes = (?(+$cache.list-files) or ?(+$mode-cache.list-files));
-    my %plugins-used;
+    my @plugins-used;
     my @output-files;
     # if no cache changes, then no need to run setup
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
     # value of full-render is moot.
-    %plugins-used<setup> = manage-plugins('setup',
+    @plugins-used.append( %(setup => manage-plugins('setup',
             :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
-            :%config, :$mode, :$collection-info)
+            :%config, :$mode, :$collection-info) ) )
         if $cache-changes or $full-render;
     return ($cache, $mode-cache) if $end ~~ /:i 'Setup' /;
     # === Setup milestone ==================================================
@@ -184,7 +184,7 @@ multi sub collect(Str:D $mode, :$no-status,
         $pr.templates(~@templates[0]);
         for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
 
-        %plugins-used<render> = manage-plugins('render', :with($pr), :%config, :$mode, :$collection-info);
+        @plugins-used.append( %(render => manage-plugins('render', :with($pr), :%config, :$mode, :$collection-info)));
         return ($pr) if $end ~~ /:i 'render' /;
         # ======== Render milestone =============================
         say "Passed Render milestone" if $collection-info;
@@ -217,7 +217,7 @@ multi sub collect(Str:D $mode, :$no-status,
             }
         }
 
-        %plugins-used<compilation> = manage-plugins('compilation', :with($pr,%processed), :%config, :$mode, :$collection-info);
+        @plugins-used.append( %(compilation => manage-plugins('compilation', :with($pr,%processed), :%config, :$mode, :$collection-info) ));
         return ($pr,%processed) if $end ~~ / 'compilation' /;
         # ==== compilation Milestone ===================================
         say "Passed Compilation milestone" if $collection-info;
@@ -245,28 +245,27 @@ multi sub collect(Str:D $mode, :$no-status,
                         .grep({ .key ~~ / 'links' / }));
             }
         }
-        %plugins-used<report> = manage-plugins('report',:with(%processed,%plugins-used),:%config,:$mode,:$collection-info)
+        @plugins-used.append( %(report => manage-plugins('report',:with(%processed,@plugins-used),:%config,:$mode,:$collection-info) ))
                 unless $no-report;
-        return (%processed, %plugins-used) if $end ~~ /:i 'report' /;
+        return (%processed, @plugins-used) if $end ~~ /:i 'report' /;
         # ==== Compilation Milestone ===================================
         say "Passed Report milestone" if $collection-info;
-        write-config( @output-files = %processed.keys, :path($mode), :fn<output-files.raku>) ;
+        @output-files = (%processed.keys.sort >>~>> %config<output-ext>);
+        write-config( @output-files, :path($mode), :fn<output-files.raku>
+        ) ;
     }
 
-    %plugins-used<completion> = manage-plugins('completion',
-            :with(:files(@output-files),:output(%config<output>),:landing(%config<landing-place>) ),
+    @plugins-used.append( %(completion => manage-plugins('completion',
+            :with(@output-files, "$mode/%config<destination>", "%config<landing-place>\.%config<output-ext>"),
             :$mode,:%config,:$collection-info)
+            ))
             unless $no-completion;
-    return (:files(@output-files),:destination(%config<destination>),:landing(%config<landing-place>) )
-    if $end ~~ /:i 'completion'  /;
+    return ( @output-files, "$mode/%config<destination>", "%config<landing-place>\.%config<output-ext>" )
+    if $end ~~ /:i 'completion' /;
     # === Report Completion Milestone ================================
     say "Passed Post-Report milestone" if $collection-info;
 
-    #return %plugins-used if $end ~~ /:i 'completion' /;
-    # === Completion Milestone =============================
-    say "Passed Post-Report milestone" if $collection-info;
-
-    %plugins-used
+    @plugins-used
     # inspection point end eq 'all'
     # === All milestone (nothing else must happen) ================================
 }
@@ -284,7 +283,7 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
     }
     %valid-confs
 }
-multi sub manage-plugins(Str:D $mile where * ~~ any( < setup report compilation completion>),
+multi sub manage-plugins(Str:D $mile where * ~~ any( < setup compilation completion>),
                          :$with,
                          :%config, :$mode,
                          :$collection-info = False) {
@@ -304,6 +303,21 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
         %plugin-conf<path> = "$mode/%config<plugins>/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
         $with.add-plugin($plug, |%plugin-conf);
+    }
+    %valids
+}
+multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
+                         :%config, :$mode,
+                         :$collection-info = False) {
+    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
+    for %valids.kv -> $plug, %plugin-conf {
+        my $path = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
+        my &closure = EVALFILE $path;
+        # a plugin should only affect the report directly
+        # so a plugin should not write directly
+        my $resp = &closure.(|$with);
+        "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt( $resp.value )
     }
     %valids
 }

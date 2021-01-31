@@ -20,6 +20,8 @@
 
 =head1 2021-01-31
 =item Compilation milestone adds plugins to convert collected data into compiled data.
-=item tests working to Compilation milestone
+=item All tests working
+=item API mostly complete
+=item TODO add a sorting key to config where the order of the files to be completed is important.
 
 =end pod
