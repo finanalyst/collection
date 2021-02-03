@@ -9,7 +9,7 @@ constant PLUGS = "{MODE}/some-plugs";
 constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
 
-plan 4;
+plan 5;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } must exit. Have source tests been run?"
@@ -31,31 +31,32 @@ bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
 (PLUGS ~ '/compiler/frontmatter.raku').IO.spurt( q:to/CODE/);
     sub ($pr, %processed) {
         for <toc footnotes glossary meta> -> $component {
-            # %data contains keys for each source and sub-keys for each page component
+            #%data contains keys for each source and sub-keys for each page component
             # what is required is to make the structure pointed to by raw-component available
             # to a collection structure with sub-keys of filenames
-            $pr.plugin-data{"collection-$component"} =
+            $pr.add-data("collection-$component",
                     %( |gather for %processed.keys {
-                        take $_ => %processed{$component}{"raw-$component"} })
+                        take $_ => %processed{$_}{"raw-$component"} }) )
         }
-        for $pr.plugin-data.kv -> $k, $v { "$k => ", $v.raku }
     }
     CODE
 
 
 
-stdout-like  { $rv = collect(MODE, :collection-info, :no-status, :no-cache, :end<compilation>, :full-render, :no-refresh)},
+stdout-like  {
+    $rv = collect(MODE, :collection-info, :no-status, :no-cache, :end<compilation>, :full-render, :no-refresh) ;
+},
     / 'Passed Render milestone' .+ 'is listed for milestone' .+ 'compilation'/,
     'got collection info';
 
 is-deeply-relaxed $rv[1].keys.Set,
         <extra_0_setup1 extra_1_setup_rend file-a file-b file-c>.Set,
         'got all the files in cache';
-is-deeply-relaxed $rv[0].plugin-data.keys.Set,
-        <collection-footnotes collection-toc collection-glossary collection-meta>.Set,
+is-deeply-relaxed $rv[0].plugin-datakeys.Set,
+        <rend2 setup_rend collection-footnotes collection-toc collection-glossary collection-meta>.Set,
         'name-spaces set up';
 is-deeply-relaxed "{MODE}/html".IO.dir(test => /'.html'/)>>.relative(MODE ~ '/html').Set,
         (<extra_0_setup1 extra_1_setup_rend file-a file-b file-c> >>~>> '.html').Set,
         'got all the files in cache';
-
+isa-ok $rv[0].get-data('collection-toc'), Associative , 'plugin data key has content';
 done-testing;

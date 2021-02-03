@@ -34,10 +34,10 @@ chdir TMP;
     sub (%processed, @plugins-used, --> Pair ) {
         #%.links{$entry}<target location>
         my @report = 'Link report', ;
-        for %processed.kv -> $fn, %page {
-            next unless %page<links> and +%page<links>.keys;
+        for %processed.kv -> $fn, $podf {
+            next unless $podf.links and +$podf.links.keys;
             @report.append: "$fn contains links";
-            for %page<links>.kv -> $entry, (:$target, :$location) {
+            for $podf.links.kv -> $entry, (:$target, :$location) {
                 @report.append: "\t$location target is: $target"
             }
         }
@@ -49,9 +49,9 @@ chdir TMP;
             }
         }
         @report.append("\n\nTemplates report");
-        for %processed.kv -> $fn, %page {
-            next unless %page<templates-used>;
-            @report.append("$fn used\n" ~ %page<templates-used>.raku);
+        for %processed.kv -> $fn, $podf {
+            next unless $podf.templates-used;
+            @report.append("$fn used\n" ~ $podf.templates-used.raku);
         }
         'link-plugin-report.txt' => @report.join("\n")
     }
@@ -90,11 +90,3 @@ collect(MODE, :no-status, :no-cache,
         :end<completion>, :full-render, :no-refresh);
 
 done-testing;
-
-
-#sub (:@output, :$destination, :$landing) {
-#        note '@output has' ~ @output.elems ~ 'files';
-#        note 'destination $destination is a directory' if $destination.IO.d;
-#        note 'landing $landing is a file' if $landing.IO.f;
-#}
-#CODE

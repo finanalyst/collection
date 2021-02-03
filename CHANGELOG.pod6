@@ -24,4 +24,12 @@
 =item API mostly complete
 =item TODO add a sorting key to config where the order of the files to be completed is important.
 
+=head1 2021-02-02
+=item extra test in compilation, routine plugin
+=item changes needed after Pod::Render refactoring
+=item now render will also call a program with $pr, this is so that it can interogate the config files
+of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in
+a template.
+
+
 =end pod

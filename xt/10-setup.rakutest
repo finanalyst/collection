@@ -40,7 +40,7 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :mode-ignore(),
         :mode-obtain(),
         :mode-refresh(),
-        mode-extensions => <rakudoc pod6>,
+        :mode-extensions<rakudoc pod6>,
         :!full-render,
         :!no-report,
         :!no-completion,
@@ -49,7 +49,7 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :landing-place<index>,
         :report-path<reports>,
         :output-ext<html>,
-        :sorter( &() ),
+        :templates<templates>,
     );
     CONF
 

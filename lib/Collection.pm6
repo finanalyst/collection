@@ -208,12 +208,11 @@ multi sub collect(Str:D $mode, :$no-status,
                 .IO.mkdir unless .IO.d
             }
             with $pr {
-                .name = $short;
+                .pod-file.name = $short;
                 .process-pod($cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 # collect page components, and links
-                %processed{$short} = %( .emit-and-renew-processed-state
-                        .grep({ .key ~~ / 'raw-' | 'links' | 'templates-used' / }));
+                %processed{$short} = .emit-and-renew-processed-state
             }
         }
 
@@ -237,12 +236,11 @@ multi sub collect(Str:D $mode, :$no-status,
                 .IO.mkdir unless .IO.d
             }
             with $pr {
-                .name = $short;
+                .pod-file.name = $short;
                 .process-pod($mode-cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 #only collect links
-                %processed{$short} = %(.emit-and-renew-processed-state
-                        .grep({ .key ~~ / 'links' / }));
+                %processed{$short} = .emit-and-renew-processed-state
             }
         }
         @plugins-used.append( %(report => manage-plugins('report',:with(%processed,@plugins-used),:%config,:$mode,:$collection-info) ))
@@ -250,7 +248,7 @@ multi sub collect(Str:D $mode, :$no-status,
         return (%processed, @plugins-used) if $end ~~ /:i 'report' /;
         # ==== Compilation Milestone ===================================
         say "Passed Report milestone" if $collection-info;
-        @output-files = (%processed.keys.sort >>~>> %config<output-ext>);
+        @output-files = (%processed.keys.sort >>~>> ('.' ~ %config<output-ext>));
         write-config( @output-files, :path($mode), :fn<output-files.raku>
         ) ;
     }
@@ -300,9 +298,13 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                          :$collection-info = False) {
     my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     for %valids.kv -> $plug, %plugin-conf {
-        %plugin-conf<path> = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
-        $with.add-plugin($plug, |%plugin-conf);
+        if %plugin-conf<render> ~~ Str { # as opposed to being a Boolean value, then its a program
+            my &closure = EVALFILE "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
+            &closure.($with);
+        }
+        $with.add-plugin($plug, :$path, :config(%plugin-conf));
     }
     %valids
 }
