@@ -31,5 +31,7 @@
 of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in
 a template.
 
+=head1 2021-02-3
+=item add mode-name key to ProcessedPod object
 
 =end pod

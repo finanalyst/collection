@@ -183,6 +183,7 @@ multi sub collect(Str:D $mode, :$no-status,
         $pr.no-code-escape = %config<no-code-escape> if %config<no-code-escape>:exists;
         $pr.templates(~@templates[0]);
         for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
+        $pr.add-data('mode-name', $mode );
 
         @plugins-used.append( %(render => manage-plugins('render', :with($pr), :%config, :$mode, :$collection-info)));
         return ($pr) if $end ~~ /:i 'render' /;

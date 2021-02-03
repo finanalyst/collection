@@ -185,7 +185,10 @@ The purpose of this milestone
 is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine
 files in some way, or to gather information for a search algorithm.
 
-During the setup stage, the C<ProcessedPod> object is prepared, adding templates to it.
+During the setup stage,
+=item the C<ProcessedPod> object is prepared,
+=item templates specified in the C<templates> directory are added
+=item the key B<mode-name> is added to the C<ProcessedPod> object's plugin-data area and given the value of the mode.
 
 The Setup stage depends on the following options:
 =item B<no-status> as before, turns off a progress bar

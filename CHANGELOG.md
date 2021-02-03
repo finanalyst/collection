@@ -8,6 +8,7 @@
 [2021-01-27 Redesign](#2021-01-27-redesign)  
 [2021-01-31](#2021-01-31)  
 [2021-02-02](#2021-02-02)  
+[2021-02-3](#2021-02-3)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -41,17 +42,20 @@
 *  TODO add a sorting key to config where the order of the files to be completed is important.
 
 # 2021-02-02
-
-
 *  extra test in compilation, routine plugin
 
 *  changes needed after Pod::Render refactoring
 
 *  now render will also call a program with $pr, this is so that it can interogate the config files of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in a template.
 
+# 2021-02-3
+
+
+*  add mode-name key to ProcessedPod object
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-03T10:51:22Z
+Rendered from CHANGELOG at 2021-02-03T11:13:47Z

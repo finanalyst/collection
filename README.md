@@ -150,7 +150,13 @@ If **setup** plugins are defined and in the mode's plugins-required<setup> list,
 
 The purpose of this milestone is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine files in some way, or to gather information for a search algorithm.
 
-During the setup stage, the `ProcessedPod` object is prepared, adding templates to it.
+During the setup stage,
+
+*  the `ProcessedPod` object is prepared,
+
+*  templates specified in the `templates` directory are added
+
+*  the key **mode-name** is added to the `ProcessedPod` object's plugin-data area and given the value of the mode.
 
 The Setup stage depends on the following options:
 
@@ -523,4 +529,4 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 
 ----
-Rendered from README at 2021-01-31T14:24:19Z
+Rendered from README at 2021-02-03T11:13:52Z
