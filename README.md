@@ -463,23 +463,23 @@ Likewise for the mode sources.
 New files can be added to the cache object inside the sub using the `.add` method, see [Sources](Sources.md).
 
 ## Render
-This is the exception to the rule that the config provides a callable. The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
+The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
+
+If the `render` key is True, no callable is provided, and the plugin will be added via the **.add-plugin** method of the `ProcessedPod` object.
+
+If the `render` key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object, and returns a list of Pairs, with `key` the value of a path name below the `%config<destination> ` directory and the `value` a filename local to the plugin's own subdirectory, which is to be copied to the path in the key.
 
 So the config file must have:
 
-*  render (True)
+*  render (True | name of callable)
 
-*  name-space => a string that can be used to store data in the `ProcessedPod` object
+*  custom-raku => a Raku program that evaluates to an array of custom blocks (must be set to `()` if no Raku program )
 
-*  custom-raku => a Raku program that evaluates to an array of custom blocks
-
-*  template-raku => a Raku program that evaluates to a hash of RakuClosure templates
-
-*  data-raku => a Raku program that evaluates to an object assigned to the `ProcessedPod` object's `.plugin-data<name-space> `, where 'name-space' is set above.
+*  template-raku => a Raku program that evaluates to a hash of RakuClosure templates (must be set to `()` if no Raku program)
 
 It is possible to specify `path` but it must be relative to the plugin's sub-directory.
 
-These plugins provide three sets of configuration programs that alter the templates, custom blocks and plugin space of the `ProcessPod` object. These are evaluated by the `ProcessedPod` object.
+More information about these plugins can be found in the documentation in the `Raku::Pod::Render` distribution.
 
 ## Compilation
 The `compilation` key must point to a Raku program that delivers a sub object
@@ -529,4 +529,4 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 
 ----
-Rendered from README at 2021-02-03T11:13:52Z
+Rendered from README at 2021-02-04T13:19:58Z

@@ -28,7 +28,7 @@ mktree MODE ~ '/m-sources';
         =end pod
         IND
 
-my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
+my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
 (MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
@@ -57,7 +57,7 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
     %(
         plugins-required => %(
             setup => ('{ @pls[0] }', '{ @pls[1] }',) ,
-            render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', ) ,
+            render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', '{ @pls[7] }' ) ,
             compilation => ('{ @pls[4] }',),
             report => ('{ @pls[3] }',),
             completion => ('{ @pls[5] }',),
@@ -74,6 +74,7 @@ for @pls {
         when 'reporter' { "report => True" }
         when 'compiler' { "compilation => True" }
         when 'completer' { "completion => True " }
+        when 'gather-css' { "render => False" }
         default { "name => \'{ $_ }\', report => True " }
     } },
         );

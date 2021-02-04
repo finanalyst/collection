@@ -2,6 +2,7 @@ use Test;
 use Test;
 use Test::Deeply::Relaxed;
 use Test::Output;
+use File::Directory::Tree;
 
 use Collection;
 constant TMP = 'xt/test-dir';
@@ -88,5 +89,9 @@ like $rpt.IO.slurp,
 # should call three tests
 collect(MODE, :no-status, :no-cache,
         :end<completion>, :full-render, :no-refresh);
+
+# clean up of tests
+chdir $orig;
+rmtree TMP;
 
 done-testing;

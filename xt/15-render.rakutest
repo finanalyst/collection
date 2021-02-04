@@ -11,8 +11,9 @@ constant MODE = 'test-mode';
 constant PLUGS = "{MODE}/some-plugs";
 constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
+constant HTML = "{MODE}/html";
 
-plan 4;
+plan 6;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } must exit. Have source tests been run?"
@@ -21,11 +22,12 @@ mktree TMP ~ '/' ~ TEMPLATES;
 'resources/min-templates.raku'.IO.copy:
         TMP ~ '/' ~ TEMPLATES ~ '/mintemp.raku' ;
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
-
 my $orig = $*CWD;
 chdir TMP;
 bail-out "{PLUGS} and { CONFS } must exit. Have setup tests been run?"
         unless PLUGS.IO.d and CONFS.IO.d;
+
+mktree( HTML) unless HTML.IO.d ;
 
 # rewrite the config and plugin test files for render plugins
 (PLUGS ~ '/setup_rend/config.raku' ).IO.spurt(q:to/CONF/);
@@ -33,7 +35,6 @@ bail-out "{PLUGS} and { CONFS } must exit. Have setup tests been run?"
         :render,
         :template-raku<templates.raku>,
         :custom-raku<blocks.raku>,
-        :data-raku(),
         :setup<proc.raku>,
         )
         CONF
@@ -41,10 +42,16 @@ bail-out "{PLUGS} and { CONFS } must exit. Have setup tests been run?"
 (PLUGS ~ '/rend2/config.raku' ).IO.spurt(q:to/CONF/);
         %(     
         :render,
-        :name-space<frontmatter>,
         :template-raku<templates.raku>,
         :custom-raku<blocks.raku>,
-        :data-raku(),
+        :css<mystyling.css>,
+        )
+        CONF
+(PLUGS ~ '/gather-css/config.raku' ).IO.spurt(q:to/CONF/);
+        %(
+        :render<css-collect.raku>,
+        :template-raku(),
+        :custom-raku(),
         )
         CONF
 # template raku files
@@ -74,24 +81,37 @@ bail-out "{PLUGS} and { CONFS } must exit. Have setup tests been run?"
 (PLUGS ~ '/rend2/blocks.raku' ).IO.spurt(q:to/CONF/);
         <figure diagram sorted-table>
         CONF
-# create full set of templates
-#(TEMPLATES ~ '/templates.raku').IO.spurt( q:to/TEMPS/);
-#        use v6.*;
-#        use ProcessedPod;
-#        my @templates = <block-code comment declarator defn dlist-end dlist-start escaped footnotes format-b format-c
-#                format-i format-k format-l format-n format-p format-r format-t format-u format-x glossary heading
-#                item list meta named output para pod raw source-wrap table toc >;
-#        my %templates  = @templates Z=> @templates.map( { gen-closure-template( $_ ) });
-#        %templates<escaped> = sub ( $str ) { $str };
-#        %templates;
-#        TEMPS
+(PLUGS ~ '/rend2/mystyling.css' ).IO.spurt(q:to/CONF/);
+        .design { font-size: large; }
+        CONF
+#create a plugin that looks for css files, creates a local css file, passes it back
+# where it is written to output
+(PLUGS ~ '/gather-css/css-collect.raku' ).IO.spurt(q:to/CONF/);
+        sub ( $pp ) {
+                my $css = '';
+                for $pp.plugin-datakeys {
+                        my $data = $pp.get-data($_);
+                        next unless $data ~~ Associative and $data<css>:exists and $data<css> ~~ Str:D;
+                        my $file = ($data<path> ~ '/' ~ $data<css>).IO;
+                        $css ~= "\n" ~ $file.slurp;
+                }
+                'local.css'.IO.spurt($css);
+                %( 'assets/css/local.css' => 'local.css' )
+        }
+        CONF
 
-$rv = collect(MODE, :no-status, :no-cache, :end<render>, :recompile);
+$rv = collect(MODE, :no-status, :no-cache, :end<render>, :recompile, :full-render);
 isa-ok $rv, ProcessedPod, 'got the correct object';
 is-deeply-relaxed $rv.custom.Set,
         <figure diagram sorted-table design>.Set,
         'plugin added the custom blocks';
 ok $rv.tmpl<sorted-table>:exists,'template was added from rend2';
 ok $rv.tmpl<design>:exists, 'template was added from setup_rend';
+
+ok (HTML ~ '/assets/css/local.css').IO.f, 'file exists';
+like (HTML ~ '/assets/css/local.css').IO.slurp,
+        /
+        '.design { font-size: large;'
+        /, 'css from other plugin has be copied';
 
 done-testing;

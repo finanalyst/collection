@@ -255,11 +255,11 @@ multi sub collect(Str:D $mode, :$no-status,
     }
 
     @plugins-used.append( %(completion => manage-plugins('completion',
-            :with(@output-files, "$mode/%config<destination>", "%config<landing-place>\.%config<output-ext>"),
+            :with(@output-files, "$mode/%config<destination>".IO.absolute, "%config<landing-place>\.%config<output-ext>"),
             :$mode,:%config,:$collection-info)
             ))
             unless $no-completion;
-    return ( @output-files, "$mode/%config<destination>", "%config<landing-place>\.%config<output-ext>" )
+    return ( @output-files, "$mode/%config<destination>".IO.absolute, "%config<landing-place>\.%config<output-ext>" )
     if $end ~~ /:i 'completion' /;
     # === Report Completion Milestone ================================
     say "Passed Post-Report milestone" if $collection-info;
@@ -270,7 +270,7 @@ multi sub collect(Str:D $mode, :$no-status,
 }
 
 sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
-    my %valid-confs;
+    my @valid-confs; # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
         say "Plugin ｢$plug｣ is listed for milestone ｢$mile｣ " if $collection-info;
         my $path = "$mode/{ %config<plugins> }/$plug/config.raku";
@@ -278,51 +278,70 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
         my %plugin-conf = get-config(:$path);
         next unless %plugin-conf{$mile}:exists and %plugin-conf{$mile}.defined;
         say "Plugin ｢$plug｣ is valid with keys ｢{%plugin-conf.keys.join(',')}｣" if $collection-info;
-        %valid-confs{$plug} = %plugin-conf;
+        @valid-confs.push: $plug => %plugin-conf;
     }
-    %valid-confs
+    @valid-confs
 }
 multi sub manage-plugins(Str:D $mile where * ~~ any( < setup compilation completion>),
                          :$with,
                          :%config, :$mode,
                          :$collection-info = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    for %valids.kv -> $plug, %plugin-conf {
-        my $path = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-        my &closure = EVALFILE $path;
-        &closure.(|$with)
+    my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    for @valids -> (:key($plug), :value(%plugin-conf)) {
+        # only run callable and closure within the drectory of the plugin
+        my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
+        my $path = $callable.IO.dirname;
+        my &closure = indir( $path, { EVALFILE $callable} );
+        indir($path, { &closure.(|$with) } );
     }
-    %valids
+    @valids
 }
 multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ ProcessedPod,
                          :%config, :$mode,
                          :$collection-info = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    for %valids.kv -> $plug, %plugin-conf {
+    my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/%config<plugins>/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
         if %plugin-conf<render> ~~ Str { # as opposed to being a Boolean value, then its a program
-            my &closure = EVALFILE "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-            &closure.($with);
+            my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
+            my $path = $callable.IO.dirname;
+            my &closure = indir( $path, { EVALFILE $callable} );
+            # a plugin should only affect the report directly
+            # so a plugin should not write directly
+            my %asset-files = indir($path, { &closure.($with) } );
+            for %asset-files.kv -> $dest, $src {
+                # copy the files returned - the use case for this is css and script files to be
+                # served with html files. The sub-directory paths are needed local to the output files
+                # they will be named in the templates provided by the plugins
+                my $dest-path = "$mode/%config<destination>/$dest".IO;
+                mkdir($dest-path.dirname) unless $dest-path.dirname.IO.d;
+                "$path/$src".IO.copy($dest-path);
+            }
         }
-        $with.add-plugin($plug, :$path, :config(%plugin-conf));
+        $with.add-plugin($plug,
+                :$path,
+                :template-raku( %plugin-conf<template-raku>:delete ),
+                :custom-raku( %plugin-conf<custom-raku>:delete ),
+                :config(%plugin-conf));
     }
-    %valids
+    @valids
 }
 multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
                          :%config, :$mode,
                          :$collection-info = False) {
-    my %valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
-    for %valids.kv -> $plug, %plugin-conf {
-        my $path = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-        my &closure = EVALFILE $path;
+    for @valids -> (:key($plug), :value(%plugin-conf)) {
+        my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
+        my $path = $callable.IO.dirname;
+        my &closure = indir( $path, { EVALFILE $callable} );
         # a plugin should only affect the report directly
         # so a plugin should not write directly
-        my $resp = &closure.(|$with);
+        my $resp = indir($path, { &closure.(|$with) } );
         "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt( $resp.value )
     }
-    %valids
+    @valids
 }
 
 #| uses Terminal::Spinners to create a progress bar, with a starting value, that is decreased by 1 after an iteration.

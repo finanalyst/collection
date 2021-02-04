@@ -53,7 +53,7 @@ is-deeply-relaxed $rv[1].keys.Set,
         <extra_0_setup1 extra_1_setup_rend file-a file-b file-c>.Set,
         'got all the files in cache';
 is-deeply-relaxed $rv[0].plugin-datakeys.Set,
-        <rend2 setup_rend collection-footnotes collection-toc collection-glossary collection-meta>.Set,
+        <rend2 setup_rend collection-footnotes collection-toc collection-glossary collection-meta mode-name gather-css>.Set,
         'name-spaces set up';
 is-deeply-relaxed "{MODE}/html".IO.dir(test => /'.html'/)>>.relative(MODE ~ '/html').Set,
         (<extra_0_setup1 extra_1_setup_rend file-a file-b file-c> >>~>> '.html').Set,

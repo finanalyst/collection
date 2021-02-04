@@ -472,6 +472,7 @@ B<collection-info>
 
 Causes collect to produce information about milestones and valid and invalid plugins
 =end item
+
 =head1 Plugin management
 
 Plugins are B<Raku> programs that are executed at specific milestones in the rendering process.
@@ -523,22 +524,25 @@ New files can be added to the cache object inside the sub using the C<.add> meth
 
 =head2 Render
 
-This is the exception to the rule that the config provides a callable.
 The Collection plugin-manager calls the C<ProcessedPod.add-plugin> method with the config keys and
 the path modified to the plugin's subdirectory.
 
+If the C<render> key is True, no callable is provided, and the plugin will be added via the B<.add-plugin>
+method of the C<ProcessedPod> object.
+
+If the C<render> key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object,
+and returns a list of Pairs, with C<key> the value of a path name below the C<%config<destination> > directory
+and the C<value> a filename local to the plugin's own subdirectory, which is to be copied to the path in the
+key.
+
 So the config file must have:
-=item render (True)
-=item name-space => a string that can be used to store data in the C<ProcessedPod> object
-=item custom-raku => a Raku program that evaluates to an array of custom blocks
-=item template-raku => a Raku program that evaluates to a hash of RakuClosure templates
-=item data-raku => a Raku program that evaluates to an object assigned to the C<ProcessedPod> object's
-C<.plugin-data<name-space> >, where 'name-space' is set above.
+=item render (True | name of callable)
+=item custom-raku => a Raku program that evaluates to an array of custom blocks (must be set to C<()> if no Raku program )
+=item template-raku => a Raku program that evaluates to a hash of RakuClosure templates (must be set to C<()> if no Raku program)
 
 It is possible to specify C<path> but it must be relative to the plugin's sub-directory.
 
-These plugins provide three sets of configuration programs that alter the templates, custom blocks and plugin space
-of the C<ProcessPod> object. These are evaluated by the C<ProcessedPod> object.
+More information about these plugins can be found in the documentation in the C<Raku::Pod::Render> distribution.
 
 =head2 Compilation
 

@@ -53,9 +53,13 @@
 
 *  add mode-name key to ProcessedPod object
 
+*  defined functionality of the return value of a render closure.
+
+*  ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-03T11:13:47Z
+Rendered from CHANGELOG at 2021-02-04T13:19:59Z
