@@ -1,0 +1,37 @@
+use Test;
+use Test::Deeply::Relaxed;
+use Test::Output;
+use File::Directory::Tree;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{MODE}/some-plugs";
+constant CONFS = "{MODE}/configs";
+constant TEMPLATES = "{MODE}/templates";
+constant OUTPUT = "{MODE}/html";
+constant REPORT = "{MODE}/reports";
+
+plan 7;
+my $rv;
+
+bail-out "{TMP} and {TMP}/{ REPORT } must exit. Have report-completion tests been run?"
+unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
+
+my $orig = $*CWD;
+chdir TMP;
+(PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/);
+    %(
+
+    )
+    CONF
+lives-ok {
+    collect(:no-status, :full-render, :dump-at(<source setup render compilation report completion>)) ;
+}, 'collect continues, but dumps';
+
+ok "dumped-mode-unknown-at-source\.txt".IO.f, "dumped-mode-unknown-at-source\.txt".IO.absolute ~ ' is a dump file';
+for <setup render compilation report completion> {
+    ok "dumped-{MODE}-at-$_\.txt".IO.f, "dumped-{MODE}-at-$_\.txt".IO.absolute ~ ' is a dump file';
+}
+
+done-testing;

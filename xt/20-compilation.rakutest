@@ -46,7 +46,7 @@ bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
 stdout-like  {
     $rv = collect(MODE, :collection-info, :no-status, :no-cache, :end<compilation>, :full-render, :no-refresh) ;
 },
-    / 'Passed Render milestone' .+ 'is listed for milestone' .+ 'compilation'/,
+    / 'Passed <Render> milestone' .+ 'is listed for milestone' .+ 'compilation'/,
     'got collection info';
 
 is-deeply-relaxed $rv[1].keys.Set,

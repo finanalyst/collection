@@ -9,6 +9,7 @@
 [2021-01-31](#2021-01-31)  
 [2021-02-02](#2021-02-02)  
 [2021-02-3](#2021-02-3)  
+[2021-02-04](#2021-02-04)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -49,17 +50,22 @@
 *  now render will also call a program with $pr, this is so that it can interogate the config files of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in a template.
 
 # 2021-02-3
-
-
 *  add mode-name key to ProcessedPod object
 
 *  defined functionality of the return value of a render closure.
 
 *  ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
 
+# 2021-02-04
+
+
+*  add dump-at functionality
+
+*  addd test of dump-at
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-04T13:19:59Z
+Rendered from CHANGELOG at 2021-02-04T23:23:00Z

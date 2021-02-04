@@ -12,7 +12,7 @@ unless TMP.IO.d;
 my $orig = $*CWD;
 chdir TMP;
 
-plan 4;
+plan 5;
 my $rv;
 
 # add a mode directory, with its config files, and plugins directory and some setup plugins
@@ -113,6 +113,7 @@ for <setup1 setup_rend> {
 }
 $rv = collect(MODE, :no-status, :no-cache, :end<setup>, :recompile);
 #recompile to ensure that the cache is emptied
+is $rv.elems, 5, 'collect should return 5 elems at setup';
 isa-ok $rv[0], Pod::From::Cache, 'first of list';
 isa-ok $rv[1], Pod::From::Cache, 'second of list';
 is-deeply-relaxed

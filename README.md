@@ -50,7 +50,7 @@ A concrete example of `Collection` is the [Collection-Raku-Documentation](https:
 The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides the concrete configuration and specifies how files are rendered. However, `Collection` has been designed so that **Templates** and **Plugins** for `Collection-Raku-Documentation` can be used for other collections, while other Collection distributions that only provide **Plugins** and/or **Templates**. Once the Raku-Documentation collection has been initialised, Raku-Doc calls `collect`, which is the entry point for `Collection`.
 
 # Life cycle of processing
-After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, the content files, or the intermediary data can be inspected and reprocessed using plugins.
+After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, intermediary data can be reprocessed using plugins, the data after the plugins can be dumped, or the processed halted.
 
 `collect` can be called with option flags, which have the same effect as configuration options. The run-time values of the [Control flags](Control flags.md) take precedence over the configuration options.
 
@@ -70,16 +70,23 @@ would create the collection output defined by the configuration in the sub-direc
 # Milestones
 The `collect` sub can **only** be called cnce the collection directory contains a `config.raku`, which in turn contains the location of a directory, which must contain recursively at least on source.
 
-The process of collecting, rendering and outputting the collection has a number of defined milestones. A milestone will have an inspection point, at which the processing can be stopped and the intermediate data inspected, eg.
+The process of collecting, rendering and outputting the collection has a number of defined milestones. A milestone will have an inspection point, at which the intermediate data can be dumped **without stopping** the processing, eg.,
 
 ```
-my $rv = collect(:end<post-cache>);
+collect(:dump-at<post-cache render>);
 ```
-The `end` option is set to a (case-insensitive) name of the inspection point for the milestone.
+or the processing can be **stopped** and the intermediate data inspected, eg.
+
+```
+my $rv = collect(:end<source>);
+```
+The `end` and `dump-at` option values are the (case-insensitive) name(s) of the inspection point for the milestone. Clearly, `end` only takes one name, but dump may take one or all of them (each separately specified).
 
 A milestone may also be where plugins (aka call-backs) can be defined. Plugins are described in more detail in [Plugin management](Plugin management.md).
 
 The return value of `collect` at a milestone is the object provided to the plugins after all the plugins have been evaluated. The aim of this design is to give to developers the ability to test the effect of plugins at each stage on the object to be modified by the plugins.
+
+The `dump-at` option calls `pretty-dump` or `.raku` [TODO pretty-dump, when it handles BagHash and classes] on the same objects as above and then outputs them to a file(s) called `dump-at-<milestone name>.txt`.
 
 Processing occurs during a stage named by the milestone which starts it. Each stage is affected by a set of [Control flags](Control flags.md). Certain flags will be passed to the underlying objects, eg. `RakuConfig` and `ProcessedPod` (see `Raku::Pod::Render`.
 
@@ -529,4 +536,4 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 
 ----
-Rendered from README at 2021-02-04T13:19:58Z
+Rendered from README at 2021-02-04T23:23:05Z

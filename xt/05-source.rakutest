@@ -63,7 +63,7 @@ $rv.add('sources/file-b.pod6');
 
 is-deeply-relaxed Set.new( $rv.list-files),
         Set(<sources/file-a.pod6 sources/file-c.pod6 new-file>),
-        'expected files' ;
+        'expected files (b cant be added)' ;
 
 isa-ok $rv.pod('new-file')[0], Pod::Block, 'adding file and getting back from cache';
 isa-ok $rv.pod('sources/file-a.pod6')[0], Pod::Block, 'existing files in cache available';

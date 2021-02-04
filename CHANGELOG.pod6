@@ -36,4 +36,8 @@ a template.
 =item defined functionality of the return value of a render closure.
 =item ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
 
+=head1 2021-02-04
+=item add dump-at functionality
+=item addd test of dump-at
+
 =end pod

@@ -1,5 +1,4 @@
 use Test;
-use Test;
 use Test::Deeply::Relaxed;
 use Test::Output;
 use File::Directory::Tree;
@@ -73,6 +72,7 @@ chdir TMP;
     CODE
 $rv = collect(MODE, :no-status, :no-cache,
         :end<report>, :full-render, :no-refresh);
+
 my $rpt = REPORT ~ '/link-plugin-report.txt';
 ok $rpt.IO.f, 'a report file is generated';
 like $rpt.IO.slurp,
@@ -80,7 +80,7 @@ like $rpt.IO.slurp,
         'Link report'
         .+ setup_rend .+ 'external' .+ 'nowhere.net.nul'
         .+ 'Plugin report'
-        .+ 'compilation'
+        .+ '｢Compilation｣ milestone'
         .+ 'compiler'
         .+ 'Templates report'
         .+ 'file-c'
@@ -89,9 +89,5 @@ like $rpt.IO.slurp,
 # should call three tests
 collect(MODE, :no-status, :no-cache,
         :end<completion>, :full-render, :no-refresh);
-
-# clean up of tests
-chdir $orig;
-rmtree TMP;
 
 done-testing;
