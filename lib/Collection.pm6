@@ -211,6 +211,7 @@ multi sub collect(Str:D $mode, :$no-status,
             }
             with $pr {
                 .pod-file.name = $short;
+                .pod-file.path = $fn;
                 .process-pod($cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 # collect page components, and links

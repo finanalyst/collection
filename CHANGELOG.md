@@ -10,6 +10,7 @@
 [2021-02-02](#2021-02-02)  
 [2021-02-3](#2021-02-3)  
 [2021-02-04](#2021-02-04)  
+[2021-02-05](#2021-02-05)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -57,15 +58,18 @@
 *  ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
 
 # 2021-02-04
-
-
 *  add dump-at functionality
 
 *  addd test of dump-at
+
+# 2021-02-05
+
+
+*  improve min-templates
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-04T23:23:00Z
+Rendered from CHANGELOG at 2021-02-05T16:35:29Z

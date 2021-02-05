@@ -11,6 +11,7 @@ use ProcessedPod;
     'raw' => sub ( %prm, %tml ) { (%prm<contents> // '') },
     'camelia-img' => sub ( %prm, %tml ) { '<camelia />' },
     'css-text' => sub ( %prm, %tml ) { '<style>debug</style>' },
+    'css' => sub ( %prm, %tml ) { '' },
     'favicon' => sub ( %prm, %tml ) { '<meta>NoIcon</meta>' },
     'block-code' => sub ( %prm, %tml ) {
         '<pre class="pod-block-code">'
@@ -233,13 +234,12 @@ use ProcessedPod;
         "\<head>\n"
                 ~ '<title>' ~ %tml<escaped>(%prm<title>) ~ "\</title>\n"
                 ~ '<meta charset="UTF-8" />' ~ "\n"
-                ~ %tml<favicon>(%prm, %tml)
+                ~ %tml<favicon>({},{})
                 ~ (%prm<metadata> // '')
-                ~ (  ( %prm<css>.defined and %prm<css> ne '' )
-                ?? ('<link rel="stylesheet" href="' ~ %prm<css> ~ '">')
-                !! %tml<css-text>(%prm, %tml)
-        )
-                ~ (%prm<head> // '')
+                ~ ( %tml<css>({},{}) ne ''
+                ?? ('<link rel="stylesheet" href="' ~ %tml<css>({},{}) ~ '">')
+                !! %tml<css-text>({},{})
+                    )
                 ~ "\</head>\n"
     },
     'header' => sub ( %prm,%tml) {
