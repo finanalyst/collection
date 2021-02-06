@@ -133,7 +133,7 @@ multi sub collect(Str:D $mode, :$no-status,
     X::Collection::NoMode.new(:$mode).throw
     unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
     %config ,= get-config(:$no-cache, :path("$mode/configs"),
-            :required<mode-cache mode-sources plugins-required destination>);
+            :required<mode-cache mode-sources plugins-required destination completion-options>);
 
     my $mode-cache = update-cache(
             :no-status($no-status // %config<no-status>),
@@ -239,9 +239,9 @@ multi sub collect(Str:D $mode, :$no-status,
             }
             with $pr {
                 .pod-file.name = $short;
+                .pod-file.path = $fn;
                 .process-pod($mode-cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
-                #only collect links
                 %processed{$short} = .emit-and-renew-processed-state
             }
         }
@@ -256,7 +256,7 @@ multi sub collect(Str:D $mode, :$no-status,
 
     $rv = milestone('Completion',
             :with(@output-files, "$mode/%config<destination>".IO.absolute,
-                  "%config<landing-place>\.%config<output-ext>"),
+                  %config<landing-place>, %config<output-ext>, %config<completion-options>),
             :$mode, :@dump-at, :%config, :$collection-info, :@plugins-used, :call-plugins(!$no-completion));
     return $rv if $end ~~ /:i Completion /;
     # === Report Completion Milestone ================================

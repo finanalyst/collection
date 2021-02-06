@@ -64,10 +64,10 @@ chdir TMP;
     CONF
 (PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
     use Test;
-    sub (@output, $destination, $landing) {
+    sub (@output, $destination, $landing, $ext, %options) {
         is @output.elems, 6, 'got 6 output files';
         ok $destination.IO.d, 'destination is a directory';
-        ok "$destination/$landing".IO.f, 'landing is a file';
+        ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
     }
     CODE
 $rv = collect(MODE, :no-status, :no-cache,

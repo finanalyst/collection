@@ -43,4 +43,7 @@ a template.
 =head1 2021-02-05
 =item improve min-templates
 
+=head1 2021-02-06
+=item added cro-run plugin, added %config<completion-options> to completion plugin signature.
+
 =end pod

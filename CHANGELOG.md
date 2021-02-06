@@ -11,6 +11,7 @@
 [2021-02-3](#2021-02-3)  
 [2021-02-04](#2021-02-04)  
 [2021-02-05](#2021-02-05)  
+[2021-02-06](#2021-02-06)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -63,13 +64,16 @@
 *  addd test of dump-at
 
 # 2021-02-05
-
-
 *  improve min-templates
+
+# 2021-02-06
+
+
+*  added cro-run plugin, added %config<completion-options> to completion plugin signature.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-05T16:35:29Z
+Rendered from CHANGELOG at 2021-02-06T23:49:02Z

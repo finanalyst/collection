@@ -34,6 +34,7 @@
 [Compilation](#compilation)  
 [Report](#report)  
 [Completion](#completion)  
+[LICENSE](#license)  
 
 ----
 This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
@@ -516,17 +517,25 @@ is the path name relative to the C<mode> directory where report files are produc
 as in Compilation
 
 ## Completion
-The `report` key points to a Raku file that evaluates to a `sub (@output-files, $destination, $landing-place, $extension) {...}` object.
+The `completion` key points to a Raku file that evaluates to a `sub (@output-files, $destination, $landing-place, $output-ext, %completion-options) {...}` object.
 
-> **$destination**  
-is the name of the output path (defined in the mode configuration)
+*  @filenames
 
-> **@filenames**  
 is a list of the output files (with paths relative to the output path) that are to be presented, in order of evaluation, if this is important. Eg. for a book, the entire order is important, for a website ony the first page is important.
 
-> **$landing-place**  
+*  $destination
+
+is the name of the output path from the mode directory (defined in the mode configuration)
+
+*  $landing-place
+
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
 
+*  %completion-options> (actually specified as %config<completion-options>)
+
+is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served. More complex plugins will require more options.
+
+# LICENSE
 **LICENSE** Artistic-2.0
 
 
@@ -536,4 +545,4 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 
 ----
-Rendered from README at 2021-02-04T23:23:05Z
+Rendered from README at 2021-02-06T23:49:01Z

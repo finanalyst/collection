@@ -43,12 +43,8 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :mode-extensions<rakudoc pod6>,
         :!full-render,
         :!no-report,
-        :!no-completion,
         :plugins<some-plugs>,
-        :destination<html>,
-        :landing-place<index>,
         :report-path<reports>,
-        :output-ext<html>,
         :templates<templates>,
     );
     CONF
@@ -62,6 +58,19 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
             report => ('{ @pls[3] }',),
             completion => ('{ @pls[5] }',),
         ),
+    );
+    CONF
+
+(MODE ~ '/configs/03-completion-options.raku').IO.spurt(qq:to/CONF/);
+    %(
+        :!no-completion,
+        :destination<html>,
+        :landing-place<index>,
+        :output-ext<html>,
+        completion-options => %(
+            :port<30000>,
+            :host<localhost>,
+        )
     );
     CONF
 
