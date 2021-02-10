@@ -4,7 +4,6 @@ use RakuConfig;
 use Pod::From::Cache;
 use ProcessedPod;
 use File::Directory::Tree;
-use PrettyDump;
 use X::Collection;
 
 unit module Collection;
@@ -250,8 +249,7 @@ multi sub collect(Str:D $mode, :$no-status,
         return $rv if $end ~~ /:i Report /;
         # ==== Compilation Milestone ===================================
         @output-files = (%processed.keys.sort >>~>> ('.' ~ %config<output-ext>));
-        write-config(@output-files, :path($mode), :fn<output-files.raku>
-                     );
+        "$mode/output-files.raku".IO.spurt: @output-files.raku;
     }
 
     $rv = milestone('Completion',
@@ -367,8 +365,7 @@ sub milestone($mile, :$with, :@dump-at = (), :$collection-info,
     if $mile.lc ~~ any( |@dump-at ) {
         my $rv = '';
         for $with.list -> $ds {
-            if $ds ~~ BagHash | Pod::Block | Pod::From::Cache | ProcessedPod | PodFile { $rv ~= ($ds.raku ~ "\n\n") }
-            else { $rv ~= (pretty-dump($ds) ~ "\n\n") }
+            $rv ~= ($ds.raku ~ "\n\n")
         }
         "dumped-{ $mode ?? $mode !! 'mode-unknown' }-at-{ $mile.lc }\.txt".IO.spurt($rv);
     }

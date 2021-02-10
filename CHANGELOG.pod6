@@ -34,7 +34,7 @@ a template.
 =head1 2021-02-3
 =item add mode-name key to ProcessedPod object
 =item defined functionality of the return value of a render closure.
-=item ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
+=item ensure that plugins are called in the order specified. manage-plugins uses an array of pairs, not a Hash
 
 =head1 2021-02-04
 =item add dump-at functionality
@@ -45,5 +45,9 @@ a template.
 
 =head1 2021-02-06
 =item added cro-run plugin, added %config<completion-options> to completion plugin signature.
+
+=head1 2021-02-08
+=item remove dependency on PrettyDump
+=item add updater script for Containerising Collection.
 
 =end pod

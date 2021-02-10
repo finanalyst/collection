@@ -9,6 +9,7 @@
 ## Table of Contents
 [Installation](#installation)  
 [Usage](#usage)  
+[Sample Dockerfile](#sample-dockerfile)  
 [Life cycle of processing](#life-cycle-of-processing)  
 [Milestones](#milestones)  
 [Zeroth](#zeroth)  
@@ -39,9 +40,16 @@
 ----
 This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
 
+Can be used as a docker container `finanalyst/collection`.
+
 # Installation
 ```
 zef install Collection
+```
+or using docker in a `Dockerfile`
+
+```
+FROM finanalyst/collection
 ```
 # Usage
 The Collection module expects there to be a `config.raku `file in the root of the collection, which provides information about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration, template, and plugin files described below are **Raku** programs that evaluate to a Hash. They are described in the documentation for the `RakuConfig` module.
@@ -50,6 +58,42 @@ A concrete example of `Collection` is the [Collection-Raku-Documentation](https:
 
 The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides the concrete configuration and specifies how files are rendered. However, `Collection` has been designed so that **Templates** and **Plugins** for `Collection-Raku-Documentation` can be used for other collections, while other Collection distributions that only provide **Plugins** and/or **Templates**. Once the Raku-Documentation collection has been initialised, Raku-Doc calls `collect`, which is the entry point for `Collection`.
 
+## Sample Dockerfile
+The `finanalyst/collection` contains a recent Rakudo-Star distribution, including zef, node, and npm. Highlighting has been enabled in Raku::Pod::Render.
+
+Once the collection has been properly established, by running `Raku-Doc Init` from the Collection-Raku-Documentation distribution, for example, then the Collection can be containerised with the `finanalyst/collection` docker image.
+
+Assuming (for the Collection-Raku-Documentation distribution, which has all the necessary plugins specified, see below) that
+
+*  the intention is to update the Doc-Sources, by pulling in changes from the main repository,
+
+*  re-render only html files that have changed,
+
+*  and serve the html files are served on port 30000 (which is given in the mode's configuration) then a Dockerfile for Raku-Documentation would be:
+
+```
+FROM finanalyst/collection
+mkdir /raku-dox
+cd /raku-dox
+COPY . .
+zef install . --deps-only
+CMD bin/Raku-Doc --!no-status
+```
+Running this Dockerfile in the distribution's directory after the collection has been set up, will create a docker image that can be be built.
+
+```
+sudo docker build -t my-raku-documentation
+```
+Then the following will refresh the documents and provide access to them at `localhost:30000`
+
+```
+sudo docker run my-raku-documentation
+```
+As normal the port can be changed with the -p option, eg, to 54321
+
+```
+sudo docker run -p 54321:30000 my-raku-documentation
+```
 # Life cycle of processing
 After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, intermediary data can be reprocessed using plugins, the data after the plugins can be dumped, or the processed halted.
 
@@ -545,4 +589,4 @@ is the set of options that the completion plugin will require from the Mode-leve
 
 
 ----
-Rendered from README at 2021-02-06T23:49:01Z
+Rendered from README at 2021-02-08T17:03:27Z

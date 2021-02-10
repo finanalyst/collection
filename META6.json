@@ -1,7 +1,7 @@
 {
   "name": "Collection",
   "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "perl": "6.*",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
@@ -10,16 +10,11 @@
   "depends": [
     "Raku::Pod::Render",
     "Pod::From::Cache",
-    "File::Temp",
     "Terminal::Spinners",
     "RakuConfig"
   ],
   "build-depends": [],
-  "test-depends": [
-    "Test::META",
-    "Test::Deeply::Relaxed",
-    "Test::Output"
-  ],
+  "test-depends": [ ],
   "provides": {
     "Collection": "lib/Collection.pm6",
     "X::Collection": "lib/Collection/Exceptions.pm6"

@@ -12,6 +12,7 @@
 [2021-02-04](#2021-02-04)  
 [2021-02-05](#2021-02-05)  
 [2021-02-06](#2021-02-06)  
+[2021-02-08](#2021-02-08)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -56,7 +57,7 @@
 
 *  defined functionality of the return value of a render closure.
 
-*  ensure that plugins are colled in the order specified. manage-plugins uses an array of pairs, not a Hash
+*  ensure that plugins are called in the order specified. manage-plugins uses an array of pairs, not a Hash
 
 # 2021-02-04
 *  add dump-at functionality
@@ -67,13 +68,18 @@
 *  improve min-templates
 
 # 2021-02-06
-
-
 *  added cro-run plugin, added %config<completion-options> to completion plugin signature.
+
+# 2021-02-08
+
+
+*  remove dependency on PrettyDump
+
+*  add updater script for Containerising Collection.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-06T23:49:02Z
+Rendered from CHANGELOG at 2021-02-08T17:03:22Z
