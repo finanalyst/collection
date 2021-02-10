@@ -2,8 +2,9 @@
 
 =TITLE Raku Collection Module
 
-=DESCRIPTION A collection of subroutines to collect, cache, render, and output content files written in POD6. Output can
-a CRO app creating a website available in a browser at localhost:3000, or an epub.
+=DESCRIPTION A subroutine to collect content files written in POD6. The collection process is in stages
+at the start of which plugins (Raku programs) can be added that transform intermediate data or add
+templates, or add new Pod::Blocks for the rendering.
 
 =AUTHOR Richard Hainsworth aka finanalyst
 
