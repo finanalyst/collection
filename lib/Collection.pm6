@@ -124,7 +124,7 @@ multi sub collect(Str:D $mode, :$no-status,
             :refresh(%config<source-refresh> // ()),
             :ignore(%config<ignore> // ()),
             :extensions(%config<extensions> // <pod6 rakudoc>)
-                                          );
+    ) unless $without-processing;
     my $rv = milestone('Source', :with($cache), :@dump-at, :$collection-info);
     return $rv if $end ~~ /:i Source /;
     # === Source milestone ====================================
@@ -141,7 +141,7 @@ multi sub collect(Str:D $mode, :$no-status,
             :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
             :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
             :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
-                                               );
+    ) unless $without-processing;
     # if at this stage there are any cache changes
     # then without-processing must be over-ridden
     # because had it was True, and changes bubble to here, then the caches were empty and had to
@@ -316,10 +316,11 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             }
         }
         $with.add-plugin($plug,
-                :$path,
-                :template-raku(%plugin-conf<template-raku>:delete),
-                :custom-raku(%plugin-conf<custom-raku>:delete),
-                :config(%plugin-conf));
+            :$path,
+            :template-raku(%plugin-conf<template-raku>:delete),
+            :custom-raku(%plugin-conf<custom-raku>:delete),
+            :config(%plugin-conf)
+        );
     }
     @valids
 }

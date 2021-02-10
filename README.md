@@ -310,6 +310,8 @@ The **templates**, which may be any format (currently RakuClosure or Mustache) a
 There are two levels of configuration. The top-level resides in `config.raku` in the root directory of the Collection. The `collect` sub will fail without this file.
 
 ## Top level configuration
+In the descriptions below, simple illustrative names are given to files with configuration, templates, callables. These files are generally **Raku** programs, which are compiled and run. They will almost certainly contain errors during development and the **Rakudo** compiler will provide information based on the filename. So it is good practice to name the files that make them easier to locate, such as prefixing them with the plugin name.
+
 `config.raku` **must** contain the following keys:
 
 *  the **cache** directory, relative to the root directory of the collection
@@ -589,4 +591,4 @@ is the set of options that the completion plugin will require from the Mode-leve
 
 
 ----
-Rendered from README at 2021-02-10T11:13:06Z
+Rendered from README at 2021-02-10T17:04:34Z

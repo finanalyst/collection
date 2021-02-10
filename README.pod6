@@ -364,6 +364,11 @@ Collection. The C<collect> sub will fail without this file.
 
 =head2 Top level configuration
 
+In the descriptions below, simple illustrative names are given to files with configuration, templates, callables.
+These files are generally B<Raku> programs, which are compiled and run. They will almost certainly contain errors
+during development and the B<Rakudo> compiler will provide information based on the filename. So it is good
+practice to name the files that make them easier to locate, such as prefixing them with the plugin name.
+
 C<config.raku> B<must> contain the following keys:
 =item the B<cache> directory, relative to the root directory of the collection
 =item2 C<Collection-Raku-Documentation> default: 'doc-cache',
