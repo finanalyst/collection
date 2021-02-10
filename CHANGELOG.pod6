@@ -50,4 +50,8 @@ a template.
 =item remove dependency on PrettyDump
 =item add updater script for Containerising Collection.
 
+=head1 2021-02-10 v0.1.9
+=item add to description of Configuration
+=item enforce action of without processing on caches
+
 =end pod

@@ -13,6 +13,7 @@
 [2021-02-05](#2021-02-05)  
 [2021-02-06](#2021-02-06)  
 [2021-02-08](#2021-02-08)  
+[2021-02-10 v0.1.9](#2021-02-10-v019)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -71,15 +72,20 @@
 *  added cro-run plugin, added %config<completion-options> to completion plugin signature.
 
 # 2021-02-08
-
-
 *  remove dependency on PrettyDump
 
 *  add updater script for Containerising Collection.
+
+# 2021-02-10 v0.1.9
+
+
+*  add to description of Configuration
+
+*  enforce action of without processing on caches
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-08T17:03:22Z
+Rendered from CHANGELOG at 2021-02-10T17:26:40Z

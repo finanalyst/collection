@@ -43,27 +43,30 @@ role Post-cache {
     }
 }
 
-sub update-cache(:$no-status, :$recompile, :$no-refresh,
+sub update-cache(:$no-status is copy, :$recompile, :$no-refresh, :$without-processing,
                  :$doc-source, :$cache-path,
                  :@obtain, :@refresh, :@ignore, :@extensions
         --> Pod::From::Cache) {
 
-    rm-cache($cache-path) if $recompile;
-    #removing the cache forces a recompilation
+    if $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
+        rm-cache($cache-path) if $recompile;
+        #removing the cache forces a recompilation
 
-    if !$doc-source.IO.d and @obtain {
-        my $proc = run @obtain.list, :err, :out;
-        my $proc-rv = $proc.err.get;
-        exit note $proc-rv if $proc-rv
+        if !$doc-source.IO.d and @obtain {
+            my $proc = run @obtain.list, :err, :out;
+            my $proc-rv = $proc.err.get;
+            exit note $proc-rv if $proc-rv
+        }
+        # recompile may be needed for existing, unrefreshed sources,
+        #  so recompile != !no-refresh
+        elsif !$no-refresh and @refresh {
+            my $proc = run @refresh.list, :err, :out;
+            my $proc-rv = $proc.err.get;
+            exit note $proc-rv if $proc-rv;
+        }
+        print "$doc-source: " unless $no-status;
     }
-    # recompile may be needed for existing, unrefreshed sources,
-    #  so recompile != !no-refresh
-    elsif !$no-refresh and @refresh {
-        my $proc = run @refresh.list, :err, :out;
-        my $proc-rv = $proc.err.get;
-        exit note $proc-rv if $proc-rv;
-    }
-    print "$doc-source: " unless $no-status;
+    else { $no-status = True } # enforce silence if without processing and cache exists
     Pod::From::Cache.new(
             :$doc-source,
             :$cache-path,
@@ -116,15 +119,16 @@ multi sub collect(Str:D $mode, :$no-status,
         $no-completion = %config<no-completion> // False
     }
     my $cache = update-cache(
-            :cache-path(%config<cache>), :doc-source(%config<sources>),
-            :no-status($no-status // %config<no-status> // False),
-            :$recompile,
-            :$no-refresh,
-            :obtain(%config<source-obtain> // ()),
-            :refresh(%config<source-refresh> // ()),
-            :ignore(%config<ignore> // ()),
+        :cache-path(%config<cache>), :doc-source(%config<sources>),
+        :no-status($no-status // %config<no-status> // False),
+        :$recompile,
+        :$no-refresh,
+        :$without-processing,
+        :obtain(%config<source-obtain> // ()),
+        :refresh(%config<source-refresh> // ()),
+        :ignore(%config<ignore> // ()),
             :extensions(%config<extensions> // <pod6 rakudoc>)
-    ) unless $without-processing;
+    );
     my $rv = milestone('Source', :with($cache), :@dump-at, :$collection-info);
     return $rv if $end ~~ /:i Source /;
     # === Source milestone ====================================
@@ -135,13 +139,14 @@ multi sub collect(Str:D $mode, :$no-status,
             :required<mode-cache mode-sources plugins-required destination completion-options>);
 
     my $mode-cache = update-cache(
-            :no-status($no-status // %config<no-status>),
-            :recompile($recompile // %config<recompile>),
-            :no-refresh($no-refresh // %config<no-refresh>),
-            :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
-            :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
-            :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
-    ) unless $without-processing;
+        :no-status($no-status // %config<no-status>),
+        :recompile($recompile // %config<recompile>),
+        :no-refresh($no-refresh // %config<no-refresh>),
+        :$without-processing,
+        :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
+        :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
+        :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
+    );
     # if at this stage there are any cache changes
     # then without-processing must be over-ridden
     # because had it was True, and changes bubble to here, then the caches were empty and had to
