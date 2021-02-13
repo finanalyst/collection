@@ -48,7 +48,7 @@ sub update-cache(:$no-status is copy, :$recompile, :$no-refresh, :$without-proce
                  :@obtain, :@refresh, :@ignore, :@extensions
         --> Pod::From::Cache) {
 
-    if $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
+    if ! $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
         rm-cache($cache-path) if $recompile;
         #removing the cache forces a recompilation
 
