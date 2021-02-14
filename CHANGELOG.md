@@ -14,6 +14,7 @@
 [2021-02-06](#2021-02-06)  
 [2021-02-08](#2021-02-08)  
 [2021-02-10 v0.1.9](#2021-02-10-v019)  
+[2021-02-14 v0.1.10](#2021-02-14-v0110)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -77,15 +78,18 @@
 *  add updater script for Containerising Collection.
 
 # 2021-02-10 v0.1.9
-
-
 *  add to description of Configuration
 
 *  enforce action of without processing on caches
+
+# 2021-02-14 v0.1.10
+
+
+*  getting without processing logic right.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-10T17:26:40Z
+Rendered from CHANGELOG at 2021-02-14T13:41:05Z

@@ -43,36 +43,44 @@ role Post-cache {
     }
 }
 
-sub update-cache(:$no-status is copy, :$recompile, :$no-refresh, :$without-processing,
+sub update-cache(Bool:D :$no-status is copy, Bool:D :$recompile, Bool:D :$no-refresh, Bool:D :$without-processing,
                  :$doc-source, :$cache-path,
                  :@obtain, :@refresh, :@ignore, :@extensions
         --> Pod::From::Cache) {
 
-    if ! $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
+    if $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
+            $no-status = True
+        } # enforce silence if without processing and cache exists
+    else {
         rm-cache($cache-path) if $recompile;
         #removing the cache forces a recompilation
 
         if !$doc-source.IO.d and @obtain {
-            my $proc = run @obtain.list, :err, :out;
-            my $proc-rv = $proc.err.get;
+            my $proc = Proc::Async.new( @obtain.list );
+            my $proc-rv;
+            $proc.stdout.tap( -> $d {} );
+            $proc.stderr.tap( -> $v { $proc-rv = $v });
+            await $proc.start;
             exit note $proc-rv if $proc-rv
         }
         # recompile may be needed for existing, unrefreshed sources,
         #  so recompile != !no-refresh
         elsif !$no-refresh and @refresh {
-            my $proc = run @refresh.list, :err, :out;
-            my $proc-rv = $proc.err.get;
+            my $proc = Proc::Async.new( @refresh.list);
+            my $proc-rv;
+            $proc.stdout.tap( -> $d {} );
+            $proc.stderr.tap( -> $v { $proc-rv = $v });
+            await $proc.start;
             exit note $proc-rv if $proc-rv;
         }
         print "$doc-source: " unless $no-status;
     }
-    else { $no-status = True } # enforce silence if without processing and cache exists
     Pod::From::Cache.new(
-            :$doc-source,
-            :$cache-path,
-            :@ignore,
-            :@extensions,
-            :progress($no-status ?? Nil !! &counter)) but Post-cache
+        :$doc-source,
+        :$cache-path,
+        :@ignore,
+        :@extensions,
+        :progress($no-status ?? Nil !! &counter)) but Post-cache
 }
 
 multi sub collect(Str:D :$dump-at, |c ) {
