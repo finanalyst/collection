@@ -9,7 +9,6 @@
 ## Table of Contents
 [Installation](#installation)  
 [Usage](#usage)  
-[Sample Dockerfile](#sample-dockerfile)  
 [Life cycle of processing](#life-cycle-of-processing)  
 [Milestones](#milestones)  
 [Zeroth](#zeroth)  
@@ -22,6 +21,7 @@
 [Cleanup](#cleanup)  
 [Distribution Structure](#distribution-structure)  
 [Content](#content)  
+[Extra assets (images, videos, etc)](#extra-assets-images-videos-etc)  
 [Cache](#cache)  
 [Mode](#mode)  
 [Templates](#templates)  
@@ -35,6 +35,7 @@
 [Compilation](#compilation)  
 [Report](#report)  
 [Completion](#completion)  
+[Asset-cache methods](#asset-cache-methods)  
 [LICENSE](#license)  
 
 ----
@@ -58,42 +59,6 @@ A concrete example of `Collection` is the [Collection-Raku-Documentation](https:
 
 The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides the concrete configuration and specifies how files are rendered. However, `Collection` has been designed so that **Templates** and **Plugins** for `Collection-Raku-Documentation` can be used for other collections, while other Collection distributions that only provide **Plugins** and/or **Templates**. Once the Raku-Documentation collection has been initialised, Raku-Doc calls `collect`, which is the entry point for `Collection`.
 
-## Sample Dockerfile
-The `finanalyst/collection` contains a recent Rakudo-Star distribution, including zef, node, and npm. Highlighting has been enabled in Raku::Pod::Render.
-
-Once the collection has been properly established, by running `Raku-Doc Init` from the Collection-Raku-Documentation distribution, for example, then the Collection can be containerised with the `finanalyst/collection` docker image.
-
-Assuming (for the Collection-Raku-Documentation distribution, which has all the necessary plugins specified, see below) that
-
-*  the intention is to update the Doc-Sources, by pulling in changes from the main repository,
-
-*  re-render only html files that have changed,
-
-*  and serve the html files are served on port 30000 (which is given in the mode's configuration) then a Dockerfile for Raku-Documentation would be:
-
-```
-FROM finanalyst/collection
-mkdir /raku-dox
-cd /raku-dox
-COPY . .
-zef install . --deps-only
-CMD bin/Raku-Doc --!no-status
-```
-Running this Dockerfile in the distribution's directory after the collection has been set up, will create a docker image that can be be built.
-
-```
-sudo docker build -t my-raku-documentation
-```
-Then the following will refresh the documents and provide access to them at `localhost:30000`
-
-```
-sudo docker run my-raku-documentation
-```
-As normal the port can be changed with the -p option, eg, to 54321
-
-```
-sudo docker run -p 54321:30000 my-raku-documentation
-```
 # Life cycle of processing
 After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, intermediary data can be reprocessed using plugins, the data after the plugins can be dumped, or the processed halted.
 
@@ -270,7 +235,7 @@ Cleanup comes after `collect` has finished, so is not a part of `collect`.
 Currently, `collect` just returns with the value of the @plugins-used object.
 
 # Distribution Structure
-A distribution contains content files, which may be updated on a regular basis, a cache, templates, and one or more modes.
+A distribution contains content files, which may be updated on a regular basis, a cache, templates, extra assets referenced in a content file (such as images), and one or more modes.
 
 ## Content
 The content of the distribution is contained in **POD6** files. In addition to the source files, there are Collection content files which express things like the Table of Contents for the whole collection.
@@ -278,6 +243,52 @@ The content of the distribution is contained in **POD6** files. In addition to t
 Collection content are held separately to the source content, so that each mode may have different pages.
 
 This allows for active search pages for a Website, not needed for an epub, or publisher data for an output formation that will be printed.
+
+## Extra assets (images, videos, etc)
+Assets such as images, which are directly referenced in content file, but exist in different formats, eg, png, are held apart from content Pod6 files, but are processed with content files.
+
+The reasoning for this design is that Pod6 files are compiled and cached in a manner that does not suit image files. But when an image file is processed for inclusion in a content file, the image may need to be processed by the template (eg., image effects specified in a Pod Block config).
+
+The assets are all held in the same directory, specified by the configuration key `asset-basenamme`, but each asset may exist in subdirectories for each type of asset, specified by the `asset-paths` key.
+
+(Asset files relating to the rendering of a content file, such as css, javascript, etc, are managed by plugins, see below for more on plugins.)
+
+A class to manage asset files is added to the `ProcessedPod` object with a role, so the assets can be manipulated by plugins and templates. Assets that are in fact used by a Pod content file are marked as used. The aim of this functionality is to allow for report-stage plugins to detect whether all images have been used.
+
+Plugins can also transform the assets, and create new files in the ProcessedPod object for inclusion in the output.
+
+At the end of the compilation stage, all the assets that have been used are written to a directory specified in the Mode configuration file. It is the task of the template rendering block to ensure that the path where the asset is stored is the same as the path the final output (eg. the browser rendering html files) processor requests.
+
+In keeping with the principle that collection level meta data is kept in the top-level config file, and output data is associated with the specific mode, there are two asset-path definitions.
+
+*  Collection level assets. The source of assets is kept in the top-level `config.raku` file. In order to have each asset in its own directory, the following is possible:
+
+```
+...
+:asset-basename<assets>,
+asset-paths => %(
+    image => %(
+        :directory<images>,
+        :extensions<png jpeg jpeg svg>,
+    ),
+    video-clips => %(
+        :directory<videos>,
+        :extensions<mp4 webm>,
+    ),
+),
+...
+```
+Notice that the `type`, eg. _image_ and _video-clips_ above, are arbitrary and not dependent on the actual format.
+
+*  Output configuration. The output destination is kept in the mode configuration, eg., `Website/configs/03-images.raku` contains
+
+```
+%(
+    :asset-out-path<html/assets>
+    ),
+)
+```
+For more see [Asset-cache methods](Asset-cache methods.md)
 
 ## Cache
 The **cache** is a Precomp structure into which the content files are pre-preprocessed.
@@ -425,9 +436,9 @@ The following are optional as they are control flags that are False by default.
 
 *  no-completion
 
-*  debug
+*  debug-when
 
-*  verbose
+*  verbose-when
 
 *  **no-code-escape**
 
@@ -470,9 +481,11 @@ Unless the caches do not exist, setting **without-processing** to True will skip
 
 RakuConfig will cache the previous configuration data by default. When testing a module, this is not desirable, so no-cache = True prevents caching.
 
-*  **debug & verbose**
+*  **debug-when & verbose-when**
 
-ProcessedPod uses both debug and verbose, so these flags are passed if set.
+ProcessedPod uses `debug` and `verbose`, which provide information about which blocks are processed (debug), and the result after the application of the template. This is a lot of information and generally, it is only one file that is of interest.
+
+These two flags take a string, eg., `:debug-when<Introduction.pod6> `, and when the filename matches the string, then the debug/verbose flag is set for that file only. (verbose is only effective when debug is True).
 
 *  **collection-info**
 
@@ -581,6 +594,51 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served. More complex plugins will require more options.
 
+# Asset-cache methods
+Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all render and compilation plugins, for example in the plugin callable:
+
+```
+sub render-plugin( $pp ) {
+    my $image-manager = $pp.get-data('image-manager');
+    ...
+    $pp.add-data('custom-block', $image-manager);
+}
+```
+By creating a name-space in the plugin data section and assigning it the value of the image-manager, the plugin callable can make the image-manager available to templates that get that data, which is a property in parameters called by the name-space.
+
+`ProcessedPod` provides data from the name-space of a Block, if it exists, as a parameter to the template called for the Block. Note that the default name-space for a block is all lower-case, unless a `name-space` config option is provided with the Pod Block in the content file.
+
+`$image-manager` is of type Asset-cache, which has the following methods:
+
+```
+    #| the directory base, not included in filenames
+    has Str $.basename is rw;
+    #| the name of the file being rendered
+    Str $.current-file
+    #| asset-sources provides a list of all the items in the cache
+    method asset-sources
+    #| asset-used-list provides a list of all the items that referenced by Content files
+    method asset-used-list
+    #| asset-add adds an item to the data-base, for example, a transformed image
+    method asset-add( $name, $object, :$by = (), :$type = 'image' )
+    #| remove the named asset, and return its metadata
+    method asset-delete( $name --> Hash )
+    #| returns the type of the asset
+    method asset-type( $name --> Str )
+    #| if an asset with name and type exists in the database, then it is marked as used by the current file
+    #| returns true with success, and false if not.
+    method asset-is-used( $asset, $type --> Bool )
+    #| brings all assets in directory with given extensions and with type
+    #| these are set in the configuration
+    multi method asset-slurp( $directory,  @extensions, $type )
+    #| this just takes the value of the config key in the top-level configuration
+    multi method asset-slurp( %asset-paths )
+    #| with type 'all', all the assets are sent to the same output directory
+    multi method asset-spurt( $directory, $type = 'all' )
+    #| the value of the config key in the mode configuration
+    multi method asset-spurt( %asset-paths )
+
+```
 # LICENSE
 **LICENSE** Artistic-2.0
 
@@ -591,4 +649,4 @@ is the set of options that the completion plugin will require from the Mode-leve
 
 
 ----
-Rendered from README at 2021-02-10T17:04:34Z
+Rendered from README at 2021-02-18T23:23:18Z

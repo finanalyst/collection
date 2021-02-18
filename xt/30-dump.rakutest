@@ -34,7 +34,4 @@ for <setup render compilation report completion> {
     ok "dumped-{MODE}-at-$_\.txt".IO.f, "dumped-{MODE}-at-$_\.txt".IO.absolute ~ ' is a dump file';
 }
 
-# clean up
-chdir $orig;
-rmtree TMP;
 done-testing;

@@ -11,6 +11,7 @@ constant MODE = 'test-mode';
 constant PLUGS = "{MODE}/some-plugs";
 constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
+constant ASSETS = 'assets';
 constant HTML = "{MODE}/html";
 
 plan 6;
@@ -21,6 +22,8 @@ unless TMP.IO.d and "{TMP}/{ MODE }".IO.d;
 mktree TMP ~ '/' ~ TEMPLATES;
 'resources/min-templates.raku'.IO.copy:
         TMP ~ '/' ~ TEMPLATES ~ '/mintemp.raku' ;
+mktree TMP ~ '/' ~ TEMPLATES;
+
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 my $orig = $*CWD;
 chdir TMP;
@@ -28,12 +31,15 @@ bail-out "{PLUGS} and { CONFS } must exit. Have setup tests been run?"
         unless PLUGS.IO.d and CONFS.IO.d;
 
 mktree( HTML) unless HTML.IO.d ;
+mktree ASSETS;
+mktree "{ASSETS}/videos";
+mktree "{ASSETS}/images";
 
 # rewrite the config and plugin test files for render plugins
 (PLUGS ~ '/setup_rend/config.raku' ).IO.spurt(q:to/CONF/);
         %(
         :render,
-        :template-raku<templates.raku>,
+        :template-raku<setup_rend_templates.raku>,
         :custom-raku<blocks.raku>,
         :setup<proc.raku>,
         )
@@ -42,7 +48,7 @@ mktree( HTML) unless HTML.IO.d ;
 (PLUGS ~ '/rend2/config.raku' ).IO.spurt(q:to/CONF/);
         %(     
         :render,
-        :template-raku<templates.raku>,
+        :template-raku<rend2_templates.raku>,
         :custom-raku<blocks.raku>,
         :css<mystyling.css>,
         )
@@ -55,7 +61,7 @@ mktree( HTML) unless HTML.IO.d ;
         )
         CONF
 # template raku files
-(PLUGS ~ '/setup_rend/templates.raku' ).IO.spurt(q:to/CONF/);
+(PLUGS ~ '/setup_rend/setup_rend_templates.raku' ).IO.spurt(q:to/CONF/);
         %(
         design => sub ( %a, %b ) {
                 '<designer-tag>' ~ %a<contents> ~ '</designer-tag'
@@ -66,7 +72,7 @@ mktree( HTML) unless HTML.IO.d ;
         )
         CONF
 
-(PLUGS ~ '/rend2/templates.raku' ).IO.spurt(q:to/CONF/);
+(PLUGS ~ '/rend2/rend2_templates.raku' ).IO.spurt(q:to/CONF/);
         %(
         sorted-table => sub (%a, %b) {
                 '<table class="sorted">' ~ %a<contents> ~ '</table>'

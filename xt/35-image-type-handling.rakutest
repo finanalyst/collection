@@ -1,0 +1,85 @@
+use Test;
+use File::Directory::Tree;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{MODE}/some-plugs";
+constant CONFS = "{MODE}/configs";
+constant TEMPLATES = "{MODE}/templates";
+constant OUTPUT = "{MODE}/html";
+constant REPORT = "{MODE}/reports";
+constant ASSETS = "assets";
+
+plan 3;
+my $rv;
+
+bail-out "{TMP} and {TMP}/{ REPORT } must exit. Have report-completion tests been run?"
+unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
+
+my $orig = $*CWD;
+chdir TMP;
+
+"{ASSETS}/videos/fake-video.mp4".IO.spurt(:bin, "This is not a video");
+"{ASSETS}/images/fake-image.png".IO.spurt(:bin, "This is not an image");
+(PLUGS ~ '/rend2/config.raku' ).IO.spurt(q:to/CONF/);
+    %(
+        :render<image-manager.raku>,
+        :template-raku<rend2_templates.raku>,
+        :custom-raku<blocks.raku>,
+        :css<mystyling.css>,
+    )
+    CONF
+(PLUGS ~ '/rend2/image-manager.raku' ).IO.spurt(q:to/CONF/);
+    sub ( $pp ) {
+        my $mnger = $pp.get-data('image-manager');
+        $pp.add-data('image', $mnger);
+        $pp.add-data('video-clip', $mnger);
+        %() # return empty list of pairs
+    }
+    CONF
+(PLUGS ~ '/rend2/rend2_templates.raku' ).IO.spurt(q:to/CONF/);
+    %(
+        image => sub (%prm, %tml) {
+            my $manager = %prm<image>;
+            exit note ('Unexpected. Got ' ~ %prm<src>)
+                unless $manager.asset-is-used(%prm<src>,'image');
+            '<img src="' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
+        },
+        video-clip => sub (%prm, %tml) {
+            my $manager = %prm<video-clip>;
+            exit note ('Unexpected. Got ' ~ %prm<src>)
+                unless $manager.asset-is-used(%prm<src>,'video-clip');
+            '<img src="' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
+        },
+    )
+    CONF
+(PLUGS ~ '/rend2/blocks.raku' ).IO.spurt(q:to/CONF/);
+    <Image Video-clip>
+    CONF
+
+"sources/image-test.pod6".IO.spurt(q:to/PODFILE/);
+    =begin pod :no-toc :no-glossary :no-meta :no-footnotes
+
+    =for Image :src<images/fake-image.png>
+    Alt text
+
+    =for Video-clip :src<videos/fake-video.mp4>
+    Alt text
+
+    =end pod
+    PODFILE
+
+$rv = collect( :no-status, :no-completion, :no-report );
+
+ok "{OUTPUT}/assets/videos/fake-video.mp4".IO.f, 'video asset in correct place';
+ok "{OUTPUT}/assets/images/fake-image.png".IO.f, 'image asset in correct place';
+like "{OUTPUT}/assets/videos/fake-video.mp4".IO.slurp(:bin).decode,
+        /
+        'This is not a video'
+        /, 'file contents as expected';
+
+# clean up
+chdir $orig;
+rmtree TMP;
+done-testing;

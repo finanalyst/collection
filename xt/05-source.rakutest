@@ -31,7 +31,18 @@ throws-like { collect(:end<pre-mode>, :no-cache) },
         :source-obtain(),
         :source-refresh(),
         :mode<{ MODE }>,
-        :extensions<rakudoc pod6 pm6 pl6 >
+        :extensions<rakudoc pod6 pm6 pl6 >,
+        :asset-basename<assets>,
+        :asset-paths( %( # type of asset is key, then metadata for that type
+            image => %(
+                :directory<images>,
+                :extensions<png jpeg jpeg svg>,
+            ),
+            video-clip => %(
+                :directory<videos>,
+                :extensions<mp4 webm>,
+            ),
+        )),
     )
     DATA
 mktree 'sources';

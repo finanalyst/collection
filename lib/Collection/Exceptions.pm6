@@ -28,3 +28,8 @@ class X::Collection::Mandatory is Exception {
             ~ "Actually got: " ~ @.got.join(',')
     }
 }
+class X::Collection::BadAssetDirectory is Exception {
+    has $.dir;
+    has $.basename;
+    method message { "Expecting, but did not get, a directory with ｢$.basename｣ and part ｢$.dir｣" }
+}

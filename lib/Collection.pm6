@@ -43,6 +43,75 @@ role Post-cache {
     }
 }
 
+#| Class to provide access to other collection resources, such as images, which are common to the collection,
+#| and referenced in the pod files, but which need to be in a separate cache.
+class Asset-cache {
+    has %!data-base = %();
+    #| the directory base, not included in filenames
+    has Str $.basename is rw;
+    #| the file currently being processed
+    has Str $.current-file is rw = '';
+    #| asset-sources provides a list of all the items in the cache
+    method asset-sources { %!data-base.keys }
+    #| asset-used-list provides a list of all the items that referenced by Content files
+    method asset-used-list { %!data-base.keys.grep( { %!data-base{$_}<by>.elems } ) }
+    #| asset-add adds an item to the data-base, for example, a transformed image
+    method asset-add( $name, $object, :$by = (), :$type = 'image' ) {
+        %!data-base{$name} = %( :$object, :$by, :$type );
+    }
+    #| remove the named asset, and return its metadata
+    method asset-delete( $name --> Hash ) {
+        %!data-base{$name}:delete
+    }
+    #| returns the type of the asset
+    method asset-type( $name --> Str ) {
+        %!data-base{$name}<type>
+    }
+    #| if an asset with name and type exists in the database, then it is marked as used by the current file
+    #| returns true with success, and false if not.
+    method asset-is-used( $asset, $type --> Bool ) {
+        if %!data-base{ $asset }:exists and %!data-base{ $asset }<type> eq $type {
+            %!data-base{$asset}<by>.append: $!current-file;
+            True
+        }
+        else { False }
+    }
+    #| brings all assets in directory with given extensions and with type
+    #| these are set in the configuration
+    multi method asset-slurp( $directory,  @extensions, $type ) {
+        X::Collection::BadAssetDirectory.new(:$!basename, :dir($directory)).throw
+            unless "$.basename/$directory".IO.d;
+        my @sources = my sub recurse ($dir) {
+            gather for dir($dir) {
+                take $_ if  .extension ~~ any( @extensions );
+                take slip sort recurse $_ if .d;
+            }
+        }("$.basename/$directory"); # is the first definition of $dir
+        for @sources {
+            %!data-base{ $_.relative($.basename) } = %(
+                :object( .slurp(:bin) ),
+                :by( [] ),
+                :$type
+            )
+        }
+    }
+    #| this just takes the value of the config key in the top-level configuration
+    multi method asset-slurp( %asset-paths ) {
+        for %asset-paths.kv -> $type, %spec {
+            self.asset-slurp( %spec<directory>, %spec<extensions>, $type)
+        }
+    }
+    #| with type 'all', all the assets are sent to the same output director
+    multi method asset-spurt( $directory ) {
+        X::Collection::BadAssetDirectory.new(:dir($directory), :basename('')).throw
+            unless $directory and $directory.IO.d;
+        for self.asset-used-list -> $nm {
+            mktree( "$directory/$nm".IO.dirname ) unless "$directory/$nm".IO.dirname.IO.d;
+            "$directory/$nm".IO.spurt( %!data-base{$nm}<object>, :bin )
+        }
+    }
+}
+
 sub update-cache(Bool:D :$no-status is copy, Bool:D :$recompile, Bool:D :$no-refresh, Bool:D :$without-processing,
                  :$doc-source, :$cache-path,
                  :@obtain, :@refresh, :@ignore, :@extensions
@@ -101,7 +170,7 @@ multi sub collect(Str:D $mode, :$no-status,
                   Str :$end = 'all',
                   :@dump-at = (),
                   :$collection-info = False,
-                  :$debug = False, :$verbose = False,
+                  :$debug-when = '', :$verbose-when = '',
                   Bool :$no-cache = False) {
     my %config = get-config(:$no-cache, :required< sources cache >);
     without $without-processing {
@@ -166,7 +235,8 @@ multi sub collect(Str:D $mode, :$no-status,
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
     # value of full-render is moot.
-    $rv = milestone('Setup', :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
+    $rv = milestone('Setup',
+            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
             :@dump-at, :$collection-info, :@plugins-used, :%config,
             :$mode, :call-plugins($cache-changes or $full-render));
     return $rv if $end ~~ /:i Setup /;
@@ -193,11 +263,14 @@ multi sub collect(Str:D $mode, :$no-status,
         my @templates = "$*CWD/$mode/{ %config<templates> }".IO.dir(test => / '.raku' /).sort;
         exit note "There must be templates in ｢~/{ "$*CWD/$mode/templates".IO.relative($*HOME) }｣:"
         unless +@templates;
-        my ProcessedPod $pr .= new(:$debug, :$verbose);
+        my ProcessedPod $pr .= new;
         $pr.no-code-escape = %config<no-code-escape> if %config<no-code-escape>:exists;
         $pr.templates(~@templates[0]);
         for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
         $pr.add-data('mode-name', $mode);
+        my Asset-cache $image-manager .= new(:basename(%config<asset-basename> ) );
+        $image-manager.asset-slurp( %config<asset-paths> );
+        $pr.add-data('image-manager', $image-manager );
         $rv = milestone('Render', :with($pr), :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used,
                 :call-plugins);
         return $rv if $end ~~ /:i Render /;
@@ -221,13 +294,17 @@ multi sub collect(Str:D $mode, :$no-status,
             with "$mode/%config<destination>/$short".IO.dirname {
                 .IO.mkdir unless .IO.d
             }
+            $image-manager.current-file = $short;
             with $pr {
                 .pod-file.name = $short;
                 .pod-file.path = $fn;
+                .debug = True if $debug-when eq $fn;
+                .verbose = True if $verbose-when eq $fn;
                 .process-pod($cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 # collect page components, and links
-                %processed{$short} = .emit-and-renew-processed-state
+                %processed{$short} = .emit-and-renew-processed-state;
+                .debug = .verbose = False;
             }
         }
         $rv = milestone('Compilation', :with($pr, %processed),
@@ -249,26 +326,35 @@ multi sub collect(Str:D $mode, :$no-status,
             with "$mode/%config<destination>/$short".IO.dirname {
                 .IO.mkdir unless .IO.d
             }
+            $image-manager.current-file = $short;
             with $pr {
                 .pod-file.name = $short;
                 .pod-file.path = $fn;
+                .debug = True if $debug-when eq $fn;
+                .verbose = True if $verbose-when eq $fn;
                 .process-pod($mode-cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
-                %processed{$short} = .emit-and-renew-processed-state
+                %processed{$short} = .emit-and-renew-processed-state;
+                .debug = .verbose = False;
             }
         }
-        $rv = milestone('Report', :with(%processed, @plugins-used), :@dump-at,
+        $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins(!$no-report));
         return $rv if $end ~~ /:i Report /;
         # ==== Compilation Milestone ===================================
         @output-files = (%processed.keys.sort >>~>> ('.' ~ %config<output-ext>));
         "$mode/output-files.raku".IO.spurt: @output-files.raku;
+        for %config<asset-out-paths>.kv -> $type, $dir {
+            mktree $dir unless $dir.IO.d
+        }
+        $image-manager.asset-spurt(%config<asset-out-path>)
     }
 
     $rv = milestone('Completion',
             :with(@output-files, "$mode/%config<destination>".IO.absolute,
                   %config<landing-place>, %config<output-ext>, %config<completion-options>),
-            :$mode, :@dump-at, :%config, :$collection-info, :@plugins-used, :call-plugins(!$no-completion));
+            :$mode, :@dump-at, :%config, :$collection-info,
+            :@plugins-used, :call-plugins(!$no-completion));
     return $rv if $end ~~ /:i Completion /;
     # === Report Completion Milestone ================================
     @plugins-used
@@ -299,8 +385,14 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
         # only run callable and closure within the directory of the plugin
         my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
         my $path = $callable.IO.dirname;
-        my &closure = indir($path, { EVALFILE $callable });
-        indir($path, { &closure.(|$with) });
+        my &closure;
+        try {
+            &closure = indir($path, { EVALFILE $callable });
+            indir($path, { &closure.(|$with) });
+        }
+        if $! {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+        }
     }
     @valids
 }
@@ -315,10 +407,22 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             # as opposed to being a Boolean value, then its a program
             my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
             my $path = $callable.IO.dirname;
-            my &closure = indir($path, { EVALFILE $callable });
+            my &closure;
+            try {
+                &closure = indir($path, { EVALFILE $callable })
+            }
+            if $! {
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+            }
             # a plugin should only affect the report directly
             # so a plugin should not write directly
-            my %asset-files = indir($path, { &closure.($with) });
+            my %asset-files;
+            try {
+                %asset-files = indir($path, { &closure.($with) });
+            }
+            if $! {
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+            }
             for %asset-files.kv -> $dest, $src {
                 # copy the files returned - the use case for this is css and script files to be
                 # served with html files. The sub-directory paths are needed local to the output files
@@ -345,11 +449,23 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
         my $path = $callable.IO.dirname;
-        my &closure = indir($path, { EVALFILE $callable });
+        my &closure;
+        try {
+            &closure = indir($path, { EVALFILE $callable });
+        }
+        if $! {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+        }
         # a plugin should only affect the report directly
         # so a plugin should not write directly
-        my $resp = indir($path, { &closure.(|$with) });
-        "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt($resp.value)
+        my $resp;
+        try {
+            $resp= indir($path, { &closure.(|$with) });
+            "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt($resp.value)
+        }
+        if $! {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+        }
     }
     @valids
 }

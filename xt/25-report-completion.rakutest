@@ -11,6 +11,7 @@ constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
 constant OUTPUT = "{MODE}/html";
 constant REPORT = "{MODE}/reports";
+constant ASSETS = "{TMP}/assets";
 
 plan 5;
 my $rv;
@@ -20,9 +21,16 @@ unless TMP.IO.d and "{TMP}/{ MODE }".IO.d and "{TMP}/{PLUGS}".IO.d;
 
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 
+mktree ASSETS ~ '/videos';
+mktree ASSETS ~ '/images';
 my $orig = $*CWD;
 chdir TMP;
 
+(MODE ~ '/configs/04-asset-output-options.raku').IO.spurt(qq:to/CONF/);
+    %(
+        asset-out-path => "{OUTPUT}/assets",
+    );
+    CONF
 # rewrite the plugins for reporter and completer
 
 (PLUGS ~ '/reporter/config.raku').IO.spurt( q:to/CONF/);
@@ -31,7 +39,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, --> Pair ) {
+    sub (%processed, @plugins-used, $pp, --> Pair ) {
         #%.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {

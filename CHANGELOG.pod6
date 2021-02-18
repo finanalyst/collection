@@ -57,4 +57,8 @@ a template.
 =head1 2021-02-14 v0.1.10
 =item getting without processing logic right.
 
+=head1 20201-02-18 v0.2.0
+=item added functionality for storage and processing of non-Pod6 content files
+=item added tests of functionality, tests passing.
+
 =end pod
