@@ -13,7 +13,7 @@ constant OUTPUT = "{MODE}/html";
 constant REPORT = "{MODE}/reports";
 constant ASSETS = "{TMP}/assets";
 
-plan 5;
+plan 6;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exit. Have source tests been run?"
@@ -79,9 +79,14 @@ chdir TMP;
     }
     CODE
 $rv = collect(MODE, :no-status, :no-cache,
-        :end<report>, :full-render, :no-refresh);
+        :end<report>, :full-render, :no-refresh, :no-report );
 
 my $rpt = REPORT ~ '/link-plugin-report.txt';
+nok $rpt.IO.f, 'a report file is not generated';
+#empty-directory REPORT;
+
+$rv = collect(MODE, :no-status, :no-cache,
+        :end<report>, :full-render, :no-refresh, :!no-report );
 ok $rpt.IO.f, 'a report file is generated';
 like $rpt.IO.slurp,
         /

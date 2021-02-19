@@ -167,9 +167,9 @@ multi sub collect(Str:D $mode, :$no-status,
                   :$full-render is copy,
                   :$no-report is copy,
                   :$no-completion is copy,
+                  :$collection-info is copy,
                   Str :$end = 'all',
                   :@dump-at = (),
-                  :$collection-info = False,
                   :$debug-when = '', :$verbose-when = '',
                   Bool :$no-cache = False) {
     my %config = get-config(:$no-cache, :required< sources cache >);
@@ -192,9 +192,6 @@ multi sub collect(Str:D $mode, :$no-status,
             $full-render = %config<full-render> // False
         }
     }
-    without $no-completion {
-        $no-completion = %config<no-completion> // False
-    }
     my $cache = update-cache(
         :cache-path(%config<cache>), :doc-source(%config<sources>),
         :no-status($no-status // %config<no-status> // False),
@@ -214,7 +211,19 @@ multi sub collect(Str:D $mode, :$no-status,
     unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
     %config ,= get-config(:$no-cache, :path("$mode/configs"),
             :required<mode-cache mode-sources plugins-required destination completion-options>);
-
+    # include mode level control flags
+    without $no-completion {
+        $no-completion = %config<no-completion> // False
+    }
+    without $no-report {
+        $no-report = %config<no-report> // False
+    }
+    without $no-completion {
+        $no-completion = %config<no-completion> // False
+    }
+    without $collection-info {
+        $collection-info = %config<collection-info> // False
+    }
     my $mode-cache = update-cache(
         :no-status($no-status // %config<no-status>),
         :recompile($recompile // %config<recompile>),

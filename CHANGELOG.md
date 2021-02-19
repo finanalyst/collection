@@ -15,7 +15,8 @@
 [2021-02-08](#2021-02-08)  
 [2021-02-10 v0.1.9](#2021-02-10-v019)  
 [2021-02-14 v0.1.10](#2021-02-14-v0110)  
-[20201-02-18 v0.2.0](#20201-02-18-v020)  
+[2021-02-18 v0.2.0](#2021-02-18-v020)  
+[Bead1](#bead1)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -86,16 +87,24 @@
 # 2021-02-14 v0.1.10
 *  getting without processing logic right.
 
-# 20201-02-18 v0.2.0
-
-
+# 2021-02-18 v0.2.0
 *  added functionality for storage and processing of non-Pod6 content files
 
 *  added tests of functionality, tests passing.
+
+# bead1
+
+2021-02-19 v0.2.1
+
+
+
+*  mode level control options in config should be enforced
+
+*  extra test in report completion
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-18T23:23:13Z
+Rendered from CHANGELOG at 2021-02-19T14:46:42Z
