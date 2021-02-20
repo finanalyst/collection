@@ -67,5 +67,6 @@ a template.
 
 =head1 2021-02-20 v0.2.2
 =item make sure asset output paths synchronise
+=item add new debug-when/verbose-when options to command-line check
 
 =end pod

@@ -13,7 +13,7 @@ proto sub collect(|c) is export {
     unless all(|c.keys.grep(*~~ Str))
             eq
             any(<no-status without-processing no-refresh recompile full-render no-report no-completion no-cleanup
-                end debug verbose no-cache collection-info dump-at>);
+                end no-cache collection-info dump-at debug-when verbose-when>);
     {*}
 }
 
