@@ -307,8 +307,8 @@ multi sub collect(Str:D $mode, :$no-status,
             with $pr {
                 .pod-file.name = $short;
                 .pod-file.path = $fn;
-                .debug = True if $debug-when eq $fn;
-                .verbose = True if $verbose-when eq $fn;
+                .debug = ?($debug-when and $fn ~~ / $debug-when /);
+                .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
                 .process-pod($cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 # collect page components, and links
@@ -339,8 +339,8 @@ multi sub collect(Str:D $mode, :$no-status,
             with $pr {
                 .pod-file.name = $short;
                 .pod-file.path = $fn;
-                .debug = True if $debug-when eq $fn;
-                .verbose = True if $verbose-when eq $fn;
+                .debug = ?($debug-when and $fn ~~ / $debug-when /);
+                .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
                 .process-pod($mode-cache.pod($fn));
                 .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                 %processed{$short} = .emit-and-renew-processed-state;

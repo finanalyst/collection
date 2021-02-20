@@ -106,9 +106,11 @@
 
 *  make sure asset output paths synchronise
 
+*  add new debug-when/verbose-when options to command-line check
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-20T15:20:43Z
+Rendered from CHANGELOG at 2021-02-20T22:34:08Z
