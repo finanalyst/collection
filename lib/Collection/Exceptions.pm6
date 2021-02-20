@@ -33,3 +33,7 @@ class X::Collection::BadAssetDirectory is Exception {
     has $.basename;
     method message { "Expecting, but did not get, a directory with ｢$.basename｣ and part ｢$.dir｣" }
 }
+class X::Collection::BadAssetOutputDirectory is Exception {
+    has $.directory;
+    method message { "Expecting, but did not get, a directory with ｢$.directory｣" }
+}

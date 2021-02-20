@@ -103,7 +103,7 @@ class Asset-cache {
     }
     #| with type 'all', all the assets are sent to the same output director
     multi method asset-spurt( $directory ) {
-        X::Collection::BadAssetDirectory.new(:dir($directory), :basename('')).throw
+        X::Collection::BadAssetOutputDirectory.new(:$directory).throw
             unless $directory and $directory.IO.d;
         for self.asset-used-list -> $nm {
             mktree( "$directory/$nm".IO.dirname ) unless "$directory/$nm".IO.dirname.IO.d;
@@ -279,7 +279,7 @@ multi sub collect(Str:D $mode, :$no-status,
         $pr.add-data('mode-name', $mode);
         my Asset-cache $image-manager .= new(:basename(%config<asset-basename> ) );
         $image-manager.asset-slurp( %config<asset-paths> );
-        $pr.add-data('image-manager', $image-manager );
+        $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir( %config<asset-out-path> ) ));
         $rv = milestone('Render', :with($pr), :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used,
                 :call-plugins);
         return $rv if $end ~~ /:i Render /;
@@ -356,7 +356,7 @@ multi sub collect(Str:D $mode, :$no-status,
         for %config<asset-out-paths>.kv -> $type, $dir {
             mktree $dir unless $dir.IO.d
         }
-        $image-manager.asset-spurt(%config<asset-out-path>)
+        $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
 
     $rv = milestone('Completion',

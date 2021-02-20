@@ -17,6 +17,7 @@
 [2021-02-14 v0.1.10](#2021-02-14-v0110)  
 [2021-02-18 v0.2.0](#2021-02-18-v020)  
 [Bead1](#bead1)  
+[2021-02-20 v0.2.2](#2021-02-20-v022)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -96,15 +97,18 @@
 
 2021-02-19 v0.2.1
 
-
-
 *  mode level control options in config should be enforced
 
 *  extra test in report completion
+
+# 2021-02-20 v0.2.2
+
+
+*  make sure asset output paths synchronise
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-19T14:46:42Z
+Rendered from CHANGELOG at 2021-02-20T15:20:43Z

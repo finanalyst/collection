@@ -28,7 +28,7 @@ chdir TMP;
 
 (MODE ~ '/configs/04-asset-output-options.raku').IO.spurt(qq:to/CONF/);
     %(
-        asset-out-path => "{OUTPUT}/assets",
+        asset-out-path => "assets", # relative to destination directory
     );
     CONF
 # rewrite the plugins for reporter and completer

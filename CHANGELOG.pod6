@@ -65,4 +65,7 @@ a template.
 =item mode level control options in config should be enforced
 =item extra test in report completion
 
+=head1 2021-02-20 v0.2.2
+=item make sure asset output paths synchronise
+
 =end pod

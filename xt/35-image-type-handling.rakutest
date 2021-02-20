@@ -32,25 +32,25 @@ chdir TMP;
     CONF
 (PLUGS ~ '/rend2/image-manager.raku' ).IO.spurt(q:to/CONF/);
     sub ( $pp ) {
-        my $mnger = $pp.get-data('image-manager');
-        $pp.add-data('image', $mnger);
-        $pp.add-data('video-clip', $mnger);
+        my $config = $pp.get-data('image-manager');
+        $pp.add-data('image', $config);
+        $pp.add-data('video-clip', $config);
         %() # return empty list of pairs
     }
     CONF
 (PLUGS ~ '/rend2/rend2_templates.raku' ).IO.spurt(q:to/CONF/);
     %(
         image => sub (%prm, %tml) {
-            my $manager = %prm<image>;
+            my $config = %prm<image>;
             exit note ('Unexpected. Got ' ~ %prm<src>)
-                unless $manager.asset-is-used(%prm<src>,'image');
-            '<img src="' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
+                unless $config<manager>.asset-is-used(%prm<src>,'image');
+            '<img src="' ~ $config<dest-dir> ~ '/' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
         },
         video-clip => sub (%prm, %tml) {
-            my $manager = %prm<video-clip>;
+            my $config = %prm<video-clip>;
             exit note ('Unexpected. Got ' ~ %prm<src>)
-                unless $manager.asset-is-used(%prm<src>,'video-clip');
-            '<img src="' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
+                unless $config<manager>.asset-is-used(%prm<src>,'video-clip');
+            '<img src="' ~ $config<dest-dir> ~ '/' ~ %prm<contents> ~ '">' ~ %prm<contents> ~ '</img>'
         },
     )
     CONF
