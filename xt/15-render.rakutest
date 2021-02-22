@@ -14,7 +14,7 @@ constant TEMPLATES = "{MODE}/templates";
 constant ASSETS = 'assets';
 constant HTML = "{MODE}/html";
 
-plan 6;
+plan 9;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } must exit. Have source tests been run?"
@@ -102,7 +102,7 @@ mktree "{ASSETS}/images";
                         $css ~= "\n" ~ $file.slurp;
                 }
                 'local.css'.IO.spurt($css);
-                %( 'assets/css/local.css' => 'local.css' )
+                ( <assets/css/local.css myself local.css >, )
         }
         CONF
 
@@ -120,4 +120,44 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
         '.design { font-size: large;'
         /, 'css from other plugin has be copied';
 
+#create a plugin that signals a copy of a file from another plugin to the asset - plugin is registered
+(PLUGS ~ '/gather-css/css-collect.raku' ).IO.spurt(q:to/CONF/);
+        sub ( $pp ) {
+                ( <assets/css/mystyling.css rend2 mystyling.css >, )
+        }
+        CONF
+$rv = collect(MODE, :no-status, :no-cache, :end<render>, :full-render);
+ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
+
+#create a plugin that signals a copy of a file from another plugin to the asset - plugin is not registered
+(PLUGS ~ '/gather-css/css-collect.raku' ).IO.spurt(q:to/CONF/);
+        sub ( $pp ) {
+                ( <assets/css/mystyling.css unused mystyling.css >, )
+        }
+        CONF
+(PLUGS ~ '/unused/nostyling.css' ).IO.spurt(q:to/CONF/);
+        .design { font-size: large; }
+        CONF
+use Test::Output;
+stderr-like { $rv = collect(MODE, :no-status, :no-cache, :end<render>, :full-render)},
+       /
+       'is not registered as a plugin'
+       /, 'transferring from unregistered plugin is ignored with warning';
+
+nok (HTML ~ '/assets/css/nostyling.css').IO.f, 'file was not transferred';
+
+# reset gather-css as it is used later
+(PLUGS ~ '/gather-css/css-collect.raku' ).IO.spurt(q:to/CONF/);
+        sub ( $pp ) {
+                my $css = '';
+                for $pp.plugin-datakeys {
+                        my $data = $pp.get-data($_);
+                        next unless $data ~~ Associative and $data<css>:exists and $data<css> ~~ Str:D;
+                        my $file = ($data<path> ~ '/' ~ $data<css>).IO;
+                        $css ~= "\n" ~ $file.slurp;
+                }
+                'local.css'.IO.spurt($css);
+                ( <assets/css/local.css myself local.css >, )
+        }
+        CONF
 done-testing;

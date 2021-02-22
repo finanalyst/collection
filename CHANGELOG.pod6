@@ -69,4 +69,8 @@ a template.
 =item make sure asset output paths synchronise
 =item add new debug-when/verbose-when options to command-line check
 
+=head1 2021-02-22 v0.3.0
+=item changed the return value from a render plugin to a list of triples, not a list of pairs
+=item changed the tests accordingly
+
 =end pod

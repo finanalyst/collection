@@ -1,7 +1,7 @@
 {
   "name": "Collection",
   "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"

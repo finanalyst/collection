@@ -534,7 +534,15 @@ The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with th
 
 If the `render` key is True, no callable is provided, and the plugin will be added via the **.add-plugin** method of the `ProcessedPod` object.
 
-If the `render` key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object, and returns a list of Pairs, with `key` the value of a path name below the `%config<destination> ` directory and the `value` a filename local to the plugin's own subdirectory, which is to be copied to the path in the key.
+If the `render` key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object, and returns a list of triples, with the form (to, from-plug, file).
+
+*  **to** is the destination under the `%config<destination> ` directory where the asset will be looked for, eg., an image file to be served.
+
+*  **plugin** is the name of the plugin in whose directory the asset is contained, where the value `myself` means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
+
+*  **file** is the filename local to the source plugin's subdirectory that is to be copied to the destination. This may contain a path relative to the plugin's subdirectory.
+
+Since a render plugin is to be added using the `ProcessedPod` interface, it must have the `custom-raku` and `template-raku` keys defined, even if they evaluate to blank (eg. `:custom-raku()` ).
 
 So the config file must have:
 
@@ -649,4 +657,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-02-18T23:23:18Z
+Rendered from README at 2021-02-22T19:06:05Z

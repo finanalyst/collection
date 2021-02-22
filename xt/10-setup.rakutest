@@ -84,7 +84,7 @@ for @pls {
         when 'compiler' { "compilation => True" }
         when 'completer' { "completion => True " }
         when 'gather-css' { "render => False" }
-        default { "name => \'{ $_ }\', report => True " }
+        default { "report => True, css => 'some-styling.css', " }
     } },
         );
         CONF

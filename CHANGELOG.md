@@ -18,6 +18,7 @@
 [2021-02-18 v0.2.0](#2021-02-18-v020)  
 [Bead1](#bead1)  
 [2021-02-20 v0.2.2](#2021-02-20-v022)  
+[2021-02-22 v0.3.0](#2021-02-22-v030)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -102,15 +103,20 @@
 *  extra test in report completion
 
 # 2021-02-20 v0.2.2
-
-
 *  make sure asset output paths synchronise
 
 *  add new debug-when/verbose-when options to command-line check
+
+# 2021-02-22 v0.3.0
+
+
+*  changed the return value from a render plugin to a list of triples, not a list of pairs
+
+*  changed the tests accordingly
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-20T22:34:08Z
+Rendered from CHANGELOG at 2021-02-22T19:06:00Z

@@ -17,6 +17,9 @@ proto sub collect(|c) is export {
     {*}
 }
 
+#| The string used by plugins to describe themselves
+constant MYSELF = 'myself';
+
 #| adds a filter to a cache object
 #| Anything that exists in the %!extra hash is returned
 #| If the key does not exist, it is as if the Cache does not contain it
@@ -425,20 +428,43 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             }
             # a plugin should only affect the report directly
             # so a plugin should not write directly
-            my %asset-files;
+            my @asset-files;
             try {
-                %asset-files = indir($path, { &closure.($with) });
+                @asset-files = indir($path, { &closure.($with) });
             }
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
             }
-            for %asset-files.kv -> $dest, $src {
+            for @asset-files -> ($to, $other-plug, $file) {
                 # copy the files returned - the use case for this is css and script files to be
                 # served with html files. The sub-directory paths are needed local to the output files
                 # they will be named in the templates provided by the plugins
-                my $dest-path = "$mode/%config<destination>/$dest".IO;
-                mkdir($dest-path.dirname) unless $dest-path.dirname.IO.d;
-                "$path/$src".IO.copy($dest-path);
+                # the simplest case is when a plugin asks for a plugin from its own
+                # directory. But there is also the case of moving files from other
+                # directories. How to do this securely? We can allow transfers from a plugin directory
+                # so the plugin-data space will contain a path for each registered plugin.
+                # consequently, we have a three element copy
+                my $from;
+                if $other-plug eq MYSELF {
+                    $from = "$path/$file";
+                }
+                else {
+                    my $config = $with.get-data($other-plug); # returns Nil if no data
+                    unless $config {
+                        note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                                ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
+                        next
+                    }
+                    $from = $config<path> ~ '/' ~ $file
+                }
+                my $to-path = "$mode/%config<destination>/$to".IO;
+                mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
+                unless $from.IO.f {
+                    note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                            ~ "｢$from｣ is not a valid file. Skipping.";
+                    next
+                }
+                $from.IO.copy($to-path);
             }
         }
         $with.add-plugin($plug,
