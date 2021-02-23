@@ -313,7 +313,7 @@ multi sub collect(Str:D $mode,
                 # All the mode files assumed to depend on the source files, So all mode files are re-rendered
                 # if any source file is changed.
                 # But if only mode files have changed, then there is only a need to render the mode files.
-                if $source-changes {
+                if ! $source-changes {
                     @files = $mode-cache.sources.list
                 }
                 else {
