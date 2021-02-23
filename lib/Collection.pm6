@@ -246,8 +246,8 @@ multi sub collect(Str:D $mode,
     # then without-processing must be over-ridden
     # because had it was True, and changes bubble to here, then the caches were empty and had to
     # be recreated
-    my Bool $source-changes = (?(+$cache.list-files);
-    my Bool $collection-changes = ?(+$mode-cache.list-files));
+    my Bool $source-changes = ?(+$cache.list-files);
+    my Bool $collection-changes = ?(+$mode-cache.list-files);
     my @plugins-used;
     my %processed;
     my %symbols;
