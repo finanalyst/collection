@@ -35,6 +35,10 @@
 [Compilation](#compilation)  
 [Report](#report)  
 [Completion](#completion)  
+[Post-cache methods](#post-cache-methods)  
+[method add(Str $fn, Array $p)](#method-addstr-fn-array-p)  
+[method add(Str $fn)](#method-addstr-fn)  
+[method pod(Str $fn)](#method-podstr-fn)  
 [Asset-cache methods](#asset-cache-methods)  
 [LICENSE](#license)  
 
@@ -507,13 +511,13 @@ Plugin's may need other configurable data, which should be kept in the config fi
 The plugin types are as follows.
 
 ## Setup
-Config hash must contain **setup** which is a path, relative to the plugin's sub-directory, to the Raku program. It must evaluate to a sub that takes a list of five items, eg.,
+Config hash must contain **setup** which is the name of a Raku program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
 ```
 sub ( $source-cache, $mode-cache, Bool $full-render,  $source-root, $mode-root ) { ... }
 ```
 > **$source-cache**  
-A Pod::From::Cache object containing the pod of the sources files
+A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
 
 > **$mode-cache**  
 Like the above for the mode content files
@@ -572,35 +576,59 @@ is a hash whose keys are source file names with a hash values containing TOC, Gl
 The `report` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, @plugins-used, $report-path) {...}
+sub (%processed, @plugins-used, $pr --> Pair ) {...}
 ```
-> **@plugins-used**  
-is an array of Pairs whose key is the milestone and value is a hash of the plugins used and their config parameters.
-
-> **$report-path**  
-is the path name relative to the C<mode> directory where report files are produced. The output format of the files is determined by the report plugin.
-
 > **%processed**  
 as in Compilation
 
+> **@plugins-used**  
+is an array of Pairs whose key is the milestone and value is a hash of the plugins used and their config parameters.
+
+> **$pr**  
+as in Compilation
+
+The plugin should return a Pair, where .key = (path/)name of the report file with extension, and .value is the text of the report in the appropriate format
+
+The aim is one report plugin -> one report output in a specified format.
+
+The `collect` sub will write the file to the correct directory.
+
 ## Completion
-The `completion` key points to a Raku file that evaluates to a `sub (@output-files, $destination, $landing-place, $output-ext, %completion-options) {...}` object.
+The `completion` key points to a Raku file that evaluates to a `sub (%processed, $destination, $landing-place, $output-ext, %completion-options) {...}` object.
 
-*  @filenames
+*  **%processed**
 
-is a list of the output files (with paths relative to the output path) that are to be presented, in order of evaluation, if this is important. Eg. for a book, the entire order is important, for a website ony the first page is important.
+As in Compilation
 
-*  $destination
+*  **$destination**
 
 is the name of the output path from the mode directory (defined in the mode configuration)
 
-*  $landing-place
+*  **$landing-place**
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
 
 *  %completion-options> (actually specified as %config<completion-options>)
 
 is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served. More complex plugins will require more options.
+
+There is no return value specified for this plugin type.
+
+# Post-cache methods
+Post-cache is a role added to a `Pod::From::Load` object so that Setup plugins can act on Cache'd content but also add files to the Cache that will be rendered.
+
+If the original file in the Cache is to be hidden, then a file with the same name is added to the Post-cache database. If the underlying cache object should remain visible, then another name should be given to a file in the Post-cache database.
+
+The Post-cache methods `sources`, `list-files`, and `pod` have the same function and semantics as `Pod::From::Cache` with the caveat of hiding as described above. If there is no name in the Post-cache database, then it is passed on to the underlying cache.
+
+## method add(Str $fn, Array $p)
+Adds the filename $fn to the cache. $p is expected to be an array of Pod::Blocks, but no check is made. This is intentional to allow the developer flexibility, but then a call to `pod( $fn )` will yield an array that is not POD6, which might not be expected.
+
+## method add(Str $fn)
+This will add only a filename to the database, and thus mask any existing filename in the underlying cache.
+
+## method pod(Str $fn)
+Will return an array of Pod::Block (see above for caveat), if the underlying Cache or database have content, or return `Nil` if there is no content (masking an underlying file in Cache).
 
 # Asset-cache methods
 Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all render and compilation plugins, for example in the plugin callable:
@@ -657,4 +685,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-02-22T19:06:05Z
+Rendered from README at 2021-02-23T22:12:19Z

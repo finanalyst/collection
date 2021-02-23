@@ -585,13 +585,13 @@ The plugin types are as follows.
 
 =head2 Setup
 
-Config hash must contain B<setup> which is a path, relative to the plugin's sub-directory, to the Raku
-program. It must evaluate to a sub that takes a list of five items, eg.,
+Config hash must contain B<setup> which is the name of a Raku
+program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
     sub ( $source-cache, $mode-cache, Bool $full-render,  $source-root, $mode-root ) { ... }
 
 =defn $source-cache
-A Pod::From::Cache object containing the pod of the sources files
+A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
 
 =defn $mode-cache
 Like the above for the mode content files
@@ -658,40 +658,44 @@ TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by
 
 The C<report> key points to a Raku file that evaluates to a
 
-    sub (%processed, @plugins-used, $report-path) {...}
+    sub (%processed, @plugins-used, $pr --> Pair ) {...}
+
+=defn %processed
+as in Compilation
 
 =defn @plugins-used
 is an array of Pairs whose key is the milestone and
 value is a hash of the plugins used and their config parameters.
 
-=defn $report-path
-is the path name relative to the C<mode> directory where report files are produced. The output format of the files
-is determined by the report plugin. 
-
-=defn %processed
+=defn $pr
 as in Compilation
+
+The plugin should return a Pair, where .key = (path/)name of the report file with extension,
+and .value is the text of the report in the appropriate format
+
+The aim is one report plugin -> one report output in a specified format.
+
+The C<collect> sub will write the file to the correct directory.
 
 =head2 Completion
 
 The C<completion> key points to a Raku file that evaluates to
-a C<sub (@output-files, $destination, $landing-place, $output-ext, %completion-options) {...}> object.
+a C<sub (%processed, $destination, $landing-place, $output-ext, %completion-options) {...}> object.
 
 =begin item
-@filenames
+B<%processed>
 
-is a list of the output files (with paths relative to the output path) that are to be presented, in order
-of evaluation, if this is important. Eg. for a book, the entire order is important, for a website
-ony the first page is important.
+As in Compilation
 
 =end item
 =begin item
-$destination
+B<$destination>
 
 is the name of the output path from the mode directory (defined in the mode configuration)
 
 =end item
 =begin item
-$landing-place
+B<$landing-place>
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the
 destination directory.
@@ -705,6 +709,36 @@ the very simple C<cro-run> plugin requires the path to the static html files, th
 are served. More complex plugins will require more options.
 
 =end item
+
+There is no return value specified for this plugin type.
+
+=head1 Post-cache methods
+
+Post-cache is a role added to a C<Pod::From::Load> object so that Setup plugins can act on Cache'd content
+but also add files to the Cache that will be rendered.
+
+If the original file in the Cache is to be hidden, then a file with the same name is added to the Post-cache
+database. If the underlying cache object should remain visible, then another name should be given to a
+file in the Post-cache database.
+
+The Post-cache methods C<sources>, C<list-files>, and C<pod> have the same function and semantics as
+C<Pod::From::Cache> with the caveat of hiding as described above. If there is no name in the Post-cache
+database, then it is passed on to the underlying cache.
+
+=head2 method add(Str $fn, Array $p)
+
+Adds the filename $fn to the cache. $p is expected to be an array of Pod::Blocks, but no check is made. This is
+intentional to allow the developer flexibility, but then a call to C<pod( $fn )> will yield an array that is not
+POD6, which might not be expected.
+
+=head2 method add(Str $fn)
+
+This will add only a filename to the database, and thus mask any existing filename in the underlying cache.
+
+=head2 method pod(Str $fn)
+
+Will return an array of Pod::Block (see above for caveat), if the underlying Cache or database have content,
+or return C<Nil> if there is no content (masking an underlying file in Cache).
 
 =head1 Asset-cache methods
 

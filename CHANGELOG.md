@@ -19,6 +19,7 @@
 [Bead1](#bead1)  
 [2021-02-20 v0.2.2](#2021-02-20-v022)  
 [2021-02-22 v0.3.0](#2021-02-22-v030)  
+[2021-02-23 v0.3.1](#2021-02-23-v031)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -108,15 +109,20 @@
 *  add new debug-when/verbose-when options to command-line check
 
 # 2021-02-22 v0.3.0
-
-
 *  changed the return value from a render plugin to a list of triples, not a list of pairs
 
 *  changed the tests accordingly
+
+# 2021-02-23 v0.3.1
+
+
+*  refactor to ensure that only changed files are re-rendered, but information of non-rendered files is cached
+
+*  change the input type of report & completion plugin
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-22T19:06:00Z
+Rendered from CHANGELOG at 2021-02-23T22:12:13Z

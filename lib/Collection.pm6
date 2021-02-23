@@ -19,6 +19,10 @@ proto sub collect(|c) is export {
 
 #| The string used by plugins to describe themselves
 constant MYSELF = 'myself';
+#| Name of file where the contents of %processed is cached
+constant PROCESSED-CACHE = 'processed-cache.raku';
+#| Name of symbol table cache
+constant SYMBOL = "symbols.raku";
 
 #| adds a filter to a cache object
 #| Anything that exists in the %!extra hash is returned
@@ -121,8 +125,8 @@ sub update-cache(Bool:D :$no-status is copy, Bool:D :$recompile, Bool:D :$no-ref
         --> Pod::From::Cache) {
 
     if $without-processing and $cache-path.IO.d { # non-existence of a cache over-rides without-processing
-            $no-status = True
-        } # enforce silence if without processing and cache exists
+        $no-status = True
+    } # enforce silence if without processing and cache exists
     else {
         rm-cache($cache-path) if $recompile;
         #removing the cache forces a recompilation
@@ -163,7 +167,8 @@ multi sub collect(:$no-cache = False, |c) {
     collect($mode, :$no-cache, |c)
 }
 
-multi sub collect(Str:D $mode, :$no-status,
+multi sub collect(Str:D $mode,
+                  :$no-status,
                   :$without-processing is copy,
                   :$no-refresh is copy,
                   :$recompile is copy,
@@ -174,7 +179,8 @@ multi sub collect(Str:D $mode, :$no-status,
                   Str :$end = 'all',
                   :@dump-at = (),
                   :$debug-when = '', :$verbose-when = '',
-                  Bool :$no-cache = False) {
+                  Bool :$no-cache = False
+          ) {
     my %config = get-config(:$no-cache, :required< sources cache >);
     without $without-processing {
         $without-processing = %config<without-processing> // False
@@ -240,9 +246,11 @@ multi sub collect(Str:D $mode, :$no-status,
     # then without-processing must be over-ridden
     # because had it was True, and changes bubble to here, then the caches were empty and had to
     # be recreated
-    my Bool $cache-changes = (?(+$cache.list-files) or ?(+$mode-cache.list-files));
+    my Bool $source-changes = (?(+$cache.list-files);
+    my Bool $collection-changes = ?(+$mode-cache.list-files));
     my @plugins-used;
-    my @output-files;
+    my %processed;
+    my %symbols;
     # if no cache changes, then no need to run setup
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
@@ -250,7 +258,7 @@ multi sub collect(Str:D $mode, :$no-status,
     $rv = milestone('Setup',
             :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
             :@dump-at, :$collection-info, :@plugins-used, :%config,
-            :$mode, :call-plugins($cache-changes or $full-render));
+            :$mode, :call-plugins($source-changes or $collection-changes or $full-render));
     return $rv if $end ~~ /:i Setup /;
     # === Setup milestone ==================================================
     rmtree "$*CWD/$mode/%config<destination>" if $full-render;
@@ -258,18 +266,19 @@ multi sub collect(Str:D $mode, :$no-status,
         "$*CWD/$mode/%config<destination>".IO.mkdir;
         $full-render = True;
     }
-    if "$mode/output-files.raku".IO.f {
-        @output-files = EVALFILE "$mode/output-files.raku";
-        # retain previous file names
+    # both the processed cache and the symbol table must exist, otherwise re-render
+    if "$mode/{ PROCESSED-CACHE }".IO.f and "$mode/{ SYMBOL }".IO.f {
+        %processed = EVALFILE "$mode/{ PROCESSED-CACHE }";
+        %symbols = EVALFILE "$mode/{ SYMBOL }"
     }
     else { $full-render = True }
-    # which writes to output-files after rendering
-    # rendering will be done if
-    # 1) full-render true & without-processing false
+    # %processed contains all processed data and is cached after the rendering stage
+    # The rendering stage occurs if
+    # 1) full-render = true & without-processing = false
     # 2) one/both caches did not exist prior to this run
     # 3) destination directory did not exist prior to this run
-    # 4) output-files.raku doesn't exist
-    if $cache-changes or $full-render {
+    # 4) PROCESSED-CACHE (& SYMBOL) doesn't exist
+    if $$source-changes or $collection-changes or $full-render {
         # Prepare the renderer
         # get the template names
         my @templates = "$*CWD/$mode/{ %config<templates> }".IO.dir(test => / '.raku' /).sort;
@@ -283,92 +292,110 @@ multi sub collect(Str:D $mode, :$no-status,
         my Asset-cache $image-manager .= new(:basename(%config<asset-basename> ) );
         $image-manager.asset-slurp( %config<asset-paths> );
         $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir( %config<asset-out-path> ) ));
-        $rv = milestone('Render', :with($pr), :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used,
-                :call-plugins);
-        return $rv if $end ~~ /:i Render /;
-        # ======== Render milestone =============================
-        my @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
-        my %processed;
-        counter(:start(+@files), :header('Rendering content files')) unless $no-status;
-        # sort files so that longer come later, meaning sub-directories appear after parents
-        # when creating the sub-directory
-        for @files.sort -> $fn {
-            counter(:dec) unless $no-status;
-            # files are cached with the relative path from Collection route & extension
-            # output file names are needed with output extension and relative to output directory
-            # there is a possibility of a name clash when filename differs only by extension.
-            my $short = $fn.IO.relative(%config<sources>).IO.extension('').Str;
-            if %processed{$short}:exists {
-                $short ~= '-1';
-                $short++ while %processed{$short}:exists;
-                # bump name if same name exists
+        my @files;
+        for <sources mode> -> $stage {
+            if $stage eq 'sources' {
+                $rv = milestone('Render', :with($pr), :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used,
+                        :call-plugins);
+                return $rv if $end ~~ /:i Render /;
+                # ======== Render milestone =============================
+                @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
+                counter(:start(+@files), :header('Rendering content files'))
+                    unless $no-status or ! +@files;
+
             }
-            with "$mode/%config<destination>/$short".IO.dirname {
-                .IO.mkdir unless .IO.d
+            else {
+                # $stage eq mode
+                $rv = milestone('Compilation', :with($pr, %processed),
+                        :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins);
+                return $rv if $end ~~ /:i Compilation /;
+                # ==== Compilation Milestone ===================================
+                # All the mode files assumed to depend on the source files, So all mode files are re-rendered
+                # if any source file is changed.
+                # But if only mode files have changed, then there is only a need to render the mode files.
+                if $source-changes {
+                    @files = $mode-cache.sources.list
+                }
+                else {
+                    # since either source-changes or mode-changes are true to get here, if source-changes is false
+                    # then mode-changes must be true
+                    @files = $mode-cache.list-files.list
+                }
+                counter(:start(+@files), :header("Rendering $mode content files"))
+                    unless $no-status or ! +@files;
             }
-            $image-manager.current-file = $short;
-            with $pr {
-                .pod-file.name = $short;
-                .pod-file.path = $fn;
-                .debug = ?($debug-when and $fn ~~ / $debug-when /);
-                .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
-                .process-pod($cache.pod($fn));
-                .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
-                # collect page components, and links
-                %processed{$short} = .emit-and-renew-processed-state;
-                .debug = .verbose = False;
-            }
-        }
-        $rv = milestone('Compilation', :with($pr, %processed),
-                :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins);
-        return $rv if $end ~~ /:i Compilation /;
-        # ==== compilation Milestone ===================================
-        # Even if the compilation sources have not changed, they are assumed to depend
-        # on the collection files, which have changed (at a minimum) in order to get here.
-        @files = $mode-cache.sources.list;
-        counter(:start(+@files), :header("Rendering $mode content files")) unless $no-status;
-        for @files -> $fn {
-            counter(:dec) unless $no-status;
-            my $short = $fn.IO.relative("$mode/%config<mode-sources>").IO.extension('').Str;
-            if %processed{$short}:exists {
-                $short ~= '-1';
-                $short++ while %processed{$short}:exists;
-                # bump name if same name exists
-            }
-            with "$mode/%config<destination>/$short".IO.dirname {
-                .IO.mkdir unless .IO.d
-            }
-            $image-manager.current-file = $short;
-            with $pr {
-                .pod-file.name = $short;
-                .pod-file.path = $fn;
-                .debug = ?($debug-when and $fn ~~ / $debug-when /);
-                .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
-                .process-pod($mode-cache.pod($fn));
-                .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
-                %processed{$short} = .emit-and-renew-processed-state;
-                .debug = .verbose = False;
+            # sort files so that longer come later, meaning sub-directories appear after parents
+            # when creating the sub-directory
+            for @files.sort -> $fn {
+                counter(:dec) unless $no-status;
+                # files are cached with the relative path from Collection route & extension
+                # output file names are needed with output extension and relative to output directory
+                # there is a possibility of a name clash when filename differs only by extension.
+                my $short;
+                # $fn is guaranteed to be unique by the filesystem
+                # $short may not be unique because a file many have the same name, but different extensions
+                # only changed files are rendered, so old data needs to be removed
+                if %symbols{$fn}:exists {
+                    # if this is true, then the render stage is being run with changed files and fn has changed
+                    $short = %symbols{$fn};
+                    %processed{$short}:delete;
+                }
+                else {
+                    # this is a first run, or full-render so populate the symbol table
+                    if $stage eq 'sources' {
+                        $short = $fn.IO.relative(%config<sources>).IO.extension('').Str
+                    }
+                    else {
+                        $short = $fn.IO.relative("$mode/%config<mode-sources>").IO.extension('').Str
+                    }
+                    while %processed{$short}:exists {
+                        FIRST { $short ~= '-1' }
+                        $short++
+                        # bump name if same name exists
+                    }
+                    %symbols{$fn} = $short;
+                }
+                with "$mode/%config<destination>/$short".IO.dirname {
+                    .IO.mkdir unless .IO.d
+                }
+                $image-manager.current-file = $short;
+                with $pr {
+                    .pod-file.name = $short;
+                    .pod-file.path = $fn;
+                    .debug = ?($debug-when and $fn ~~ / $debug-when /);
+                    .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
+                    if $stage eq 'sources' {
+                        .process-pod($cache.pod($fn));
+                    }
+                    else {
+                        .process-pod($mode-cache.pod($fn));
+                    }
+                    .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
+                    %processed{$short} = .emit-and-renew-processed-state;
+                    .debug = .verbose = False;
+                }
             }
         }
         $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins(!$no-report));
         return $rv if $end ~~ /:i Report /;
-        # ==== Compilation Milestone ===================================
-        @output-files = (%processed.keys.sort >>~>> ('.' ~ %config<output-ext>));
-        "$mode/output-files.raku".IO.spurt: @output-files.raku;
+        # ==== Report Milestone ===================================
+        # Save state , move assets
+        # @output-files = (%processed.keys.sort >>~>> ('.' ~ %config<output-ext>));
         for %config<asset-out-paths>.kv -> $type, $dir {
             mktree $dir unless $dir.IO.d
         }
+        PROCESSED-CACHE.IO.spurt(%processed.raku);
+        SYMBOL.IO.spurt(%symbols.raku);
         $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
-
     $rv = milestone('Completion',
-            :with(@output-files, "$mode/%config<destination>".IO.absolute,
+            :with(%processed, "$mode/%config<destination>".IO.absolute,
                   %config<landing-place>, %config<output-ext>, %config<completion-options>),
             :$mode, :@dump-at, :%config, :$collection-info,
             :@plugins-used, :call-plugins(!$no-completion));
     return $rv if $end ~~ /:i Completion /;
-    # === Report Completion Milestone ================================
+    # === Completion Milestone ================================
     @plugins-used
     # inspection point end eq 'all'
     # === All milestone (nothing else must happen) ================================

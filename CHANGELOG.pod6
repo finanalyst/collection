@@ -73,4 +73,8 @@ a template.
 =item changed the return value from a render plugin to a list of triples, not a list of pairs
 =item changed the tests accordingly
 
+=head1 2021-02-23 v0.3.1
+=item refactor to ensure that only changed files are re-rendered, but information of non-rendered files is cached
+=item change the input type of report & completion plugin
+
 =end pod
