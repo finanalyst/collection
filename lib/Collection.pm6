@@ -278,7 +278,7 @@ multi sub collect(Str:D $mode,
     # 2) one/both caches did not exist prior to this run
     # 3) destination directory did not exist prior to this run
     # 4) PROCESSED-CACHE (& SYMBOL) doesn't exist
-    if $$source-changes or $collection-changes or $full-render {
+    if $source-changes or $collection-changes or $full-render {
         # Prepare the renderer
         # get the template names
         my @templates = "$*CWD/$mode/{ %config<templates> }".IO.dir(test => / '.raku' /).sort;
