@@ -266,8 +266,9 @@ multi sub collect(Str:D $mode,
         "$*CWD/$mode/%config<destination>".IO.mkdir;
         $full-render = True;
     }
-    # both the processed cache and the symbol table must exist, otherwise re-render
-    if "$mode/{ PROCESSED-CACHE }".IO.f and "$mode/{ SYMBOL }".IO.f {
+    # both the processed cache and the symbol table must exist for without-processing or partial processing to work
+    if ! $full-render and "$mode/{ PROCESSED-CACHE }".IO.f and "$mode/{ SYMBOL }".IO.f {
+        say "Recovering state from cache" unless $no-status;
         %processed = EVALFILE "$mode/{ PROCESSED-CACHE }";
         %symbols = EVALFILE "$mode/{ SYMBOL }"
     }
@@ -299,15 +300,21 @@ multi sub collect(Str:D $mode,
                         :call-plugins);
                 return $rv if $end ~~ /:i Render /;
                 # ======== Render milestone =============================
+            say "At $?LINE full render $full-render";
                 @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
+            say 'files: <' ~ @files.join(', ') ~ '>';
                 counter(:start(+@files), :header('Rendering content files'))
                     unless $no-status or ! +@files;
 
             }
             else {
                 # $stage eq mode
-                $rv = milestone('Compilation', :with($pr, %processed),
-                        :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins);
+                $rv = milestone('Compilation',
+                        :with($pr, %processed),
+                        :@dump-at,
+                        :%config,
+                        :$mode, :$collection-info, :@plugins-used,
+                        :call-plugins);
                 return $rv if $end ~~ /:i Compilation /;
                 # ==== Compilation Milestone ===================================
                 # All the mode files assumed to depend on the source files, So all mode files are re-rendered
@@ -385,8 +392,8 @@ multi sub collect(Str:D $mode,
         for %config<asset-out-paths>.kv -> $type, $dir {
             mktree $dir unless $dir.IO.d
         }
-        PROCESSED-CACHE.IO.spurt(%processed.raku);
-        SYMBOL.IO.spurt(%symbols.raku);
+        "$mode/{ PROCESSED-CACHE }".IO.spurt(%processed.raku);
+        "$mode/{ SYMBOL }".IO.spurt(%symbols.raku);
         $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
     $rv = milestone('Completion',

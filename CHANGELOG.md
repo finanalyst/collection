@@ -20,6 +20,7 @@
 [2021-02-20 v0.2.2](#2021-02-20-v022)  
 [2021-02-22 v0.3.0](#2021-02-22-v030)  
 [2021-02-23 v0.3.1](#2021-02-23-v031)  
+[2021-02-25 v0.3.2](#2021-02-25-v032)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -114,15 +115,20 @@
 *  changed the tests accordingly
 
 # 2021-02-23 v0.3.1
-
-
 *  refactor to ensure that only changed files are re-rendered, but information of non-rendered files is cached
 
-*  change the input type of report & completion plugin
+*  change the input type of completion plugin
+
+# 2021-02-25 v0.3.2
+
+
+*  add in a progress statement about rendered files in place of a spinner
+
+*  correct error about where processed/symbol structures are stored.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-23T22:12:13Z
+Rendered from CHANGELOG at 2021-02-25T12:00:15Z
