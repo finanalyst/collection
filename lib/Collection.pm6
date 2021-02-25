@@ -300,9 +300,7 @@ multi sub collect(Str:D $mode,
                         :call-plugins);
                 return $rv if $end ~~ /:i Render /;
                 # ======== Render milestone =============================
-            say "At $?LINE full render $full-render";
                 @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
-            say 'files: <' ~ @files.join(', ') ~ '>';
                 counter(:start(+@files), :header('Rendering content files'))
                     unless $no-status or ! +@files;
 
