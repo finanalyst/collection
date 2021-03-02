@@ -1,7 +1,7 @@
 {
   "name": "Collection",
   "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
@@ -23,11 +23,11 @@
     "min-templates.raku"
   ],
   "support": {
-    "source": "https://github.com/finanalyst/content-collection.git",
-    "bugtracker": "https://github.com/finanalyst/content-collection/issues",
+    "source": "https://github.com/finanalyst/collection.git",
+    "bugtracker": "https://github.com/finanalyst/collection/issues",
     "email": "richard@hainsworth.wales"
   },
   "license": "Artistic-2.0",
-  "source-url": "git://github.com/finanalyst/content-collection.git",
+  "source-url": "git://github.com/finanalyst/collection.git",
   "source-type": "git"
 }

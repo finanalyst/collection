@@ -21,6 +21,7 @@
 [2021-02-22 v0.3.0](#2021-02-22-v030)  
 [2021-02-23 v0.3.1](#2021-02-23-v031)  
 [2021-02-25 v0.3.2](#2021-02-25-v032)  
+[2021-03-02 v0.3.3](#2021-03-02-v033)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -120,15 +121,18 @@
 *  change the input type of completion plugin
 
 # 2021-02-25 v0.3.2
-
-
 *  add in a progress statement about rendered files in place of a spinner
 
 *  correct error about where processed/symbol structures are stored.
+
+# 2021-03-02 v0.3.3
+
+
+*  META6 path changes to reflect repository name
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-02-25T12:00:15Z
+Rendered from CHANGELOG at 2021-03-02T09:49:31Z

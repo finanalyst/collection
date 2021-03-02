@@ -81,4 +81,7 @@ a template.
 =item add in a progress statement about rendered files in place of a spinner
 =item correct error about where processed/symbol structures are stored.
 
+=head1 2021-03-02 v0.3.3
+=item META6 path changes to reflect repository name
+
 =end pod
