@@ -22,6 +22,7 @@
 [2021-02-23 v0.3.1](#2021-02-23-v031)  
 [2021-02-25 v0.3.2](#2021-02-25-v032)  
 [2021-03-02 v0.3.3](#2021-03-02-v033)  
+[2021-03-03 v0.3.4](#2021-03-03-v034)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -126,13 +127,18 @@
 *  correct error about where processed/symbol structures are stored.
 
 # 2021-03-02 v0.3.3
-
-
 *  META6 path changes to reflect repository name
+
+# 2021-03-03 v0.3.4
+
+
+*  Change of storing cache, using Libarchive.
+
+*  Added timing information when !no-status
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-02T09:49:31Z
+Rendered from CHANGELOG at 2021-03-03T17:37:46Z

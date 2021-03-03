@@ -84,4 +84,8 @@ a template.
 =head1 2021-03-02 v0.3.3
 =item META6 path changes to reflect repository name
 
+=head1 2021-03-03 v0.3.4
+=item Change of storing cache, using Libarchive.
+=item Added timing information when !no-status
+
 =end pod

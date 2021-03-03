@@ -5,6 +5,7 @@ use Pod::From::Cache;
 use ProcessedPod;
 use File::Directory::Tree;
 use X::Collection;
+use Archive::Libarchive;
 
 unit module Collection;
 
@@ -20,9 +21,9 @@ proto sub collect(|c) is export {
 #| The string used by plugins to describe themselves
 constant MYSELF = 'myself';
 #| Name of file where the contents of %processed is cached
-constant PROCESSED-CACHE = 'processed-cache.raku';
-#| Name of symbol table cache
-constant SYMBOL = "symbols.raku";
+constant PROCESSED-CACHE = 'cache.7z';
+#| entity name in cache
+constant CACHENAME = 'render-cache';
 
 #| adds a filter to a cache object
 #| Anything that exists in the %!extra hash is returned
@@ -251,6 +252,7 @@ multi sub collect(Str:D $mode,
     my @plugins-used;
     my %processed;
     my %symbols;
+    my Archive::Libarchive $arc;
     # if no cache changes, then no need to run setup
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
@@ -266,11 +268,23 @@ multi sub collect(Str:D $mode,
         "$*CWD/$mode/%config<destination>".IO.mkdir;
         $full-render = True;
     }
-    # both the processed cache and the symbol table must exist for without-processing or partial processing to work
-    if ! $full-render and "$mode/{ PROCESSED-CACHE }".IO.f and "$mode/{ SYMBOL }".IO.f {
+    # both processed and symbols must exist for without-processing or partial processing to work
+    if ! $full-render and "$mode/{PROCESSED-CACHE}".IO.f  {
         say "Recovering state from cache" unless $no-status;
-        %processed = EVALFILE "$mode/{ PROCESSED-CACHE }";
-        %symbols = EVALFILE "$mode/{ SYMBOL }"
+        my $timer = now;
+        $arc .= new(:operation(LibarchiveRead), :file( "$*CWD/$mode/{PROCESSED-CACHE}" ) );
+        my %rv;
+        use MONKEY-SEE-NO-EVAL;
+        my Archive::Libarchive::Entry $e .= new;
+        while $arc.next-header( $e ) {
+            if $e.pathname eq CACHENAME {
+                %rv = EVAL $arc.read-file-content( $e)
+            }
+            else { $arc.data-skip }
+        }
+        %processed = %rv<processed>;
+        %symbols = %rv<symbols>;
+        say "Recovery took { now - $timer } secs" unless $no-status
     }
     else { $full-render = True }
     # %processed contains all processed data and is cached after the rendering stage
@@ -290,9 +304,9 @@ multi sub collect(Str:D $mode,
         $pr.templates(~@templates[0]);
         for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
         $pr.add-data('mode-name', $mode);
-        my Asset-cache $image-manager .= new(:basename(%config<asset-basename> ) );
-        $image-manager.asset-slurp( %config<asset-paths> );
-        $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir( %config<asset-out-path> ) ));
+        my Asset-cache $image-manager .= new(:basename(%config<asset-basename>));
+        $image-manager.asset-slurp(%config<asset-paths>);
+        $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir(%config<asset-out-path>)));
         my @files;
         for <sources mode> -> $stage {
             if $stage eq 'sources' {
@@ -302,7 +316,7 @@ multi sub collect(Str:D $mode,
                 # ======== Render milestone =============================
                 @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
                 counter(:start(+@files), :header('Rendering content files'))
-                    unless $no-status or ! +@files;
+                unless $no-status or !+@files;
 
             }
             else {
@@ -318,7 +332,7 @@ multi sub collect(Str:D $mode,
                 # All the mode files assumed to depend on the source files, So all mode files are re-rendered
                 # if any source file is changed.
                 # But if only mode files have changed, then there is only a need to render the mode files.
-                if ! $source-changes {
+                if !$source-changes {
                     @files = $mode-cache.sources.list
                 }
                 else {
@@ -327,7 +341,7 @@ multi sub collect(Str:D $mode,
                     @files = $mode-cache.list-files.list
                 }
                 counter(:start(+@files), :header("Rendering $mode content files"))
-                    unless $no-status or ! +@files;
+                unless $no-status or !+@files;
             }
             # sort files so that longer come later, meaning sub-directories appear after parents
             # when creating the sub-directory
@@ -390,8 +404,19 @@ multi sub collect(Str:D $mode,
         for %config<asset-out-paths>.kv -> $type, $dir {
             mktree $dir unless $dir.IO.d
         }
-        "$mode/{ PROCESSED-CACHE }".IO.spurt(%processed.raku);
-        "$mode/{ SYMBOL }".IO.spurt(%symbols.raku);
+        try {
+            $arc .= new(
+                    :operation(LibarchiveOverwrite),
+                    :file("$*CWD/$mode/{PROCESSED-CACHE}"),
+                    );
+            my Buf $buffer .= new: %(:%processed, :%symbols).raku.encode;
+            $arc.write-header(CACHENAME, :size($buffer.bytes), :atime(now.Int), :mtime(now.Int), :ctime(now.Int));
+            $arc.write-data($buffer);
+            $arc.close;
+            CATCH {
+                default { say "Exception getting processed cache: ", .Str}
+            }
+        }
         $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
     $rv = milestone('Completion',
@@ -542,16 +567,19 @@ sub counter(:$start, :$dec, :$header = 'Caching files ') {
     state $hash-bar = Bar.new(:type<bar>);
     state $inc;
     state $done;
+    state $timer;
     if $start {
         # also fails if $start = 0
         $inc = 1 / $start * 100;
         $done = 0;
+        $timer = now;
         say $header;
         $hash-bar.show: 0
     }
     if $dec {
         $done += $inc;
         $hash-bar.show: $done;
+        say "$header took { now - $timer } secs";
     }
 }
 
