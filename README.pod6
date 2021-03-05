@@ -806,7 +806,9 @@ C<$image-manager> is of type Asset-cache, which has the following methods:
     multi method asset-spurt( %asset-paths )
 =end code
 
-=head1 LICENSE
+=head1 Copyright and License
+
+(c) Copyright, 2021 Richard Hainsworth
 
 B<LICENSE> Artistic-2.0
 

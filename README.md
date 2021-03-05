@@ -41,7 +41,7 @@
 [multi method add(Str $fn, Str :alias! )](#multi-method-addstr-fn-str-alias-)  
 [method pod(Str $fn)](#method-podstr-fn)  
 [Asset-cache methods](#asset-cache-methods)  
-[LICENSE](#license)  
+[Copyright and License](#copyright-and-license)  
 
 ----
 This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
@@ -687,7 +687,9 @@ By creating a name-space in the plugin data section and assigning it the value o
     multi method asset-spurt( %asset-paths )
 
 ```
-# LICENSE
+# Copyright and License
+(c) Copyright, 2021 Richard Hainsworth
+
 **LICENSE** Artistic-2.0
 
 
@@ -697,4 +699,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-03-05T11:38:38Z
+Rendered from README at 2021-03-05T11:58:50Z
