@@ -88,4 +88,10 @@ a template.
 =item Change of storing cache, using Libarchive.
 =item Added timing information when !no-status
 
+=head1 2021-03-05 v0.3.5
+=item Added method add(fn,:alias) to Post-Cache role.
+=item allows for the change in the name of the filename without affecting the underlying Cache
+=item added tests & modified README
+=item fixed output of timing information
+
 =end pod

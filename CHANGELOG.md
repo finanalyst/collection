@@ -23,6 +23,7 @@
 [2021-02-25 v0.3.2](#2021-02-25-v032)  
 [2021-03-02 v0.3.3](#2021-03-02-v033)  
 [2021-03-03 v0.3.4](#2021-03-03-v034)  
+[2021-03-05 v0.3.5](#2021-03-05-v035)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -130,15 +131,24 @@
 *  META6 path changes to reflect repository name
 
 # 2021-03-03 v0.3.4
-
-
 *  Change of storing cache, using Libarchive.
 
 *  Added timing information when !no-status
+
+# 2021-03-05 v0.3.5
+
+
+*  Added method add(fn,:alias) to Post-Cache role.
+
+*  allows for the change in the name of the filename without affecting the underlying Cache
+
+*  added tests & modified README
+
+*  fixed output of timing information
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-03T17:37:46Z
+Rendered from CHANGELOG at 2021-03-05T11:40:27Z

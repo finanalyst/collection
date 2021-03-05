@@ -36,8 +36,9 @@
 [Report](#report)  
 [Completion](#completion)  
 [Post-cache methods](#post-cache-methods)  
-[method add(Str $fn, Array $p)](#method-addstr-fn-array-p)  
-[method add(Str $fn)](#method-addstr-fn)  
+[multi method add(Str $fn, Array $p)](#multi-method-addstr-fn-array-p)  
+[multi method add(Str $fn)](#multi-method-addstr-fn)  
+[multi method add(Str $fn, Str :alias! )](#multi-method-addstr-fn-str-alias-)  
 [method pod(Str $fn)](#method-podstr-fn)  
 [Asset-cache methods](#asset-cache-methods)  
 [LICENSE](#license)  
@@ -621,14 +622,25 @@ If the original file in the Cache is to be hidden, then a file with the same nam
 
 The Post-cache methods `sources`, `list-files`, and `pod` have the same function and semantics as `Pod::From::Cache` with the caveat of hiding as described above. If there is no name in the Post-cache database, then it is passed on to the underlying cache.
 
-## method add(Str $fn, Array $p)
+## multi method add(Str $fn, Array $p)
 Adds the filename $fn to the cache. $p is expected to be an array of Pod::Blocks, but no check is made. This is intentional to allow the developer flexibility, but then a call to `pod( $fn )` will yield an array that is not POD6, which might not be expected.
 
-## method add(Str $fn)
+## multi method add(Str $fn)
 This will add only a filename to the database, and thus mask any existing filename in the underlying cache.
 
+## multi method add(Str $fn, Str :alias! )
+This will add a filename to the database, with the value of a key in the underlying cache, and thus mask any the original spelling of the filename in the underlying cache.
+
 ## method pod(Str $fn)
-Will return an array of Pod::Block (see above for caveat), if the underlying Cache or database have content, or return `Nil` if there is no content (masking an underlying file in Cache).
+Will return
+
+*  an array of Pod::Block (or other content - beware of adding other content) if the underlying Cache or database have content,
+
+*  the array of Pod::Block in an underlying filename, spelt differently
+
+*  `Nil` if there is no content (masking an underlying file in Cache)
+
+*  throw a NoPodInCache Exception if there is no pod associated with eithe the database or the underlying cache.
 
 # Asset-cache methods
 Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all render and compilation plugins, for example in the plugin callable:
@@ -685,4 +697,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-02-23T22:12:19Z
+Rendered from README at 2021-03-05T11:38:38Z

@@ -725,20 +725,34 @@ The Post-cache methods C<sources>, C<list-files>, and C<pod> have the same funct
 C<Pod::From::Cache> with the caveat of hiding as described above. If there is no name in the Post-cache
 database, then it is passed on to the underlying cache.
 
-=head2 method add(Str $fn, Array $p)
+=head2 multi method add(Str $fn, Array $p)
 
 Adds the filename $fn to the cache. $p is expected to be an array of Pod::Blocks, but no check is made. This is
 intentional to allow the developer flexibility, but then a call to C<pod( $fn )> will yield an array that is not
 POD6, which might not be expected.
 
-=head2 method add(Str $fn)
+=head2 multi method add(Str $fn)
 
 This will add only a filename to the database, and thus mask any existing filename in the underlying cache.
 
+
+=head2 multi method add(Str $fn, Str :alias! )
+
+This will add a filename to the database, with the value of a key in the underlying cache,
+and thus mask any the original spelling of the filename in the underlying cache.
+
 =head2 method pod(Str $fn)
 
-Will return an array of Pod::Block (see above for caveat), if the underlying Cache or database have content,
-or return C<Nil> if there is no content (masking an underlying file in Cache).
+Will return
+=item an array of Pod::Block (or other content - beware of adding other content) if the
+underlying Cache or database have content,
+
+=item the array of Pod::Block in an underlying filename, spelt differently
+
+=item C<Nil> if there is no content (masking an underlying file in Cache)
+
+=item throw a NoPodInCache Exception if there is no pod associated with eithe the database
+or the underlying cache.
 
 =head1 Asset-cache methods
 
