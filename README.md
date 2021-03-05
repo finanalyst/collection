@@ -496,6 +496,10 @@ These two flags take a string, eg., `:debug-when<Introduction.pod6> `, and when 
 
 Causes collect to produce information about milestones and valid and invalid plugins
 
+*  **with-only** filename
+
+Collect is run only with that filename, which must be in the sources, and is specified like `debug-when`.
+
 # Plugin management
 Plugins are **Raku** programs that are executed at specific milestones in the rendering process. The milestone are given in [Milestones](Milestones.md) above.
 
@@ -699,4 +703,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-03-05T11:58:50Z
+Rendered from README at 2021-03-05T20:58:20Z

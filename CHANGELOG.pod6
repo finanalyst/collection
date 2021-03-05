@@ -94,4 +94,8 @@ a template.
 =item added tests & modified README
 =item fixed output of timing information
 
+=head1 2021-03-05 v0.3.6
+=item Added :with-only<filename> that runs the whole of Collect but with only one file
+=item added tests for :debug-when and :with-only
+
 =end pod

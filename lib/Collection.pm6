@@ -14,7 +14,7 @@ proto sub collect(|c) is export {
     unless all(|c.keys.grep(*~~ Str))
             eq
             any(<no-status without-processing no-refresh recompile full-render no-report no-completion no-cleanup
-                end no-cache collection-info dump-at debug-when verbose-when>);
+                end no-cache collection-info dump-at debug-when verbose-when with-only>);
     {*}
 }
 
@@ -29,7 +29,7 @@ constant CACHENAME = 'render-cache';
 #| Anything that exists in the %!extra hash is returned
 #| If the key does not exist, it is as if the Cache does not contain it
 #| A filename can be blocked from addressing cache by setting its %extra key to Nil
-role Post-cache {
+role Post-cache is export {
     has %!extra = %();
     #| Checks to see if %!extra has non-Nil keys, returns them
     #| returns all underlying cache keys not in Extra
@@ -193,7 +193,7 @@ multi sub collect(Str:D $mode,
                   :$collection-info is copy,
                   Str :$end = 'all',
                   :@dump-at = (),
-                  :$debug-when = '', :$verbose-when = '',
+                  :$debug-when = '', :$verbose-when = '', :$with-only = '',
                   Bool :$no-cache = False
           ) {
     my %config = get-config(:$no-cache, :required< sources cache >);
@@ -329,6 +329,7 @@ multi sub collect(Str:D $mode,
                 return $rv if $end ~~ /:i Render /;
                 # ======== Render milestone =============================
                 @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
+                @files .= grep( { $_ ~~ / $with-only / }) if $with-only;
                 counter(:start(+@files), :header('Rendering content files'))
                 unless $no-status or !+@files;
 
@@ -354,6 +355,7 @@ multi sub collect(Str:D $mode,
                     # then mode-changes must be true
                     @files = $mode-cache.list-files.list
                 }
+                @files .= grep( { $_ ~~ / $with-only / }) if $with-only;
                 counter(:start(+@files), :header("Rendering $mode content files"))
                 unless $no-status or !+@files;
             }

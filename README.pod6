@@ -560,6 +560,11 @@ B<collection-info>
 
 Causes collect to produce information about milestones and valid and invalid plugins
 =end item
+=begin item
+B<with-only> filename
+
+Collect is run only with that filename, which must be in the sources, and is specified like C<debug-when>.
+=end item
 
 =head1 Plugin management
 

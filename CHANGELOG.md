@@ -24,6 +24,7 @@
 [2021-03-02 v0.3.3](#2021-03-02-v033)  
 [2021-03-03 v0.3.4](#2021-03-03-v034)  
 [2021-03-05 v0.3.5](#2021-03-05-v035)  
+[2021-03-05 v0.3.6](#2021-03-05-v036)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -136,8 +137,6 @@
 *  Added timing information when !no-status
 
 # 2021-03-05 v0.3.5
-
-
 *  Added method add(fn,:alias) to Post-Cache role.
 
 *  allows for the change in the name of the filename without affecting the underlying Cache
@@ -146,9 +145,16 @@
 
 *  fixed output of timing information
 
+# 2021-03-05 v0.3.6
+
+
+*  Added :with-only<filename> that runs the whole of Collect but with only one file
+
+*  added tests for :debug-when and :with-only
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-05T11:40:27Z
+Rendered from CHANGELOG at 2021-03-05T20:58:14Z
