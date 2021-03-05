@@ -81,5 +81,5 @@ like "{OUTPUT}/assets/videos/fake-video.mp4".IO.slurp(:bin).decode,
 
 # clean up
 chdir $orig;
-#rmtree TMP;
+rmtree TMP;
 done-testing;
