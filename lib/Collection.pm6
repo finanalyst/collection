@@ -31,16 +31,26 @@ constant CACHENAME = 'render-cache';
 #| A filename can be blocked from addressing cache by setting its %extra key to Nil
 role Post-cache {
     has %!extra = %();
+    #| Checks to see if %!extra has non-Nil keys, returns them
+    #| returns all underlying cache keys not in Extra
     method sources {
         (%!extra.keys.grep({ %!extra{$_}.so }),
          callsame.grep({ $_ !~~ any(%!extra.keys) })).flat
     }
+    #| As sources, but returns list-files of underlying cache
     method list-files {
         (%!extra.keys.grep({ %!extra{$_}.so }),
          callsame.grep({ $_ !~~ any(%!extra.keys) })).flat
     }
+    #| checks if filename in extra, returns value or value of alias,
+    #| otherwise returns value in underlying cache
     method pod(Str $fn) {
-        return %!extra{$fn} if %!extra{$fn}:exists;
+        if %!extra{$fn}:exists {
+            my $rv = %!extra{$fn};
+            return $rv if $rv ~~ Array; # return value if Array
+            nextwith($rv) if $rv ~~ Str:D; # return underlying alias if Str
+            return Nil # return Nil otherwise
+        }
         nextwith($fn)
     }
     multi method add(Str $fn, Array $p) {
@@ -48,6 +58,10 @@ role Post-cache {
     }
     multi method add(Str $fn) {
         %!extra{$fn} = Nil
+    }
+    multi method add(Str $fn, Str :$alias! ) {
+        %!extra{$fn} = Nil;
+        %!extra{$alias} = $fn
     }
 }
 
@@ -568,18 +582,20 @@ sub counter(:$start, :$dec, :$header = 'Caching files ') {
     state $inc;
     state $done;
     state $timer;
+    state $final;
     if $start {
         # also fails if $start = 0
         $inc = 1 / $start * 100;
         $done = 0;
         $timer = now;
+        $final = $start;
         say $header;
         $hash-bar.show: 0
     }
     if $dec {
         $done += $inc;
         $hash-bar.show: $done;
-        say "$header took { now - $timer } secs";
+        say "$header took { now - $timer } secs" unless --$final;
     }
 }
 
