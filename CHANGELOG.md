@@ -25,6 +25,7 @@
 [2021-03-03 v0.3.4](#2021-03-03-v034)  
 [2021-03-05 v0.3.5](#2021-03-05-v035)  
 [2021-03-05 v0.3.6](#2021-03-05-v036)  
+[Head](#head)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -146,15 +147,21 @@
 *  fixed output of timing information
 
 # 2021-03-05 v0.3.6
-
-
 *  Added :with-only<filename> that runs the whole of Collect but with only one file
 
 *  added tests for :debug-when and :with-only
+
+# head
+
+2021-03-10 c0.3.7
+
+
+
+*  add backtrace to plugin error response.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-05T20:58:14Z
+Rendered from CHANGELOG at 2021-03-10T10:31:24Z

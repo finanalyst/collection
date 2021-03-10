@@ -98,4 +98,7 @@ a template.
 =item Added :with-only<filename> that runs the whole of Collect but with only one file
 =item added tests for :debug-when and :with-only
 
+=head 2021-03-10 c0.3.7
+=item add backtrace to plugin error response.
+
 =end pod

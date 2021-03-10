@@ -476,7 +476,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
             indir($path, { &closure.(|$with) });
         }
         if $! {
-            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ $!.backtrace
         }
     }
     @valids
@@ -497,7 +497,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                 &closure = indir($path, { EVALFILE $callable })
             }
             if $! {
-                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ $!.backtrace
             }
             # a plugin should only affect the report directly
             # so a plugin should not write directly
@@ -506,7 +506,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                 @asset-files = indir($path, { &closure.($with) });
             }
             if $! {
-                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ $!.backtrace
             }
             for @asset-files -> ($to, $other-plug, $file) {
                 # copy the files returned - the use case for this is css and script files to be
@@ -562,7 +562,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
             &closure = indir($path, { EVALFILE $callable });
         }
         if $! {
-            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ $!.backtrace
         }
         # a plugin should only affect the report directly
         # so a plugin should not write directly
