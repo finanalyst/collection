@@ -685,14 +685,8 @@ The C<collect> sub will write the file to the correct directory.
 =head2 Completion
 
 The C<completion> key points to a Raku file that evaluates to
-a C<sub (%processed, $destination, $landing-place, $output-ext, %completion-options) {...}> object.
+a C<sub ($destination, $landing-place, $output-ext, %completion-options) {...}> object.
 
-=begin item
-B<%processed>
-
-As in Compilation
-
-=end item
 =begin item
 B<$destination>
 

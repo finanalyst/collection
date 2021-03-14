@@ -26,6 +26,7 @@
 [2021-03-05 v0.3.5](#2021-03-05-v035)  
 [2021-03-05 v0.3.6](#2021-03-05-v036)  
 [Head](#head)  
+[Head](#head)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -153,15 +154,21 @@
 
 # head
 
-2021-03-10 c0.3.7
-
-
+2021-03-10 v0.3.7
 
 *  add backtrace to plugin error response.
+
+# head
+
+2021-03-14 v0.4.0
+
+
+
+*  remove %processed as input to completion plugin. Intermediate data not needed at completion. Hence it is not necessary to cache intermediate data except for rendering collection documents.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-10T10:31:24Z
+Rendered from CHANGELOG at 2021-03-14T11:55:11Z

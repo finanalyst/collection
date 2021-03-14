@@ -98,7 +98,11 @@ a template.
 =item Added :with-only<filename> that runs the whole of Collect but with only one file
 =item added tests for :debug-when and :with-only
 
-=head 2021-03-10 c0.3.7
+=head 2021-03-10 v0.3.7
 =item add backtrace to plugin error response.
+
+=head 2021-03-14 v0.4.0
+=item remove %processed as input to completion plugin. Intermediate data not needed at completion.
+Hence it is not necessary to cache intermediate data except for rendering collection documents.
 
 =end pod

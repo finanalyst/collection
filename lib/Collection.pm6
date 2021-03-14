@@ -283,22 +283,23 @@ multi sub collect(Str:D $mode,
         $full-render = True;
     }
     # both processed and symbols must exist for without-processing or partial processing to work
-    if ! $full-render and "$mode/{PROCESSED-CACHE}".IO.f  {
-        say "Recovering state from cache" unless $no-status;
-        my $timer = now;
-        $arc .= new(:operation(LibarchiveRead), :file( "$*CWD/$mode/{PROCESSED-CACHE}" ) );
-        my %rv;
-        use MONKEY-SEE-NO-EVAL;
-        my Archive::Libarchive::Entry $e .= new;
-        while $arc.next-header( $e ) {
-            if $e.pathname eq CACHENAME {
-                %rv = EVAL $arc.read-file-content( $e)
-            }
-            else { $arc.data-skip }
-        }
-        %processed = %rv<processed>;
-        %symbols = %rv<symbols>;
-        say "Recovery took { now - $timer } secs" unless $no-status
+    if ! $without-processing and ! $full-render and "$mode/{PROCESSED-CACHE}".IO.f  {
+        say "No state recovery, use full-render unless all html files are generated";
+#        say "Recovering state from cache" unless $no-status;
+#        my $timer = now;
+#        $arc .= new(:operation(LibarchiveRead), :file( "$*CWD/$mode/{PROCESSED-CACHE}" ) );
+#        my %rv;
+#        use MONKEY-SEE-NO-EVAL;
+#        my Archive::Libarchive::Entry $e .= new;
+#        while $arc.next-header( $e ) {
+#            if $e.pathname eq CACHENAME {
+#                %rv = EVAL $arc.read-file-content( $e)
+#            }
+#            else { $arc.data-skip }
+#        }
+#        %processed = %rv<processed>;
+#        %symbols = %rv<symbols>;
+#        say "Recovery took { now - $timer } secs" unless $no-status
     }
     else { $full-render = True }
     # %processed contains all processed data and is cached after the rendering stage
@@ -436,7 +437,7 @@ multi sub collect(Str:D $mode,
         $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
     $rv = milestone('Completion',
-            :with(%processed, "$mode/%config<destination>".IO.absolute,
+            :with("$mode/%config<destination>".IO.absolute,
                   %config<landing-place>, %config<output-ext>, %config<completion-options>),
             :$mode, :@dump-at, :%config, :$collection-info,
             :@plugins-used, :call-plugins(!$no-completion));

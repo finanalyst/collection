@@ -599,11 +599,7 @@ The aim is one report plugin -> one report output in a specified format.
 The `collect` sub will write the file to the correct directory.
 
 ## Completion
-The `completion` key points to a Raku file that evaluates to a `sub (%processed, $destination, $landing-place, $output-ext, %completion-options) {...}` object.
-
-*  **%processed**
-
-As in Compilation
+The `completion` key points to a Raku file that evaluates to a `sub ($destination, $landing-place, $output-ext, %completion-options) {...}` object.
 
 *  **$destination**
 
@@ -703,4 +699,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-03-05T20:58:20Z
+Rendered from README at 2021-03-14T11:55:09Z
