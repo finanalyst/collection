@@ -40,7 +40,7 @@ chdir TMP;
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
     sub (%processed, @plugins-used, $pp, --> Pair ) {
-        #%.links{$entry}<target location>
+        ## format is %.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {
             next unless $podf.links and +$podf.links.keys;

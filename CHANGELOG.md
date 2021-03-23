@@ -25,8 +25,9 @@
 [2021-03-03 v0.3.4](#2021-03-03-v034)  
 [2021-03-05 v0.3.5](#2021-03-05-v035)  
 [2021-03-05 v0.3.6](#2021-03-05-v036)  
-[Head](#head)  
-[Head](#head)  
+[2021-03-10 v0.3.7](#2021-03-10-v037)  
+[2021-03-14 v0.4.0](#2021-03-14-v040)  
+[2021-03-23 v0.4.1](#2021-03-23-v041)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -152,23 +153,20 @@
 
 *  added tests for :debug-when and :with-only
 
-# head
-
-2021-03-10 v0.3.7
-
+# 2021-03-10 v0.3.7
 *  add backtrace to plugin error response.
 
-# head
-
-2021-03-14 v0.4.0
-
-
-
+# 2021-03-14 v0.4.0
 *  remove %processed as input to completion plugin. Intermediate data not needed at completion. Hence it is not necessary to cache intermediate data except for rendering collection documents.
+
+# 2021-03-23 v0.4.1
+
+
+*  correct without-processing logic
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-14T11:55:11Z
+Rendered from CHANGELOG at 2021-03-23T22:22:47Z

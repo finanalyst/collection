@@ -242,9 +242,6 @@ multi sub collect(Str:D $mode,
     without $no-report {
         $no-report = %config<no-report> // False
     }
-    without $no-completion {
-        $no-completion = %config<no-completion> // False
-    }
     without $collection-info {
         $collection-info = %config<collection-info> // False
     }
@@ -266,7 +263,7 @@ multi sub collect(Str:D $mode,
     my @plugins-used;
     my %processed;
     my %symbols;
-    my Archive::Libarchive $arc;
+#    my Archive::Libarchive $arc;
     # if no cache changes, then no need to run setup
     # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
     # if without-processing was true, and cache-changes, then all files will be listed in any case, so
@@ -301,6 +298,7 @@ multi sub collect(Str:D $mode,
 #        %symbols = %rv<symbols>;
 #        say "Recovery took { now - $timer } secs" unless $no-status
     }
+    elsif $without-processing { } # do nothing if no processing
     else { $full-render = True }
     # %processed contains all processed data and is cached after the rendering stage
     # The rendering stage occurs if
@@ -421,19 +419,19 @@ multi sub collect(Str:D $mode,
         for %config<asset-out-paths>.kv -> $type, $dir {
             mktree $dir unless $dir.IO.d
         }
-        try {
-            $arc .= new(
-                    :operation(LibarchiveOverwrite),
-                    :file("$*CWD/$mode/{PROCESSED-CACHE}"),
-                    );
-            my Buf $buffer .= new: %(:%processed, :%symbols).raku.encode;
-            $arc.write-header(CACHENAME, :size($buffer.bytes), :atime(now.Int), :mtime(now.Int), :ctime(now.Int));
-            $arc.write-data($buffer);
-            $arc.close;
-            CATCH {
-                default { say "Exception getting processed cache: ", .Str}
-            }
-        }
+#        try {
+#            $arc .= new(
+#                    :operation(LibarchiveOverwrite),
+#                    :file("$*CWD/$mode/{PROCESSED-CACHE}"),
+#                    );
+#            my Buf $buffer .= new: %(:%processed, :%symbols).raku.encode;
+#            $arc.write-header(CACHENAME, :size($buffer.bytes), :atime(now.Int), :mtime(now.Int), :ctime(now.Int));
+#            $arc.write-data($buffer);
+#            $arc.close;
+#            CATCH {
+#                default { say "Exception getting processed cache: ", .Str}
+#            }
+#        }
         $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>")
     }
     $rv = milestone('Completion',
