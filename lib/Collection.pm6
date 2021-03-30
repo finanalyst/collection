@@ -89,9 +89,9 @@ class Asset-cache {
     method asset-add( $name, $object, :$by = (), :$type = 'image' ) {
         %!data-base{$name} = %( :$object, :$by, :$type );
     }
-    #| return the whole data base
+    #| return the data base's name/by/type data
     method asset-db {
-        %!data-base
+        %!data-base<name by type>;
     }
     #| remove the named asset, and return its metadata
     method asset-delete( $name --> Hash ) {
