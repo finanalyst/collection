@@ -1,5 +1,5 @@
 use Test;
-plan 13;
+plan 15;
 use File::Directory::Tree;
 use Test::Deeply::Relaxed;
 
@@ -88,6 +88,8 @@ throws-like { $rv.pod('Sources/file-c.pod6') }, X::Pod::From::Cache::NoPodInCach
 $rv.add('sources/file-c.pod6', :alias<Sources/file-c.pod6>);
 isa-ok $rv.pod('Sources/file-c.pod6')[0], Pod::Block, 'gets pod from cache with new name';
 isa-ok $rv.pod('sources/file-c.pod6'), Nil, 'nothing available in cache with old name';
+is $rv.anti-alias('Sources/file-c.pod6'), 'sources/file-c.pod6', 'anti-alias method works';
+is $rv.anti-alias('sources/file-a.pod6'), 'sources/file-a.pod6', 'if no alias, then fn returned';
 
 throws-like { $rv = collect(MODE, :no-status, :no-cache) },
         X::Collection::NoMode,

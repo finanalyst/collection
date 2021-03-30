@@ -740,6 +740,14 @@ This will add only a filename to the database, and thus mask any existing filena
 This will add a filename to the database, with the value of a key in the underlying cache,
 and thus mask any the original spelling of the filename in the underlying cache.
 
+=head2 method anti-alias(Str $fn --> Str )
+
+Returns the original name of the cached content file, if an alias has been created, otherwise
+returns the same fn.
+
+If the alias is already taken, an exception is thrown. This will even occur if the same alias
+is used for the same cached content file.
+
 =head2 method pod(Str $fn)
 
 Will return
@@ -750,8 +758,9 @@ underlying Cache or database have content,
 
 =item C<Nil> if there is no content (masking an underlying file in Cache)
 
-=item throw a NoPodInCache Exception if there is no pod associated with eithe the database
-or the underlying cache.
+=item throw a NoPodInCache Exception if there is no pod associated with either the database
+or the underlying cache. If the original filename is used after an alias have been generated,
+the Exception will also be thrown.
 
 =head1 Asset-cache methods
 

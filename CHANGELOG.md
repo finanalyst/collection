@@ -28,6 +28,7 @@
 [2021-03-10 v0.3.7](#2021-03-10-v037)  
 [2021-03-14 v0.4.0](#2021-03-14-v040)  
 [2021-03-23 v0.4.1](#2021-03-23-v041)  
+[2021-03-30 v0.4.2](#2021-03-30-v042)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -160,13 +161,16 @@
 *  remove %processed as input to completion plugin. Intermediate data not needed at completion. Hence it is not necessary to cache intermediate data except for rendering collection documents.
 
 # 2021-03-23 v0.4.1
-
-
 *  correct without-processing logic
+
+# 2021-03-30 v0.4.2
+
+
+*  add anti-alias method to Post-cache
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-23T22:22:47Z
+Rendered from CHANGELOG at 2021-03-30T16:03:00Z

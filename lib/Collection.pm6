@@ -31,6 +31,7 @@ constant CACHENAME = 'render-cache';
 #| A filename can be blocked from addressing cache by setting its %extra key to Nil
 role Post-cache is export {
     has %!extra = %();
+    has %!aliases = %();
     #| Checks to see if %!extra has non-Nil keys, returns them
     #| returns all underlying cache keys not in Extra
     method sources {
@@ -60,8 +61,16 @@ role Post-cache is export {
         %!extra{$fn} = Nil
     }
     multi method add(Str $fn, Str :$alias! ) {
+        X::Collection::Post-cache-alias-overwrite.new( :$fn, :$alias, :old(%!aliases{$alias} ) ).throw
+            if %!aliases{$alias}:exists;
+        %!aliases{$alias} = $fn;
         %!extra{$fn} = Nil;
         %!extra{$alias} = $fn
+    }
+    method anti-alias(Str $fn --> Str ) {
+        say "AT $?LINE fn $fn alias exists? ", %!aliases{ $fn }:exists ?? "yes and is " ~ %!aliases{$fn} !! 'NO';
+        if %!aliases{$fn}:exists { %!aliases{ $fn } }
+        else { $fn }
     }
 }
 
@@ -395,13 +404,14 @@ multi sub collect(Str:D $mode,
                 $image-manager.current-file = $short;
                 with $pr {
                     .pod-file.name = $short;
-                    .pod-file.path = $fn;
                     .debug = ?($debug-when and $fn ~~ / $debug-when /);
                     .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
                     if $stage eq 'sources' {
+                        .pod-file.path = $cache.anti-alias($fn);
                         .process-pod($cache.pod($fn));
                     }
                     else {
+                        .pod-file.path = $mode-cache.anti-alias($fn);
                         .process-pod($mode-cache.pod($fn));
                     }
                     .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));

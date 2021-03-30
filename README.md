@@ -39,6 +39,7 @@
 [multi method add(Str $fn, Array $p)](#multi-method-addstr-fn-array-p)  
 [multi method add(Str $fn)](#multi-method-addstr-fn)  
 [multi method add(Str $fn, Str :alias! )](#multi-method-addstr-fn-str-alias-)  
+[method anti-alias(Str $fn --&gt; Str )](#method-anti-aliasstr-fn----str-)  
 [method pod(Str $fn)](#method-podstr-fn)  
 [Asset-cache methods](#asset-cache-methods)  
 [Copyright and License](#copyright-and-license)  
@@ -631,6 +632,11 @@ This will add only a filename to the database, and thus mask any existing filena
 ## multi method add(Str $fn, Str :alias! )
 This will add a filename to the database, with the value of a key in the underlying cache, and thus mask any the original spelling of the filename in the underlying cache.
 
+## method anti-alias(Str $fn --&gt; Str )
+Returns the original name of the cached content file, if an alias has been created, otherwise returns the same fn.
+
+If the alias is already taken, an exception is thrown. This will even occur if the same alias is used for the same cached content file.
+
 ## method pod(Str $fn)
 Will return
 
@@ -640,7 +646,7 @@ Will return
 
 *  `Nil` if there is no content (masking an underlying file in Cache)
 
-*  throw a NoPodInCache Exception if there is no pod associated with eithe the database or the underlying cache.
+*  throw a NoPodInCache Exception if there is no pod associated with either the database or the underlying cache. If the original filename is used after an alias have been generated, the Exception will also be thrown.
 
 # Asset-cache methods
 Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all render and compilation plugins, for example in the plugin callable:
@@ -699,4 +705,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-03-14T11:55:09Z
+Rendered from README at 2021-03-30T16:03:06Z

@@ -1,5 +1,14 @@
 use v6.*;
 
+class X::Collection::Post-cache-alias-overwrite is Exception {
+    has $.fn;
+    has $.alias;
+    has $.old;
+    method message {
+        "Attempt to overwrite existing alias slot ｢$.alias｣ occupied by ｢$.old｣ with new filename ｢$.fn｣"
+    }
+}
+
 class X::Collection::NoSources is Exception {
     has $.path;
     method message {
