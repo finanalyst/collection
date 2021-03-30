@@ -90,8 +90,8 @@ class Asset-cache {
         %!data-base{$name} = %( :$object, :$by, :$type );
     }
     #| return the data base's name/by/type data
-    method asset-db {
-        %!data-base<name by type>;
+    method asset-db( --> Hash ) {
+       %( %!data-base.map({ .key => %( type => .value<type>, by => .value<by>) }) )
     }
     #| remove the named asset, and return its metadata
     method asset-delete( $name --> Hash ) {
@@ -103,9 +103,9 @@ class Asset-cache {
     }
     #| if an asset with name and type exists in the database, then it is marked as used by the current file
     #| returns true with success, and false if not.
-    method asset-is-used( $asset, $type --> Bool ) {
+    method asset-is-used( $asset, $type, :$by = $!current-file --> Bool ) {
         if %!data-base{ $asset }:exists and %!data-base{ $asset }<type> eq $type {
-            %!data-base{$asset}<by>.append: $!current-file;
+            %!data-base{$asset}<by>.append: $by;
             True
         }
         else { False }
