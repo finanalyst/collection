@@ -172,9 +172,11 @@
 
 *  make it possible for a report plugin to return a Pair with '' key.
 
+*  add asset-db method to return the whole database for analysis
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-30T20:27:02Z
+Rendered from CHANGELOG at 2021-03-30T22:28:06Z
