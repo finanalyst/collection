@@ -170,9 +170,11 @@
 
 *  remove trace statement
 
+*  make it possible for a report plugin to return a Pair with '' key.
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-30T16:40:42Z
+Rendered from CHANGELOG at 2021-03-30T20:27:02Z

@@ -111,5 +111,6 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =head1 2021-03-30 v0.4.2
 =item add anti-alias method to Post-cache
 =item remove trace statement
+=item make it possible for a report plugin to return a Pair with '' key.
 
 =end pod

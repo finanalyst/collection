@@ -577,11 +577,12 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
         my $resp;
         try {
             $resp= indir($path, { &closure.(|$with) });
-            "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt($resp.value)
         }
         if $! {
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
         }
+        "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt($resp.value)
+            if $resp.key
     }
     @valids
 }
