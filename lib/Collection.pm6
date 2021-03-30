@@ -68,7 +68,6 @@ role Post-cache is export {
         %!extra{$alias} = $fn
     }
     method anti-alias(Str $fn --> Str ) {
-        say "AT $?LINE fn $fn alias exists? ", %!aliases{ $fn }:exists ?? "yes and is " ~ %!aliases{$fn} !! 'NO';
         if %!aliases{$fn}:exists { %!aliases{ $fn } }
         else { $fn }
     }
