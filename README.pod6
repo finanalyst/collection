@@ -408,28 +408,28 @@ a C<configs> sub-directory (note the plural ending).
 
 The following are optional keys, together with the defaults 
 =item the allowed B<extensions> for content files. These are provided to the C<Pod::From::Cache> object.
-=item2 < rakudoc pod pod6 p6 pm pm6 >
+=item2 default: < rakudoc pod pod6 p6 pm pm6 >
 =item no-status This option controls whether a progress bar is provided in the terminal
-=item2 False
+=item2 default: False
 =item B<source-obtain> is the array of strings sent to the OS by C<run> to obtain sources, eg git clone
 and assumes CWD is set to the directory of collection. Without this key, there must already be files
 in C<sources>.
 
-=item2 ()
+=item2 default: ()
 =item B<source-refresh> is the array of strings run to refresh the sources, assumes CWD set to the directory of sources.
 No key assumes the sources never change.
 
-=item2 ()
+=item2 default: ()
 =item B<ignore> is a list of files in the B<sources> directory that are not cached.
-=item2 ()
+=item2 default: ()
 =item B<no-status> as described in Milestones
-=item2 False
+=item2 default: False
 =item B<without-processing> as described in Milestones
-=item2 False
+=item2 default: False
 =item B<no-refresh> as described in Milestones
-=item2 False
+=item2 default: False
 =item B<recompile> as described in Milestones
-=item2 False
+=item2 default: False
 
 =head2 Second-level configuration
 
@@ -469,6 +469,7 @@ in a Website, the landing file is usually called C<index.html>
 =item B<output-ext> is the extension for the output files
 
 The following are optional as they are control flags that are False by default.
+=item no-status
 =item recompile
 =item no-refresh
 =item full-render
@@ -492,6 +493,12 @@ This has to be done at the Mode level and not left to C<render> plugins.
 
 The control flags have mostly been described in L<Milestones>. They are summarised here again, with some
 extra information.
+
+=begin item
+B<no-status>
+
+No progress status is output.
+=end item
 
 =begin item
 B<recompile>
@@ -586,6 +593,10 @@ which points to the program to be called.
 
 Plugin's may need other configurable data, which should be kept in the config file for the plugin.
 
+All plugins are expected to adhere to C<no-status> and C<collection-info>, which are interpretted as
+=item C<no-status> if true means 'no output at all', equivalent to a B<quite> flag
+=item C<collection-info> if true means 'output extra information' (if need be), eqivalent to a B<verbose> flag.
+
 The plugin types are as follows.
 
 =head2 Setup
@@ -593,7 +604,7 @@ The plugin types are as follows.
 Config hash must contain B<setup> which is the name of a Raku
 program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
-    sub ( $source-cache, $mode-cache, Bool $full-render,  $source-root, $mode-root ) { ... }
+    sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %options ) { ... }
 
 =defn $source-cache
 A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
@@ -613,6 +624,9 @@ destination file.
 =defn $mode-root
 Likewise for the mode sources.
 
+=defn %options
+Has the values of 'collection-info' and 'no-status' flags.
+
 New files can be added to the cache object inside the sub using the C<.add> method, see L<Sources>.
 
 =head2 Render
@@ -620,18 +634,25 @@ New files can be added to the cache object inside the sub using the C<.add> meth
 The Collection plugin-manager calls the C<ProcessedPod.add-plugin> method with the config keys and
 the path modified to the plugin's subdirectory.
 
-If the C<render> key is True, no callable is provided, and the plugin will be added via the B<.add-plugin>
-method of the C<ProcessedPod> object.
+If the C<render> key is True, no callable is provided, and the plugin name will be added via the B<.add-plugin>
+method of the C<ProcessedPod> object. See C<ProcessedPod> documentation.
 
-If the C<render> key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object,
-and returns a list of triples, with the form (to, from-plug, file).
-=item B<to> is the destination under the C<%config<destination> > directory where the asset will be
+If the C<render> key is a Str, then it is the filename of a Raku callable of the form
+
+    sub ( $pr, %options --> Array ) {...}
+
+where
+
+=item B<$pr> is a <ProcessedPod> object,
+=item B<%options> is the same as for Setup, and
+=item the callable B<returns> a list of triples, with the form (to, from-plug, file)
+=item2 B<to> is the destination under the C<%config<destination> > directory where the asset will be
 looked for, eg., an image file to be served.
 
-=item B<plugin> is the name of the plugin in whose directory the asset is contained, where the value C<myself>
+=item2 B<plugin> is the name of the plugin in whose directory the asset is contained, where the value C<myself>
 means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
 
-=item B<file> is the filename local to the source plugin's subdirectory that is to be copied to the destination.
+=item2 B<file> is the filename local to the source plugin's subdirectory that is to be copied to the destination.
 This may contain a path relative to the plugin's subdirectory.
 
 Since a render plugin is to be added using the C<ProcessedPod> interface, it must have the C<custom-raku> and
@@ -650,7 +671,7 @@ More information about these plugins can be found in the documentation in the C<
 
 The C<compilation> key must point to a Raku program that delivers a sub object
 
-    sub ( $pr, %processed) { ... }
+    sub ( $pr, %processed, %options) { ... }
 
 =defn $pr
 is the ProcessedPod object rendering the content files.
@@ -659,11 +680,14 @@ is the ProcessedPod object rendering the content files.
 is a hash whose keys are source file names with a hash values containing
 TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
+=defn %options
+as for setup
+
 =head2 Report
 
 The C<report> key points to a Raku file that evaluates to a
 
-    sub (%processed, @plugins-used, $pr --> Pair ) {...}
+    sub (%processed, @plugins-used, $pr, %options --> Pair ) {...}
 
 =defn %processed
 as in Compilation
@@ -675,6 +699,9 @@ value is a hash of the plugins used and their config parameters.
 =defn $pr
 as in Compilation
 
+=defn %options
+as for Setup
+
 The plugin should return a Pair, where .key = (path/)name of the report file with extension,
 and .value is the text of the report in the appropriate format
 
@@ -685,7 +712,7 @@ The C<collect> sub will write the file to the correct directory.
 =head2 Completion
 
 The C<completion> key points to a Raku file that evaluates to
-a C<sub ($destination, $landing-place, $output-ext, %completion-options) {...}> object.
+a C<sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}> object.
 
 =begin item
 B<$destination>
@@ -701,12 +728,18 @@ destination directory.
 
 =end item
 =begin item
-%completion-options> (actually specified as %config<completion-options>)
+B<%completion-options> (actually specified as %config<completion-options>)
 
 is the set of options that the completion plugin will require from the Mode-level configuration. For example,
 the very simple C<cro-run> plugin requires the path to the static html files, the hostname, and the port on which the files
 are served. More complex plugins will require more options.
 
+=end item
+
+=begin item
+B<%options>
+
+As for Setup
 =end item
 
 There is no return value specified for this plugin type.
@@ -796,6 +829,8 @@ C<$image-manager> is of type Asset-cache, which has the following methods:
     method asset-used-list
     #| asset-add adds an item to the data-base, for example, a transformed image
     method asset-add( $name, $object, :$by = (), :$type = 'image' )
+    #| returns name / type / by information in database (not the object blob)
+    method asset-db
     #| remove the named asset, and return its metadata
     method asset-delete( $name --> Hash )
     #| returns the type of the asset

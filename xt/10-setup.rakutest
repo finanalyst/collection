@@ -114,7 +114,7 @@ This is a N<Footnote> for prosperity.
 my $p = 0;
 for <setup1 setup_rend> {
     (MODE ~ "/some-plugs/$_/proc.raku").IO.spurt(qq:to/CONF/);
-        sub ( \$cache, \$coll, \$full, \$s-root, \$m-root ) \{
+        sub ( \$cache, \$coll, \$full, \$s-root, \$m-root, \%options ) \{
                 \$cache.add( \"\$s-root/extra_{ $p }_{ $_ }\", [{ $=pod[$p++].raku }] );
         \}
         CONF

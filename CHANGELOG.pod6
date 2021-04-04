@@ -114,4 +114,11 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =item make it possible for a report plugin to return a Pair with '' key.
 =item add asset-db method to return the whole database for analysis
 
+=head1 2021-04-02 v0.5.0
+=item enforce no-status (= quiet) and collection-info (= verbose) on plugins
+=item change README (and some editing) to reflect this
+=item change logic for rendering collection content when there is change to sources, but no change to collection
+=item added date/time output when starting
+=item change counter to put heading into state
+
 =end pod

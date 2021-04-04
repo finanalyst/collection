@@ -347,39 +347,39 @@ The following are optional keys, together with the defaults
 
 *  the allowed **extensions** for content files. These are provided to the `Pod::From::Cache` object.
 
-	*  < rakudoc pod pod6 p6 pm pm6 >
+	*  default: < rakudoc pod pod6 p6 pm pm6 >
 
 *  no-status This option controls whether a progress bar is provided in the terminal
 
-	*  False
+	*  default: False
 
 *  **source-obtain** is the array of strings sent to the OS by `run` to obtain sources, eg git clone and assumes CWD is set to the directory of collection. Without this key, there must already be files in `sources`.
 
-	*  ()
+	*  default: ()
 
 *  **source-refresh** is the array of strings run to refresh the sources, assumes CWD set to the directory of sources. No key assumes the sources never change.
 
-	*  ()
+	*  default: ()
 
 *  **ignore** is a list of files in the **sources** directory that are not cached.
 
-	*  ()
+	*  default: ()
 
 *  **no-status** as described in Milestones
 
-	*  False
+	*  default: False
 
 *  **without-processing** as described in Milestones
 
-	*  False
+	*  default: False
 
 *  **no-refresh** as described in Milestones
 
-	*  False
+	*  default: False
 
 *  **recompile** as described in Milestones
 
-	*  False
+	*  default: False
 
 ## Second-level configuration
 The second-level configuration resides in one or more **files** that are under the **configs/** sub-directory of the `mode` directory. This arrangement is used to allow for configuration to be separated into different named files for ease of management.
@@ -428,6 +428,8 @@ All the following keys are mandatory. Where a key refers to a directory (path), 
 
 The following are optional as they are control flags that are False by default.
 
+*  no-status
+
 *  recompile
 
 *  no-refresh
@@ -454,6 +456,10 @@ This has to be done at the Mode level and not left to `render` plugins.
 
 # Control flags
 The control flags have mostly been described in [Milestones](Milestones.md). They are summarised here again, with some extra information.
+
+*  **no-status**
+
+No progress status is output.
 
 *  **recompile**
 
@@ -514,13 +520,19 @@ With the exception of 'render' plugins, the config file contains a key for the t
 
 Plugin's may need other configurable data, which should be kept in the config file for the plugin.
 
+All plugins are expected to adhere to `no-status` and `collection-info`, which are interpretted as
+
+*  `no-status` if true means 'no output at all', equivalent to a **quite** flag
+
+*  `collection-info` if true means 'output extra information' (if need be), eqivalent to a **verbose** flag.
+
 The plugin types are as follows.
 
 ## Setup
 Config hash must contain **setup** which is the name of a Raku program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
 ```
-sub ( $source-cache, $mode-cache, Bool $full-render,  $source-root, $mode-root ) { ... }
+sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %options ) { ... }
 ```
 > **$source-cache**  
 A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
@@ -537,20 +549,34 @@ This path must be prepended to any sources added (see below) to the cache, other
 > **$mode-root**  
 Likewise for the mode sources.
 
+> **%options**  
+Has the values of 'collection-info' and 'no-status' flags.
+
 New files can be added to the cache object inside the sub using the `.add` method, see [Sources](Sources.md).
 
 ## Render
 The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
 
-If the `render` key is True, no callable is provided, and the plugin will be added via the **.add-plugin** method of the `ProcessedPod` object.
+If the `render` key is True, no callable is provided, and the plugin name will be added via the **.add-plugin** method of the `ProcessedPod` object. See `ProcessedPod` documentation.
 
-If the `render` key is a Str, then it is the filename of a Raku program that takes a <ProcessedPod> object, and returns a list of triples, with the form (to, from-plug, file).
+If the `render` key is a Str, then it is the filename of a Raku callable of the form
 
-*  **to** is the destination under the `%config<destination> ` directory where the asset will be looked for, eg., an image file to be served.
+```
+sub ( $pr, %options --> Array ) {...}
+```
+where
 
-*  **plugin** is the name of the plugin in whose directory the asset is contained, where the value `myself` means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
+*  **$pr** is a <ProcessedPod> object,
 
-*  **file** is the filename local to the source plugin's subdirectory that is to be copied to the destination. This may contain a path relative to the plugin's subdirectory.
+*  **%options** is the same as for Setup, and
+
+*  the callable **returns** a list of triples, with the form (to, from-plug, file)
+
+	*  **to** is the destination under the `%config<destination> ` directory where the asset will be looked for, eg., an image file to be served.
+
+	*  **plugin** is the name of the plugin in whose directory the asset is contained, where the value `myself` means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
+
+	*  **file** is the filename local to the source plugin's subdirectory that is to be copied to the destination. This may contain a path relative to the plugin's subdirectory.
 
 Since a render plugin is to be added using the `ProcessedPod` interface, it must have the `custom-raku` and `template-raku` keys defined, even if they evaluate to blank (eg. `:custom-raku()` ).
 
@@ -570,7 +596,7 @@ More information about these plugins can be found in the documentation in the `R
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
-sub ( $pr, %processed) { ... }
+sub ( $pr, %processed, %options) { ... }
 ```
 > **$pr**  
 is the ProcessedPod object rendering the content files.
@@ -578,11 +604,14 @@ is the ProcessedPod object rendering the content files.
 > **%processed**  
 is a hash whose keys are source file names with a hash values containing TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
+> **%options**  
+as for setup
+
 ## Report
 The `report` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, @plugins-used, $pr --> Pair ) {...}
+sub (%processed, @plugins-used, $pr, %options --> Pair ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -593,6 +622,9 @@ is an array of Pairs whose key is the milestone and value is a hash of the plugi
 > **$pr**  
 as in Compilation
 
+> **%options**  
+as for Setup
+
 The plugin should return a Pair, where .key = (path/)name of the report file with extension, and .value is the text of the report in the appropriate format
 
 The aim is one report plugin -> one report output in a specified format.
@@ -600,7 +632,7 @@ The aim is one report plugin -> one report output in a specified format.
 The `collect` sub will write the file to the correct directory.
 
 ## Completion
-The `completion` key points to a Raku file that evaluates to a `sub ($destination, $landing-place, $output-ext, %completion-options) {...}` object.
+The `completion` key points to a Raku file that evaluates to a `sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}` object.
 
 *  **$destination**
 
@@ -610,9 +642,13 @@ is the name of the output path from the mode directory (defined in the mode conf
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
 
-*  %completion-options> (actually specified as %config<completion-options>)
+*  **%completion-options** (actually specified as %config<completion-options>)
 
 is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served. More complex plugins will require more options.
+
+*  **%options**
+
+As for Setup
 
 There is no return value specified for this plugin type.
 
@@ -675,6 +711,8 @@ By creating a name-space in the plugin data section and assigning it the value o
     method asset-used-list
     #| asset-add adds an item to the data-base, for example, a transformed image
     method asset-add( $name, $object, :$by = (), :$type = 'image' )
+    #| returns name / type / by information in database (not the object blob)
+    method asset-db
     #| remove the named asset, and return its metadata
     method asset-delete( $name --> Hash )
     #| returns the type of the asset
@@ -705,4 +743,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-03-30T16:03:06Z
+Rendered from README at 2021-04-04T13:28:23Z

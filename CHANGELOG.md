@@ -29,6 +29,7 @@
 [2021-03-14 v0.4.0](#2021-03-14-v040)  
 [2021-03-23 v0.4.1](#2021-03-23-v041)  
 [2021-03-30 v0.4.2](#2021-03-30-v042)  
+[2021-04-02 v0.5.0](#2021-04-02-v050)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -164,8 +165,6 @@
 *  correct without-processing logic
 
 # 2021-03-30 v0.4.2
-
-
 *  add anti-alias method to Post-cache
 
 *  remove trace statement
@@ -174,9 +173,22 @@
 
 *  add asset-db method to return the whole database for analysis
 
+# 2021-04-02 v0.5.0
+
+
+*  enforce no-status (= quiet) and collection-info (= verbose) on plugins
+
+*  change README (and some editing) to reflect this
+
+*  change logic for rendering collection content when there is change to sources, but no change to collection
+
+*  added date/time output when starting
+
+*  change counter to put heading into state
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-03-30T22:28:06Z
+Rendered from CHANGELOG at 2021-04-04T13:28:16Z

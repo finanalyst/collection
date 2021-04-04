@@ -32,7 +32,7 @@ bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
 
 #fake compilation
 (PLUGS ~ '/compiler/frontmatter.raku').IO.spurt(q:to/CONF/);
-    sub ($pr, %processed) { } # do nothing, this is a placeholder
+    sub ($pr, %processed, %options) { } # do nothing, this is a placeholder
     CONF
 
 # test single file run
@@ -56,7 +56,7 @@ output-like {
     )
     CONF
 (PLUGS ~ '/compiler/frontmatter.raku').IO.spurt( q:to/CODE/);
-    sub ($pr, %processed) {
+    sub ($pr, %processed, %options) {
         for <toc footnotes glossary meta> -> $component {
             #%data contains keys for each source and sub-keys for each page component
             # what is required is to make the structure pointed to by raw-component available

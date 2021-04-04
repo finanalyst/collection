@@ -31,7 +31,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/rend2/image-manager.raku' ).IO.spurt(q:to/CONF/);
-    sub ( $pp ) {
+    sub ( $pp, %options ) {
         my $config = $pp.get-data('image-manager');
         $pp.add-data('image', $config);
         $pp.add-data('video-clip', $config);

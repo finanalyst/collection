@@ -39,7 +39,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, --> Pair ) {
+    sub (%processed, @plugins-used, $pp, %options --> Pair ) {
         ## format is %.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {
@@ -72,7 +72,7 @@ chdir TMP;
     CONF
 (PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
     use Test;
-    sub ($destination, $landing, $ext, %options) {
+    sub ($destination, $landing, $ext, %c-options, %options) {
         ok $destination.IO.d, 'destination is a directory';
         ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
     }
@@ -104,7 +104,7 @@ collect(MODE, :no-status, :no-cache,
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, --> Pair ) {
+    sub (%processed, @plugins-used, $pp, %options, --> Pair ) {
         #only side effects
         '' => ''
         }

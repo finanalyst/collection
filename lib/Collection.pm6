@@ -195,7 +195,7 @@ multi sub collect(:$no-cache = False, |c) {
 }
 
 multi sub collect(Str:D $mode,
-                  :$no-status,
+                  :$no-status is copy,
                   :$without-processing is copy,
                   :$no-refresh is copy,
                   :$recompile is copy,
@@ -209,6 +209,11 @@ multi sub collect(Str:D $mode,
                   Bool :$no-cache = False
           ) {
     my %config = get-config(:$no-cache, :required< sources cache >);
+    $no-status = ( %config<no-status> // False ) without $no-status;
+
+    say "Rendering Collection on { now.Date } at { now.DateTime.hh-mm-ss}"
+        unless $no-status;
+
     without $without-processing {
         $without-processing = %config<without-processing> // False
     }
@@ -230,7 +235,7 @@ multi sub collect(Str:D $mode,
     }
     my $cache = update-cache(
         :cache-path(%config<cache>), :doc-source(%config<sources>),
-        :no-status($no-status // %config<no-status> // False),
+        :$no-status,
         :$recompile,
         :$no-refresh,
         :$without-processing,
@@ -258,7 +263,7 @@ multi sub collect(Str:D $mode,
         $collection-info = %config<collection-info> // False
     }
     my $mode-cache = update-cache(
-        :no-status($no-status // %config<no-status>),
+        :$no-status,
         :recompile($recompile // %config<recompile>),
         :no-refresh($no-refresh // %config<no-refresh>),
         :$without-processing,
@@ -335,14 +340,20 @@ multi sub collect(Str:D $mode,
         my @files;
         for <sources mode> -> $stage {
             if $stage eq 'sources' {
-                $rv = milestone('Render', :with($pr), :@dump-at, :%config, :$mode, :$collection-info, :@plugins-used,
+                $rv = milestone('Render',
+                        :with($pr),
+                        :@dump-at,
+                        :%config,
+                        :$mode,
+                        :$collection-info,
+                        :@plugins-used,
                         :call-plugins);
                 return $rv if $end ~~ /:i Render /;
                 # ======== Render milestone =============================
                 @files = $full-render ?? $cache.sources.list !! $cache.list-files.list;
                 @files .= grep( { $_ ~~ / $with-only / }) if $with-only;
                 counter(:start(+@files), :header('Rendering content files'))
-                unless $no-status or !+@files;
+                    unless $no-status or !+@files;
 
             }
             else {
@@ -351,14 +362,16 @@ multi sub collect(Str:D $mode,
                         :with($pr, %processed),
                         :@dump-at,
                         :%config,
-                        :$mode, :$collection-info, :@plugins-used,
+                        :$mode,
+                        :$collection-info,
+                        :@plugins-used,
                         :call-plugins);
                 return $rv if $end ~~ /:i Compilation /;
                 # ==== Compilation Milestone ===================================
                 # All the mode files assumed to depend on the source files, So all mode files are re-rendered
                 # if any source file is changed.
                 # But if only mode files have changed, then there is only a need to render the mode files.
-                if !$source-changes {
+                if $source-changes {
                     @files = $mode-cache.sources.list
                 }
                 else {
@@ -450,7 +463,7 @@ multi sub collect(Str:D $mode,
     $rv = milestone('Completion',
             :with("$mode/%config<destination>".IO.absolute,
                   %config<landing-place>, %config<output-ext>, %config<completion-options>),
-            :$mode, :@dump-at, :%config, :$collection-info,
+            :$mode, :@dump-at, :%config, :$collection-info, :$no-status,
             :@plugins-used, :call-plugins(!$no-completion));
     return $rv if $end ~~ /:i Completion /;
     # === Completion Milestone ================================
@@ -459,7 +472,7 @@ multi sub collect(Str:D $mode,
     # === All milestone (nothing else must happen) ================================
 }
 
-sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
+sub plugin-confs(:$mile, :%config, :$mode, :$collection-info ) {
     my @valid-confs;
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
@@ -476,8 +489,10 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info = False) {
 multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completion>),
                          :$with,
                          :%config, :$mode,
-                         :$collection-info = False) {
+                         :$collection-info,
+                         :$no-status) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    my %options = %( :$collection-info, :$no-status );
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         # only run callable and closure within the directory of the plugin
         my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
@@ -485,7 +500,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
         my &closure;
         try {
             &closure = indir($path, { EVALFILE $callable });
-            indir($path, { &closure.(|$with) });
+            indir($path, { &closure.(|$with, %options) });
         }
         if $! {
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
@@ -495,8 +510,10 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
 }
 multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ ProcessedPod,
                          :%config, :$mode,
-                         :$collection-info = False) {
+                         :$collection-info,
+                         :$no-status ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    my %options = %( :$collection-info, :$no-status );
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/%config<plugins>/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
@@ -515,7 +532,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             # so a plugin should not write directly
             my @asset-files;
             try {
-                @asset-files = indir($path, { &closure.($with) });
+                @asset-files = indir($path, { &closure.($with, %options) });
             }
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
@@ -563,8 +580,10 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
 }
 multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
                          :%config, :$mode,
-                         :$collection-info = False) {
+                         :$collection-info,
+                         :$no-status) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    my %options = %( :$collection-info, :$no-status );
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
@@ -580,7 +599,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
         # so a plugin should not write directly
         my $resp;
         try {
-            $resp= indir($path, { &closure.(|$with) });
+            $resp= indir($path, { &closure.(|$with, %options) });
         }
         if $! {
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
@@ -593,31 +612,33 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
 }
 
 #| uses Terminal::Spinners to create a progress bar, with a starting value, that is decreased by 1 after an iteration.
-sub counter(:$start, :$dec, :$header = 'Caching files ') {
+sub counter(:$start, :$dec, :$header) {
     state $hash-bar = Bar.new(:type<bar>);
     state $inc;
     state $done;
     state $timer;
     state $final;
+    state $title = 'Caching files ';
+    $title = $header with $header;
     if $start {
         # also fails if $start = 0
         $inc = 1 / $start * 100;
         $done = 0;
         $timer = now;
         $final = $start;
-        say $header;
+        say $title;
         $hash-bar.show: 0
     }
     if $dec {
         $done += $inc;
         $hash-bar.show: $done;
-        say "$header took { now - $timer } secs" unless --$final;
+        say "$title took { now - $timer } secs" unless --$final;
     }
 }
 
-sub milestone($mile, :$with, :@dump-at = (), :$collection-info,
+sub milestone($mile, :$with, :@dump-at = (), :$collection-info, :$no-status,
               :%config = {}, :$mode = '', :@plugins-used = (), Bool :$call-plugins = False) {
-    @plugins-used.append(%( $mile => manage-plugins($mile.lc, :$with, :%config, :$mode, :$collection-info)))
+    @plugins-used.append(%( $mile => manage-plugins($mile.lc, :$with, :%config, :$mode, :$collection-info, :$no-status)))
         if $call-plugins;
     if $mile.lc ~~ any( |@dump-at ) {
         my $rv = '';

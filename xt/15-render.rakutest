@@ -99,7 +99,7 @@ mktree "{ ASSETS }/images";
 #create a plugin that looks for css files, creates a local css file, passes it back
 # where it is written to output
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp ) {
+        sub ( $pp, %options ) {
                 my $css = '';
                 for $pp.plugin-datakeys {
                         my $data = $pp.get-data($_);
@@ -128,7 +128,7 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is registered
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp ) {
+        sub ( $pp, %options ) {
                 ( <assets/css/mystyling.css rend2 mystyling.css >, )
         }
         CONF
@@ -138,7 +138,7 @@ ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is not registered
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp ) {
+        sub ( $pp, %options ) {
                 ( <assets/css/mystyling.css unused mystyling.css >, )
         }
         CONF
@@ -157,7 +157,7 @@ nok (HTML ~ '/assets/css/nostyling.css').IO.f, 'file was not transferred';
 
 # reset gather-css as it is used later
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp ) {
+        sub ( $pp, %options ) {
                 my $css = '';
                 for $pp.plugin-datakeys {
                         my $data = $pp.get-data($_);
