@@ -9,7 +9,6 @@ constant MODE = 'test-mode';
 bail-out "{ TMP } must exist. Have pre-render tests been run?"
 unless TMP.IO.d;
 
-my $orig = $*CWD;
 chdir TMP;
 
 plan 5;
@@ -19,7 +18,7 @@ my $rv;
 if MODE.IO.d { empty-directory MODE }
 else { mktree MODE }
 mktree MODE ~ '/m-sources';
-(MODE ~ '/m-sources/index.pod6').IO.spurt(q:to/IND/);
+(MODE ~ '/m-sources/index.rakudoc').IO.spurt(q:to/IND/);
         =begin pod
         =TITLE An index
 
@@ -120,14 +119,15 @@ for <setup1 setup_rend> {
         CONF
 
 }
-$rv = collect(MODE, :no-status, :no-cache, :end<setup>, :recompile);
+$rv = collect(MODE, :no-status, :no-cache, :end<setup>, :no-preserve-state, :recompile);
 #recompile to ensure that the cache is emptied
 is $rv.elems, 5, 'collect should return 5 elems at setup';
 isa-ok $rv[0], Pod::From::Cache, 'first of list';
 isa-ok $rv[1], Pod::From::Cache, 'second of list';
+
 is-deeply-relaxed
-        $rv[0].list-files.Set,
-        <sources/file-a.pod6 sources/file-b.pod6 sources/file-c.pod6 sources/extra_0_setup1 sources/extra_1_setup_rend>.Set,
+        $rv[0].list-changed-files.Set,
+        <sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc sources/file-d.rakudoc sources/extra_0_setup1 sources/extra_1_setup_rend>.Set,
         'cache altered';
 isa-ok $rv[0].pod('sources/extra_1_setup_rend')[0], Pod::Block, 'retrieved Pod::Block from first extra';
 

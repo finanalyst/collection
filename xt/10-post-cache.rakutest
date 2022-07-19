@@ -1,0 +1,89 @@
+use v6.d;
+use Test;
+use File::Directory::Tree;
+use Test::Deeply::Relaxed;
+use Pod::From::Cache;
+use Collection;
+
+plan 19;
+
+constant TMP = 'xt/test-dir';
+
+rmtree TMP if TMP.IO.d;
+mktree TMP;
+
+chdir TMP;
+
+mktree 'sources';
+
+my $rv;
+
+throws-like { $rv = Pod::From::Cache.new(
+        :doc-source<sources>,
+        :cache-path<cache>
+        :progress(Nil) ) but Post-cache },
+    X::Pod::From::Cache::NoSources,
+    'traps lack of sources',
+    message => / 'No pod sources in' /;
+
+for <file-a file-b file-c> -> $fn {
+    "sources/$fn.rakudoc".IO.spurt(qq:to/FILE/);
+        =begin pod
+        =TITLE File { $fn }
+        =head1 First title
+
+        Some text
+        =end pod
+        FILE
+}
+
+lives-ok { $rv = Pod::From::Cache.new(
+        :doc-source<sources>,
+        :cache-path<cache>
+        :progress(Nil) ) but Post-cache },
+        'Instantiating Pod::From::Cache with sources works';
+
+isa-ok $rv, Pod::From::Cache, 'cache object returned';
+ok 'cache'.IO.d, 'Instantiation makes a cache';
+
+is-deeply-relaxed Set.new($rv.sources), Set.new($rv.list-changed-files), 'methods sources and list-changed-files are the same';
+is-deeply-relaxed Set.new($rv.sources),
+        Set(<sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc>),
+        'expected sources';
+
+$rv.add('new-file', [Pod::Block.new(:contents<fixed growth>)]);
+is-deeply-relaxed Set.new($rv.sources),
+        Set(<sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc new-file>),
+        'added new file';
+is-deeply-relaxed Set.new($rv.sources), Set.new($rv.list-changed-files), 'methods sources and list-changed-files are the same';
+
+$rv.add-alias('sources/file-b.rakudoc', :alias<Sources/file-b.rakudoc>);
+is-deeply-relaxed Set.new($rv.list-changed-files),
+        Set(<sources/file-a.rakudoc sources/file-c.rakudoc sources/file-b.rakudoc Sources/file-b.rakudoc new-file>),
+        'alias has been added, original is also available';
+
+$rv.mask('sources/file-b.rakudoc');
+is-deeply-relaxed Set.new($rv.list-changed-files),
+        Set(<sources/file-a.rakudoc Sources/file-b.rakudoc sources/file-c.rakudoc new-file>),
+        'filename has been masked';
+
+isa-ok $rv.pod('new-file')[0], Pod::Block, 'adding file and getting back from cache';
+isa-ok $rv.pod('sources/file-a.rakudoc')[0], Pod::Block, 'existing files in cache available';
+nok $rv.pod('sources/file-b.rakudoc'), 'file-b blocked from cache access';
+like $rv.pod('Sources/file-b.rakudoc')[0].contents[0].contents[0].contents, / 'file-b' / , 'alias has expected content';
+throws-like { $rv.pod('Sources/file-c.rakudoc') }, X::Pod::From::Cache::NoPodInCache,
+        message => / 'Has the path changed' /,
+        'nothing available in cache with new name';
+throws-like { $rv.add-alias('new-file', :alias<New-File>) }, X::Collection::Post-cache-illegal-alias,
+        message => / 'overwrite content' /,
+        'attempt to overwrite added content';
+$rv.add-alias('sources/file-a.rakudoc', :alias<SRC/file-a.rakudoc>).mask('sources/file-a.rakudoc');
+subtest {
+        isa-ok $rv.pod('SRC/file-a.rakudoc')[0], Pod::Block, 'alias works';
+        nok $rv.pod('sources/file-a.rakudoc'), 'old name is masked';
+}, 'add-alias and mask can be chained';
+
+is $rv.behind-alias('Sources/file-b.rakudoc'), 'sources/file-b.rakudoc', 'original filename returned from alias';
+is $rv.behind-alias('sources/file-d.rakudoc'), 'sources/file-d.rakudoc', 'if no alias, then fn returned';
+
+done-testing;

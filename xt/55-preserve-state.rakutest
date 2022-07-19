@@ -1,0 +1,41 @@
+use v6.d;
+use Test;
+use Test::Output;
+use File::Directory::Tree;
+
+use Collection;
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant PLUGS = "{ MODE }/some-plugs";
+constant CONFS = "{ MODE }/configs";
+constant TEMPLATES = "{ MODE }/templates";
+constant OUTPUT = "{ MODE }/html";
+constant REPORT = "{ MODE }/reports";
+constant ASSETS = "assets";
+
+plan 7;
+my $rv;
+
+bail-out "{ TMP } and { TMP }/{ REPORT } must exist. Have report-completion tests been run?"
+unless TMP.IO.d and "{ TMP }/{ REPORT }".IO.d;
+
+chdir TMP;
+stderr-like { $rv = collect(:no-cache, :end<setup>, :recompile) },
+        / 'Could not recover the archive' /,
+        'detects the absence of preserved state';
+is $rv[2], True, 'Full-render turned on';
+
+rmtree OUTPUT;
+throws-like { $rv = collect(:no-cache, :end<all>, :no-status, :without-processing) },
+        X::Collection::BadOutputDirectory,
+        message => / 'directory with ｢' .+ "{ OUTPUT }" /,
+        'traps no html output';
+
+$rv = collect(:no-cache, :end<report>, :no-status);
+ok "{MODE}/processed-state.7z".IO ~~ :f, 'got preserve state archive';
+my ($ok, %processed, %symbols) := restore-processed-state( MODE , :no-status );
+ok $ok, 'restoration was good';
+isa-ok %processed<file-a>, 'PodFile', 'processed seems to have expected data';
+isa-ok %symbols, 'Hash', 'symbols seems OK';
+
+done-testing;

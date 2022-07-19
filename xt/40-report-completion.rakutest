@@ -1,6 +1,5 @@
 use Test;
 use Test::Deeply::Relaxed;
-use Test::Output;
 use File::Directory::Tree;
 
 use Collection;
@@ -16,14 +15,14 @@ constant ASSETS = "{TMP}/assets";
 plan 6;
 my $rv;
 
-bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exit. Have source tests been run?"
+bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exist. Have source tests been run?"
 unless TMP.IO.d and "{TMP}/{ MODE }".IO.d and "{TMP}/{PLUGS}".IO.d;
 
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 
 mktree ASSETS ~ '/videos';
 mktree ASSETS ~ '/images';
-my $orig = $*CWD;
+
 chdir TMP;
 
 (MODE ~ '/configs/04-asset-output-options.raku').IO.spurt(qq:to/CONF/);
@@ -73,19 +72,21 @@ chdir TMP;
 (PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
     use Test;
     sub ($destination, $landing, $ext, %c-options, %options) {
+        say "destination $destination landing $landing ext $ext";
+        say "$destination/$landing\.$ext";
         ok $destination.IO.d, 'destination is a directory';
         ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
     }
     CODE
 $rv = collect(MODE, :no-status, :no-cache,
-        :end<report>, :full-render, :no-refresh, :no-report );
+        :end<report>, :full-render, :no-refresh, :no-preserve-state, :no-report );
 
 my $rpt = REPORT ~ '/link-plugin-report.txt';
 nok $rpt.IO.f, 'a report file is not generated';
 #empty-directory REPORT;
 
 $rv = collect(MODE, :no-status, :no-cache,
-        :end<report>, :full-render, :no-refresh, :!no-report );
+        :end<report>, :full-render, :no-preserve-state, :no-refresh, :!no-report );
 ok $rpt.IO.f, 'a report file is generated';
 like $rpt.IO.slurp,
         /
@@ -100,7 +101,7 @@ like $rpt.IO.slurp,
 
 # should call three tests
 collect(MODE, :no-status, :no-cache,
-        :end<completion>, :full-render, :no-refresh);
+        :end<completion>, :full-render, :no-preserve-state, :no-refresh );
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
@@ -109,7 +110,7 @@ collect(MODE, :no-status, :no-cache,
         '' => ''
         }
     CODE
-lives-ok { collect(MODE, :no-status, :no-cache, :end<report>, :full-render, :no-refresh) },
+lives-ok { collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<report>, :full-render, :no-refresh) },
         'allows a Nil return';
 
 done-testing;

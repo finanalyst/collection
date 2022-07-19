@@ -1,6 +1,5 @@
 use Test;
-
-require Test::META '&meta-ok';
+use Test::META;
 
 meta-ok;
 

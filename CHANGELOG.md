@@ -1,7 +1,7 @@
 # Changlog
+>Changes in the Collection distribution
 
-----
-----
+
 ## Table of Contents
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 [2021-01-24 Adding tests](#2021-01-24-adding-tests)  
@@ -30,6 +30,7 @@
 [2021-03-23 v0.4.1](#2021-03-23-v041)  
 [2021-03-30 v0.4.2](#2021-03-30-v042)  
 [2021-04-02 v0.5.0](#2021-04-02-v050)  
+[2022-07-17 v.0.7.0](#2022-07-17-v070)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -174,8 +175,6 @@
 *  add asset-db method to return the whole database for analysis
 
 # 2021-04-02 v0.5.0
-
-
 *  enforce no-status (= quiet) and collection-info (= verbose) on plugins
 
 *  change README (and some editing) to reflect this
@@ -186,9 +185,38 @@
 
 *  change counter to put heading into state
 
+# 2022-07-17 v.0.7.0
+
+
+*  prepare for fez
+
+*  change to github workflow testing
+
+*  remove Docker implementation
+
+*  refactor tests
+
+	*  rename raku files, change tests to reflect this too
+
+	*  test post-cache role separately
+
+	*  add clean up test
+
+	*  add preserve-state archive test
+
+*  Refactor Post-cache Role
+
+	*  rename methods to better reflect their actions,
+
+	*  add inline documentation
+
+*  rewrite README to only provide a reference to Raku-Documentation
+
+*  add no-preserve-state option to prevent archiving if need be
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2021-04-04T13:28:16Z
+Rendered from CHANGELOG at 2022-07-19T23:23:02Z

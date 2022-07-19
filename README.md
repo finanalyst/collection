@@ -1,14 +1,16 @@
+![github-tests-passing-badge](https://github.com/finanalyst/collection/actions/workflows/test.yaml/badge.svg)
 # Raku Collection Module
-> **Description** A subroutine to collect content files written in POD6. The collection process is in stages at the start of which plugins (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
+>
+> **Description** A subroutine to collect content files written in Rakudoc (aka POD6). The collection process is in stages at the start of which plugins (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
 
 > **Author** Richard Hainsworth aka finanalyst
 
 
 ----
-----
 ## Table of Contents
 [Installation](#installation)  
 [Usage](#usage)  
+[Archiving and Minor Changes](#archiving-and-minor-changes)  
 [Life cycle of processing](#life-cycle-of-processing)  
 [Milestones](#milestones)  
 [Zeroth](#zeroth)  
@@ -47,46 +49,35 @@
 ----
 This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
 
-Can be used as a docker container `finanalyst/collection`.
-
 # Installation
 ```
 zef install Collection
 ```
-or using docker in a `Dockerfile`
-
-```
-FROM finanalyst/collection
-```
 # Usage
 The Collection module expects there to be a `config.raku `file in the root of the collection, which provides information about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration, template, and plugin files described below are **Raku** programs that evaluate to a Hash. They are described in the documentation for the `RakuConfig` module.
 
-A concrete example of `Collection` is the [Collection-Raku-Documentation](https://github.com/finanalyst/collection-raku-documentation.git) module. It provides the `Raku-Doc` executable, which copies a `config.raku` file and a mode called `Website`. The configuration describes how to get the **Raku Doc** files from the **Raku.org** repository, and the **Website** mode contains default templates and plugins to create a website that shows the collection, using a `Cro` app.
+A concrete example of `Collection` is the [Collection-Raku-Documentation](https://github.com/finanalyst/collection-raku-documentation.git) module.
 
-The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides the concrete configuration and specifies how files are rendered. However, `Collection` has been designed so that **Templates** and **Plugins** for `Collection-Raku-Documentation` can be used for other collections, while other Collection distributions that only provide **Plugins** and/or **Templates**. Once the Raku-Documentation collection has been initialised, Raku-Doc calls `collect`, which is the entry point for `Collection`.
+The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides an example of a concrete configuration.
+
+# Archiving and Minor Changes
+In principle, if a small change is made in a source file of a Collection, only the rendered version of that file should be changed, and the Collection pages (eg., the index and the glossaries) updated.
+
+When there are many source files, the process of saving and restoring state information may be longer than actually rerendering all the cached files. Consequently, the option `no-preserve-state` prevents the archiving of processed state.
 
 # Life cycle of processing
 After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, intermediary data can be reprocessed using plugins, the data after the plugins can be dumped, or the processed halted.
 
 `collect` can be called with option flags, which have the same effect as configuration options. The run-time values of the [Control flags](Control flags.md) take precedence over the configuration options.
 
+`collect` should be called with a [Mode](Mode.md). A **Mode** is the name of a set of configuration files, templates, and plugins that control the way the source files are processed and rendered. The main configuration file must contain a key called `mode`, which defines the default mode that `collect` uses if called with no explicit mode, so if `collect` is called without a **Mode**, the default will be used.
+
 In **Collection-Raku-Documentation** `Raku-Doc` is an Command Line Interface for giving run time options to `collect`.
 
-`collect` can also be called with a [Mode](Mode.md). A **Mode** is the name of a set of configuration files, templates, and plugins that control the way the source files are processed and rendered. The main configuration file must contain a key called `mode`, which defines the default mode that `collect` uses if called with no explicit mode.
-
-For example, the **Collection-Raku-Documentation** is set up with a default `mode` called **Website**. `Raku-Doc` just calls `collect` and passes on to `collect` all of its arguments, with the exception of the string **Init**, which `Raku-Doc` traps so that processing can stop before calling `collect`.
-
-If `Raku-Doc` is called with a string other than 'Init' or 'Website', then the string is interpreted as another **Mode**, with its own sub-directory and [Configuration](Configuration.md) for the collection. For example,
-
-```
-Raku-Doc Book
-```
-would create the collection output defined by the configuration in the sub-directory `Book/config/`. This design is to allow for the creation of different Collection outputs to be defined for the same content files.
-
 # Milestones
-The `collect` sub can **only** be called cnce the collection directory contains a `config.raku`, which in turn contains the location of a directory, which must contain recursively at least on source.
+The `collect` sub can be called once the collection directory contains a `config.raku`, which in turn contains the location of a directory of rakudoc source files, which must contain recursively at least one source.
 
-The process of collecting, rendering and outputting the collection has a number of defined milestones. A milestone will have an inspection point, at which the intermediate data can be dumped **without stopping** the processing, eg.,
+The process of collecting, rendering and outputting the collection has a number of milestones. A milestone will have an inspection point, at which the intermediate data can be dumped **without stopping** the processing, eg.,
 
 ```
 collect(:dump-at<post-cache render>);
@@ -111,7 +102,7 @@ The milestone name is the name of the inspection point, and the plugin type.
 ## Zeroth
 Since this is the start of the processing, no plugins are defined as there are no objects for them to operate on.
 
-The `config.raku` file must exist and must contain a minumum set of keys. It may optionally contain keys for the control flags that control the stage, see below. The intent is to keep the options for the root configuration file as small as possible and only refer to the source files. Most other options are configured by the Mode.
+The `config.raku` file must exist and must contain a minimum set of keys. It may optionally contain keys for the control flags that control the stage, see below. The intent is to keep the options for the root configuration file as small as possible and only refer to the source files. Most other options are configured by the Mode.
 
 During the subsequent **Source** stage, the source files in the collection are brought in, if the collection has not been fully initiated, using the `source-obtain` configaturation list. Alternatively, any updates are brought in using the `source-refresh` list. Commonly, sources will be in a _git_ repository, which has separate commands for `clone` and `pull`. If the `source-obtain` and `source-refresh` options are not given (for example during a test), no changes will be made to the source directory.
 
@@ -133,13 +124,9 @@ An explicit configuration or run-time **no-refresh** = False is over-ridden by a
 
 This option is used to skip every stage upto the **Completion**, for example starting the document server without checking for documentation updates or re-rendering templates.
 
-**without-processing** implies **no-refresh**, and over-rides any configuration option, but with the caveat that the caches must exist.
-
 *  **recompile**
 
 Forces all the source files to be recompiled into the cache.
-
-**without-processing** over-rides **recompile**.
 
 ## Source
 At this milestone, the source files have been cached. The **mode** sub-directory has not been tested, and the configuration for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugins can be called.
@@ -194,8 +181,6 @@ By default, only files that are changed are re-rendered, which includes an assum
 When **full-render** is True, the output directory is emptied of content, forcing all files to be rendered.
 
 **full-render** may be combined with **no-refresh**, for example when templates or plugins are changed and the aim is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but the cache object will not contain any files generated by **setup** plugins.
-
-**without-processsing** takes precedence over **full-render**, unless there is no output directory.
 
 ## Render
 At this milestone `render` plugins are supplied to the `ProcessedPod` object. New Pod::Blocks can be defined, and the templates associated with them can be created.
@@ -426,7 +411,7 @@ All the following keys are mandatory. Where a key refers to a directory (path), 
 
 *  **output-ext** is the extension for the output files
 
-The following are optional as they are control flags that are False by default.
+All optional control flags are False by default. They are:
 
 *  no-status
 
@@ -440,6 +425,8 @@ The following are optional as they are control flags that are False by default.
 
 *  without-processing
 
+*  no-preserved-state
+
 *  no-cache
 
 *  no-completion
@@ -448,18 +435,24 @@ The following are optional as they are control flags that are False by default.
 
 *  verbose-when
 
-*  **no-code-escape**
-
-`ProcessedPod` has a special flag for turning off escaping in code sections when a highlighter is used to pre-process code. In some cases, the highlighter also does HTML escaping, so RPR has to avoid it.
-
-This has to be done at the Mode level and not left to `render` plugins.
+*  no-code-escape
 
 # Control flags
-The control flags have mostly been described in [Milestones](Milestones.md). They are summarised here again, with some extra information.
+The control flags are also covered in [Milestones](Milestones.md).
 
 *  **no-status**
 
-No progress status is output.
+No progress status is output at any time.
+
+*  **without-processing**
+
+Setting **without-processing** to True will skip all the stages except **Completion**, so long as the destination directories exist.
+
+*  **no-preserved-state**
+
+In order to allow for changes in some source files, or in only mode files, after all the sources have been processed once, the processing state must be archived. This may not be needed in testing or if the archiving takes too long.
+
+Setting no-preserved-state = True prevents storage of state, but also forces **without-processing** to False, and **recompile** to True.
 
 *  **recompile**
 
@@ -477,17 +470,13 @@ Prevents the updating of content files, so no changes will be made.
 
 Forces all files to be rendered. Even if there are no changes to source files, plugins or templates may be added/changed, thus changing the output, so all files need to be re-rendered.
 
-A True value is over-ridden by **without-processing**
+This flag is set to False if **without-processing** is True.
 
 *  **no-report**
 
 Normally, report plugins report on the final state of the output files. No-report prevents report plugins from being loaded or run.
 
 If **without-processing** is set, then the **Report** stage is skipped. If, however, the caches do not exist (deleted or first run), then the value of **without-processing** is ignored and the value of **no-report** is observed.
-
-*  **without-processing**
-
-Unless the caches do not exist, setting **without-processing** to True will skip all the stages except **Completion**
 
 *  **no-cache**
 
@@ -506,6 +495,12 @@ Causes collect to produce information about milestones and valid and invalid plu
 *  **with-only** filename
 
 Collect is run only with that filename, which must be in the sources, and is specified like `debug-when`.
+
+*  **no-code-escape**
+
+`ProcessedPod` has a special flag for turning off escaping in code sections when a highlighter is used to pre-process code. In some cases, the highlighter also does HTML escaping, so RPR has to avoid it.
+
+This has to be done at the Mode level and not left to `render` plugins.
 
 # Plugin management
 Plugins are **Raku** programs that are executed at specific milestones in the rendering process. The milestone are given in [Milestones](Milestones.md) above.
@@ -732,7 +727,7 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 ```
 # Copyright and License
-(c) Copyright, 2021 Richard Hainsworth
+(c) Copyright, 2021-2022 Richard Hainsworth
 
 **LICENSE** Artistic-2.0
 
@@ -743,4 +738,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2021-04-04T13:28:23Z
+Rendered from README at 2022-07-19T23:22:52Z

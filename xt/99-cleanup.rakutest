@@ -1,0 +1,8 @@
+use v6.d;
+use Test;
+use File::Directory::Tree;
+
+indir 'xt', { rmtree 'test-dir' };
+nok 't/test-dir'.IO.d, 'test directory cleaned up';
+
+done-testing;

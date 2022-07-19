@@ -121,4 +121,19 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =item added date/time output when starting
 =item change counter to put heading into state
 
+=head1 2022-07-17 v.0.7.0
+=item prepare for fez
+=item change to github workflow testing
+=item remove Docker implementation
+=item refactor tests
+=item2 rename raku files, change tests to reflect this too
+=item2 test post-cache role separately
+=item2 add clean up test
+=item2 add preserve-state archive test
+=item Refactor Post-cache Role
+=item2 rename methods to better reflect their actions,
+=item2 add inline documentation
+=item rewrite README to only provide a reference to Raku-Documentation
+=item add no-preserve-state option to prevent archiving if need be
+
 =end pod

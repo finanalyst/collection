@@ -1,0 +1,57 @@
+use Test;
+plan 3;
+use File::Directory::Tree;
+use Test::Deeply::Relaxed;
+
+use Collection;
+use Pod::From::Cache;
+
+constant TMP = 'xt/test-dir';
+constant MODE = 'test-mode';
+constant CH = 'cache';
+constant SRC = 'sources';
+
+exit "Must have { TMP }, {TMP}/{ CH } and {TMP}/{SRC}. Run first post-cache tests"
+    unless TMP.IO.d and "{TMP}/{ CH }".IO.d and "{TMP}/{SRC}".IO.d;
+
+chdir TMP;
+
+throws-like { collect(:no-processing) },
+        X::Collection::BadOption,
+        'traps an incorrect option',
+        message => / 'passed' .+ 'no-processing' /;
+
+throws-like { collect(:end<setup>, :no-cache, :no-preserve-state) },
+        X::RakuConfig::NoFiles,
+        'traps lack of config file in root',
+        message => / 'config.raku' .+ 'is not a file or' /;
+
+'config.raku'.IO.spurt(qq:to/DATA/);
+    %(
+        :cache<cache>,
+        :sources<sources>,
+        :ignore(),
+        :source-obtain(),
+        :source-refresh(),
+        :mode<{ MODE }>,
+        :extensions<rakudoc pod6 pm6 pl6 >,
+        :asset-basename<assets>,
+        :asset-paths( %( # type of asset is key, then metadata for that type
+            image => %(
+                :directory<images>,
+                :extensions<png jpeg jpeg svg>,
+            ),
+            video-clip => %(
+                :directory<videos>,
+                :extensions<mp4 webm>,
+            ),
+        )),
+    )
+    DATA
+
+throws-like { collect(MODE, :no-status, :no-cache) },
+        X::Collection::NoMode,
+        'traps no mode sub-directory',
+        message => / 'sub-directory' .+ ', not found'/;
+
+done-testing;

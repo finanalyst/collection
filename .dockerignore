@@ -1,8 +1,0 @@
-# Default ignored files
-.precomp/
-lib/.precomp/
-raku-collection.iml
-.idea/
-.travis.yml
-.git
-

@@ -17,7 +17,7 @@ constant HTML = "{ MODE }/html";
 plan 9;
 my $rv;
 
-bail-out "{ TMP } and { TMP }/{ MODE } must exit. Have source tests been run?"
+bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
 unless TMP.IO.d and "{ TMP }/{ MODE }".IO.d;
 mktree TMP ~ '/' ~ TEMPLATES;
 'resources/min-templates.raku'.IO.copy:
@@ -25,7 +25,7 @@ mktree TMP ~ '/' ~ TEMPLATES;
 mktree TMP ~ '/' ~ TEMPLATES;
 
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
-my $orig = $*CWD;
+
 chdir TMP;
 bail-out "{ PLUGS } and { CONFS } must exit. Have setup tests been run?"
 unless PLUGS.IO.d and CONFS.IO.d;
@@ -112,7 +112,7 @@ mktree "{ ASSETS }/images";
         }
         CONF
 
-$rv = collect(MODE, :no-status, :no-cache, :end<render>, :recompile, :full-render);
+$rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :recompile, :full-render);
 isa-ok $rv, ProcessedPod, 'got the correct object';
 is-deeply-relaxed $rv.custom.Set,
         <figure diagram sorted-table design>.Set,
@@ -133,7 +133,7 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
         }
         CONF
 
-$rv = collect(MODE, :no-status, :no-cache, :end<render>, :full-render);
+$rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :full-render);
 ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is not registered
@@ -148,7 +148,7 @@ ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
         CONF
 
 use Test::Output;
-stderr-like { $rv = collect(MODE, :no-status, :no-cache, :end<render>, :full-render)},
+stderr-like { $rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :full-render)},
        /
        'is not registered as a plugin'
        /, 'transferring from unregistered plugin is ignored with warning';

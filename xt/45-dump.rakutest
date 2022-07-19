@@ -15,10 +15,9 @@ constant REPORT = "{MODE}/reports";
 plan 7;
 my $rv;
 
-bail-out "{TMP} and {TMP}/{ REPORT } must exit. Have report-completion tests been run?"
+bail-out "{TMP} and {TMP}/{ REPORT } must exist. Have report-completion tests been run?"
 unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
 
-my $orig = $*CWD;
 chdir TMP;
 (PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/);
     %(
@@ -26,7 +25,7 @@ chdir TMP;
     )
     CONF
 lives-ok {
-    collect(:no-status, :full-render, :dump-at(<source setup render compilation report completion>)) ;
+    collect(:no-status, :full-render, :no-preserve-state, :dump-at(<source setup render compilation report completion>)) ;
 }, 'collect continues, but dumps';
 
 ok "dumped-mode-unknown-at-source\.txt".IO.f, "dumped-mode-unknown-at-source\.txt".IO.absolute ~ ' is a dump file';

@@ -14,10 +14,9 @@ constant ASSETS = "assets";
 plan 3;
 my $rv;
 
-bail-out "{TMP} and {TMP}/{ REPORT } must exit. Have report-completion tests been run?"
+bail-out "{TMP} and {TMP}/{ REPORT } must exist. Have report-completion tests been run?"
 unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
 
-my $orig = $*CWD;
 chdir TMP;
 
 "{ASSETS}/videos/fake-video.mp4".IO.spurt(:bin, "This is not a video");
@@ -58,7 +57,7 @@ chdir TMP;
     <Image Video-clip>
     CONF
 
-"sources/image-test.pod6".IO.spurt(q:to/PODFILE/);
+"sources/image-test.rakudoc".IO.spurt(q:to/PODFILE/);
     =begin pod :no-toc :no-glossary :no-meta :no-footnotes
 
     =for Image :src<images/fake-image.png>
@@ -70,7 +69,7 @@ chdir TMP;
     =end pod
     PODFILE
 
-$rv = collect( :no-status, :no-completion, :no-report );
+$rv = collect( :no-status, :no-completion, :no-preserve-state, :no-report, :full-render );
 
 ok "{OUTPUT}/assets/videos/fake-video.mp4".IO.f, 'video asset in correct place';
 ok "{OUTPUT}/assets/images/fake-image.png".IO.f, 'image asset in correct place';
@@ -79,7 +78,4 @@ like "{OUTPUT}/assets/videos/fake-video.mp4".IO.slurp(:bin).decode,
         'This is not a video'
         /, 'file contents as expected';
 
-# clean up
-chdir $orig;
-rmtree TMP;
 done-testing;

@@ -2,7 +2,8 @@
 
 =TITLE Raku Collection Module
 
-=DESCRIPTION A subroutine to collect content files written in POD6. The collection process is in stages
+=DESCRIPTION A subroutine to collect content files written in Rakudoc (aka POD6).
+The collection process is in stages
 at the start of which plugins (Raku programs) can be added that transform intermediate data or add
 templates, or add new Pod::Blocks for the rendering.
 
@@ -10,15 +11,9 @@ templates, or add new Pod::Blocks for the rendering.
 
 This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
 
-Can be used as a docker container C<finanalyst/collection>.
-
 =head1 Installation
 
     zef install Collection
-
-or using docker in a C<Dockerfile>
-
-    FROM finanalyst/collection
 
 =head1 Usage
 
@@ -28,17 +23,19 @@ template, and plugin files described below are B<Raku> programs that evaluate to
 documentation for the C<RakuConfig> module.
 
 A concrete example of C<Collection> is the L<Collection-Raku-Documentation|https://github.com/finanalyst/collection-raku-documentation.git>
-module. It provides the C<Raku-Doc> executable, which
-copies a C<config.raku> file and a mode called C<Website>. The configuration describes how to get the B<Raku Doc> files
-from the B<Raku.org> repository, and the B<Website> mode contains default templates and plugins to create a website
-that shows the collection, using a C<Cro> app.
+module.
 
-The C<Collection> module provides the infrastructure, whilst C<Collection-Raku-Documentation> provides the concrete configuration
-and specifies how files are rendered. However, C<Collection> has been designed so that B<Templates> and B<Plugins>
-for C<Collection-Raku-Documentation>
-can be used for other collections, while other Collection distributions that only provide B<Plugins> and/or B<Templates>.
-Once the Raku-Documentation
-collection has been initialised, Raku-Doc calls C<collect>, which is the entry point for C<Collection>.
+The C<Collection> module provides the infrastructure,
+whilst C<Collection-Raku-Documentation> provides an example of a concrete configuration.
+
+=head1 Archiving and Minor Changes
+
+In principle, if a small change is made in a source file of a Collection, only the rendered version
+of that file should be changed, and the Collection pages (eg., the index and the glossaries) updated.
+
+When there are many source files, the process of saving and restoring state information may be longer
+than actually rerendering all the cached files. Consequently, the option C<no-preserve-state> prevents
+the archiving of processed state.
 
 =head1 Life cycle of processing
 
@@ -49,32 +46,20 @@ using plugins, the data after the plugins can be dumped, or the processed halted
 C<collect> can be called with option flags, which have the same effect as configuration options. The run-time values
 of the L<Control flags> take precedence over the configuration options.
 
-In B<Collection-Raku-Documentation> C<Raku-Doc> is an Command Line Interface for giving run time options to C<collect>.
-
-C<collect> can also be called with a L<Mode>. A B<Mode> is the name of a set of configuration files, templates,
+C<collect> should be called with a L<Mode>. A B<Mode> is the name of a set of configuration files, templates,
 and plugins that control the way the source files are processed and rendered. The main configuration file must
 contain a key called C<mode>, which defines the default mode that C<collect> uses if called with no explicit
-mode.
+mode, so if C<collect> is called without a B<Mode>, the default will be used.
 
-For example, the B<Collection-Raku-Documentation> is set up with a
-default C<mode> called B<Website>. C<Raku-Doc> just calls C<collect> and passes on to C<collect> all of
-its arguments, with the exception of the string B<Init>, which C<Raku-Doc> traps so that processing can stop before
-calling C<collect>.
-
-If C<Raku-Doc> is called with a string other than 'Init' or 'Website', then the string is interpreted as another B<Mode>,
-with its own sub-directory and L<Configuration> for the collection. For example,
-
-    Raku-Doc Book
-
-would create the collection output defined by the configuration in the sub-directory C<Book/config/>. This design
-is to allow for the creation of different Collection outputs to be defined for the same content files.
+In B<Collection-Raku-Documentation> C<Raku-Doc> is an Command Line Interface
+for giving run time options to C<collect>.
 
 =head1 Milestones
 
-The C<collect> sub can B<only> be called cnce the collection directory contains a C<config.raku>,
-which in turn contains the location of a directory, which must contain recursively at least on source.
+The C<collect> sub can be called once the collection directory contains a C<config.raku>,
+which in turn contains the location of a directory of rakudoc source files, which must contain recursively at least one source.
 
-The process of collecting, rendering and outputting the collection has a number of defined milestones. A milestone
+The process of collecting, rendering and outputting the collection has a number of milestones. A milestone
 will have an inspection point, at which the intermediate data can be dumped B<without stopping> the processing, eg.,
 
     collect(:dump-at<post-cache render>);
@@ -94,7 +79,8 @@ provided to the plugins after all the plugins have been evaluated. The aim of th
 developers the ability to test the effect of plugins at each stage on the object to be modified by
 the plugins.
 
-The C<dump-at> option calls C<pretty-dump> or C<.raku> [TODO pretty-dump, when it handles BagHash and classes] on the same objects as above
+The C<dump-at> option calls C<pretty-dump> or C<.raku>
+[TODO pretty-dump, when it handles BagHash and classes] on the same objects as above
 and then outputs them to a file(s) called C<dump-at-<milestone name>.txt>.
 
 Processing occurs during a stage named by the milestone which starts it.
@@ -108,7 +94,7 @@ The milestone name is the name of the inspection point, and the plugin type.
 
 Since this is the start of the processing, no plugins are defined as there are no objects for them to operate on.
 
-The C<config.raku> file must exist and must contain a minumum set of keys. It may optionally contain keys for
+The C<config.raku> file must exist and must contain a minimum set of keys. It may optionally contain keys for
 the control flags that control the stage, see below. The intent is to keep the options for the root configuration file
 as small as possible and only refer to the source files. Most other options are configured by the Mode.
 
@@ -142,15 +128,12 @@ B<without-processing> (default False)
 This option is used to skip every stage upto the B<Completion>, for example starting the document server without
 checking for documentation updates or re-rendering templates.
 
-B<without-processing> implies B<no-refresh>, and over-rides any configuration option,
-but with the caveat that the caches must exist.
 =end item
 =begin item
 B<recompile>
 
 Forces all the source files to be recompiled into the cache.
 
-B<without-processing> over-rides B<recompile>.
 =end item
 
 =head2 Source
@@ -219,8 +202,6 @@ When B<full-render> is True, the output directory is emptied of content, forcing
 B<full-render> may be combined with B<no-refresh>, for example when templates or plugins are changed and the aim
 is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but
 the cache object will not contain any files generated by B<setup> plugins.
-
-B<without-processsing> takes precedence over B<full-render>, unless there is no output directory.
 =end item
 
 =head2 Render
@@ -468,38 +449,46 @@ unused plugins. See L<Plugin management>
 in a Website, the landing file is usually called C<index.html>
 =item B<output-ext> is the extension for the output files
 
-The following are optional as they are control flags that are False by default.
+All optional control flags are False by default. They are:
 =item no-status
 =item recompile
 =item no-refresh
 =item full-render
 =item no-report
 =item without-processing
+=item no-preserved-state
 =item no-cache
 =item no-completion
 =item debug-when
 =item verbose-when
-=begin item
-B<no-code-escape>
-
-C<ProcessedPod> has a special flag for turning off escaping in code sections
-when a highlighter is used to pre-process code. In some cases, the highlighter also
-does HTML escaping, so RPR has to avoid it.
-
-This has to be done at the Mode level and not left to C<render> plugins.
-=end item
+=item no-code-escape
 
 =head1 Control flags
 
-The control flags have mostly been described in L<Milestones>. They are summarised here again, with some
-extra information.
+The control flags are also covered in L<Milestones>.
 
 =begin item
 B<no-status>
 
-No progress status is output.
+No progress status is output at any time.
 =end item
+=begin item
+B<without-processing>
 
+Setting B<without-processing> to True will skip all the stages except
+B<Completion>, so long as the destination directories exist.
+
+=end item
+=begin item
+B<no-preserved-state>
+
+In order to allow for changes in some source files, or in only mode files, after all the sources
+have been processed once, the processing state must be archived. This may not be needed in testing
+or if the archiving takes too long.
+
+Setting no-preserved-state = True prevents storage of state, but also forces B<without-processing> to False,
+and B<recompile> to True.
+=end item
 =begin item
 B<recompile>
 
@@ -522,7 +511,7 @@ B<full-render>
 Forces all files to be rendered. Even if there are no changes to source files, plugins or templates
 may be added/changed, thus changing the output, so all files need to be re-rendered.
 
-A True value is over-ridden by B<without-processing>
+This flag is set to False if B<without-processing> is True.
 
 =end item
 =begin item
@@ -536,13 +525,7 @@ the caches do not exist (deleted or first run), then the value of B<without-proc
 the value of B<no-report> is observed.
 
 =end item
-=begin item
-B<without-processing>
 
-Unless the caches do not exist, setting B<without-processing> to True will skip all the stages except
-B<Completion>
-
-=end item
 =begin item
 B<no-cache>
 
@@ -573,6 +556,15 @@ B<with-only> filename
 Collect is run only with that filename, which must be in the sources, and is specified like C<debug-when>.
 =end item
 
+=begin item
+B<no-code-escape>
+
+C<ProcessedPod> has a special flag for turning off escaping in code sections
+when a highlighter is used to pre-process code. In some cases, the highlighter also
+does HTML escaping, so RPR has to avoid it.
+
+This has to be done at the Mode level and not left to C<render> plugins.
+=end item
 =head1 Plugin management
 
 Plugins are B<Raku> programs that are executed at specific milestones in the rendering process.
@@ -851,7 +843,7 @@ C<$image-manager> is of type Asset-cache, which has the following methods:
 
 =head1 Copyright and License
 
-(c) Copyright, 2021 Richard Hainsworth
+(c) Copyright, 2021-2022 Richard Hainsworth
 
 B<LICENSE> Artistic-2.0
 

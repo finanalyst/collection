@@ -1,0 +1,49 @@
+use v6.d;
+use Test;
+use Test::Deeply::Relaxed;
+use Pod::From::Cache;
+use Collection;
+
+constant TMP = 'xt/test-dir';
+constant CH = 'cache';
+constant SRC = 'sources';
+
+plan 6;
+
+exit "Must have { TMP }, {TMP}/{ CH } and {TMP}/{SRC}. Run first post-cache test"
+    unless TMP.IO.d and "{TMP}/{ CH }".IO.d and "{TMP}/{SRC}".IO.d;
+
+chdir TMP;
+my $rv;
+lives-ok { $rv = Pod::From::Cache.new(
+    :doc-source<sources>,
+    :cache-path<cache>
+    :progress(Nil) ) but Post-cache },
+    'Instantiating Pod::From::Cache with existing sources and cache works';
+
+isnt-deeply-relaxed Set.new($rv.sources), Set.new($rv.list-changed-files), 'methods sources and list-changed-files are not the same';
+is-deeply-relaxed Set.new($rv.sources),
+    Set(<sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc>),
+    'expected sources';
+is $rv.list-changed-files, [], 'changed files is Empty array';
+
+"sources/file-d.rakudoc".IO.spurt(qq:to/FILE/);
+    =begin pod
+    =TITLE File file-d
+    =head1 First title
+
+    Some text
+    =end pod
+    FILE
+
+$rv = Pod::From::Cache.new(
+        :doc-source<sources>,
+        :cache-path<cache>
+        :progress(Nil) ) but Post-cache;
+
+is-deeply-relaxed Set.new($rv.sources),
+    Set(<sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc sources/file-d.rakudoc>),
+    'new file in sources';
+is $rv.list-changed-files, ['sources/file-d.rakudoc',], 'changed files contains new file';
+
+done-testing;

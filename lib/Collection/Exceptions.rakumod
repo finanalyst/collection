@@ -9,6 +9,14 @@ class X::Collection::Post-cache-alias-overwrite is Exception {
     }
 }
 
+class X::Collection::Post-cache-illegal-alias is Exception {
+    has $.fn;
+    has $.alias;
+    method message {
+        "Attempt to overwrite content associated with ｢$.fn｣ by the alias ｢$.alias｣."
+    }
+}
+
 class X::Collection::NoSources is Exception {
     has $.path;
     method message {
@@ -42,7 +50,7 @@ class X::Collection::BadAssetDirectory is Exception {
     has $.basename;
     method message { "Expecting, but did not get, a directory with ｢$.basename｣ and part ｢$.dir｣" }
 }
-class X::Collection::BadAssetOutputDirectory is Exception {
+class X::Collection::BadOutputDirectory is Exception {
     has $.directory;
     method message { "Expecting, but did not get, a directory with ｢$.directory｣" }
 }
