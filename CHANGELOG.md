@@ -31,6 +31,7 @@
 [2021-03-30 v0.4.2](#2021-03-30-v042)  
 [2021-04-02 v0.5.0](#2021-04-02-v050)  
 [2022-07-17 v.0.7.0](#2022-07-17-v070)  
+[2022-07-22 v0.7.1](#2022-07-22-v071)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -186,8 +187,6 @@
 *  change counter to put heading into state
 
 # 2022-07-17 v.0.7.0
-
-
 *  prepare for fez
 
 *  change to github workflow testing
@@ -214,9 +213,16 @@
 
 *  add no-preserve-state option to prevent archiving if need be
 
+# 2022-07-22 v0.7.1
+
+
+*  move up test for without-processing so no checking of caches
+
+*  revise no-preserve-state test.
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-07-19T23:23:02Z
+Rendered from CHANGELOG at 2022-07-21T23:04:34Z

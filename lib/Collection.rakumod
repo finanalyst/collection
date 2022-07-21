@@ -202,8 +202,8 @@ multi sub collect(Str:D :$dump-at, |c) {
     collect(:dump-at([$dump-at,]), |c)
 }
 multi sub collect(:$no-cache = False, |c) {
-    my $mode = get-config(:$no-cache, :required('mode',))<mode>;
-    collect($mode, :$no-cache, |c)
+    my $mode = get-config( :required('mode',))<mode>;
+    collect($mode,  |c)
 }
 multi sub collect(Str:D $mode,
                   :$no-status is copy,
@@ -224,66 +224,77 @@ multi sub collect(Str:D $mode,
     my $mode-cache;
     my @plugins-used;
     my $rv;
-    my %config = get-config(:$no-cache, :required< sources cache >);
+    my %config = get-config( :required< sources cache >);
     $no-status = (%config<no-status> // False) without $no-status;
     without $without-processing {
         $without-processing = %config<without-processing> // False;
     }
-    without $recompile {
-        $recompile = %config<recompile> // False
+    # make sure $without-processing can proceed
+    if $without-processing {
+        my %t-config =get-config( :path("$mode/configs" ));
+        if "$*CWD/$mode/{ %t-config<destination> }".IO ~~ :e & :d {
+            %config ,= %t-config;
+        }
+        else {
+            note "Cannot continue without processing" unless $no-status;
+            $without-processing = False;
+        }
     }
-    without $no-refresh {
-        $no-refresh = %config<no-refresh> // False
-    }
-    without $full-render {
-        $full-render = %config<full-render> // False
-    }
-    without $no-preserve-state {
-        $full-render = $no-preserve-state = %config<no-preserve-state> // False;
-    }
-
-    $cache = update-cache(
-            :cache-path(%config<cache>), :doc-source(%config<sources>),
-            :$no-status,
-            :$recompile,
-            :$no-refresh,
-            :obtain(%config<source-obtain> // ()),
-            :refresh(%config<source-refresh> // ()),
-            :ignore(%config<ignore> // ()),
-            :extensions(%config<extensions> // <pod6 rakudoc>)
-                                           );
-    $rv = milestone('Source', :with($cache), :@dump-at, :$collection-info);
-    return $rv if $end ~~ /:i Source /;
-    # === Zero / Source milestone ====================================
-    # === no plugins because Mode config not available yet.
-    X::Collection::NoMode.new(:$mode).throw
-    unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
-    %config ,= get-config(:$no-cache, :path("$mode/configs"),
-            :required<mode-cache mode-sources plugins-required destination completion-options>);
-    # include mode level control flags
-    without $no-completion {
-        $no-completion = %config<no-completion> // False
-    }
-    without $no-report {
-        $no-report = %config<no-report> // False
-    }
-    without $collection-info {
-        $collection-info = %config<collection-info> // False
-    }
-    $mode-cache = update-cache(
-            :$no-status,
-            :$recompile,
-            :$no-refresh,
-            :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
-            :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
-            :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
-                                                );
-    my Bool $source-changes = ?(+$cache.list-changed-files);
-    my Bool $collection-changes = ?(+$mode-cache.list-changed-files);
-    my %processed;
-    my %symbols;
-
     unless $without-processing {
+        without $recompile {
+            $recompile = %config<recompile> // False
+        }
+        without $no-refresh {
+            $no-refresh = %config<no-refresh> // False
+        }
+        without $full-render {
+            $full-render = %config<full-render> // False
+        }
+        without $no-preserve-state {
+            $full-render = $no-preserve-state = %config<no-preserve-state> // False;
+        }
+    
+        $cache = update-cache(
+                :cache-path(%config<cache>), :doc-source(%config<sources>),
+                :$no-status,
+                :$recompile,
+                :$no-refresh,
+                :obtain(%config<source-obtain> // ()),
+                :refresh(%config<source-refresh> // ()),
+                :ignore(%config<ignore> // ()),
+                :extensions(%config<extensions> // <pod6 rakudoc>)
+                                               );
+        $rv = milestone('Source', :with($cache), :@dump-at, :$collection-info);
+        return $rv if $end ~~ /:i Source /;
+        # === Zero / Source milestone ====================================
+        # === no plugins because Mode config not available yet.
+        X::Collection::NoMode.new(:$mode).throw
+        unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
+        %config ,= get-config( :path("$mode/configs"),
+                :required<mode-cache mode-sources plugins-required destination completion-options>);
+        # include mode level control flags
+        without $no-completion {
+            $no-completion = %config<no-completion> // False
+        }
+        without $no-report {
+            $no-report = %config<no-report> // False
+        }
+        without $collection-info {
+            $collection-info = %config<collection-info> // False
+        }
+        $mode-cache = update-cache(
+                :$no-status,
+                :$recompile,
+                :$no-refresh,
+                :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
+                :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
+                :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
+                                                    );
+        my Bool $source-changes = ?(+$cache.list-changed-files);
+        my Bool $collection-changes = ?(+$mode-cache.list-changed-files);
+        my %processed;
+        my %symbols;
+
         rmtree "$*CWD/$mode/%config<destination>" if $full-render;
         unless "$*CWD/$mode/%config<destination>".IO.d {
             "$*CWD/$mode/%config<destination>".IO.mkdir;
@@ -435,15 +446,6 @@ multi sub collect(Str:D $mode,
                     :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins(!$no-report));
             return $rv if $end ~~ /:i Report /;
             # ==== Compilation / Report Milestone ===================================
-        }
-    }
-    # make sure $without-processing can proceed
-    if $without-processing {
-        X::Collection::BadOutputDirectory.new(:directory("$*CWD/$mode/{ %config<destination> }")).throw
-            unless "$*CWD/$mode/{ %config<destination> }".IO ~~ :e & :d;
-        for %config<asset-out-paths>.kv -> $type, $directory {
-            X::Collection::BadOutputDirectory.new(:$directory).throw
-            unless $directory.IO ~~ :e & :d
         }
     }
     $rv = milestone('Completion',

@@ -26,9 +26,8 @@ stderr-like { $rv = collect(:no-cache, :end<setup>, :recompile) },
 is $rv[2], True, 'Full-render turned on';
 
 rmtree OUTPUT;
-throws-like { $rv = collect(:no-cache, :end<all>, :no-status, :without-processing) },
-        X::Collection::BadOutputDirectory,
-        message => / 'directory with ｢' .+ "{ OUTPUT }" /,
+stderr-like { $rv = collect(:no-cache, :end<all>, :without-processing) },
+         / 'Cannot continue without processing' /,
         'traps no html output';
 
 $rv = collect(:no-cache, :end<report>, :no-status);
