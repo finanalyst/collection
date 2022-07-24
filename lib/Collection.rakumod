@@ -634,6 +634,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
         }
         # a plugin should only affect the report directly
         # so a plugin should not write directly
+        # a plugin may offer more than one file for a report, $resp is a list of pairs
         my $resp;
         try {
             $resp = indir($path, { &closure.(|$with, %options) });
@@ -641,8 +642,8 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
         if $! {
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
         }
-        if $resp.defined and $resp.key ne '' {
-            "$mode/{ %config<report-path> }/{ $resp.key }".IO.spurt($resp.value)
+        for $resp.list {
+            "$mode/{ %config<report-path> }/{ .key }".IO.spurt( .value )
         }
     }
     @valids

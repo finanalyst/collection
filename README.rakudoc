@@ -679,7 +679,7 @@ as for setup
 
 The C<report> key points to a Raku file that evaluates to a
 
-    sub (%processed, @plugins-used, $pr, %options --> Pair ) {...}
+    sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -694,10 +694,9 @@ as in Compilation
 =defn %options
 as for Setup
 
-The plugin should return a Pair, where .key = (path/)name of the report file with extension,
+The plugin should return an Array of Pair, where for each Pair
+.key = (path/)name of the report file with extension,
 and .value is the text of the report in the appropriate format
-
-The aim is one report plugin -> one report output in a specified format.
 
 The C<collect> sub will write the file to the correct directory.
 

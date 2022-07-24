@@ -12,7 +12,7 @@ constant OUTPUT = "{MODE}/html";
 constant REPORT = "{MODE}/reports";
 constant ASSETS = "{TMP}/assets";
 
-plan 6;
+plan 8;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exist. Have source tests been run?"
@@ -38,7 +38,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %options --> Pair ) {
+    sub (%processed, @plugins-used, $pp, %options --> Array ) {
         ## format is %.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {
@@ -48,23 +48,26 @@ chdir TMP;
                 @report.append: "\t$link points to $location target with $target"
             }
         }
-        @report.append: "\n\nPlugin report";
+        my @plugs = "Plugin report", ;
         for @plugins-used {
-            @report.append: "Plugins used at ｢{ .key }｣ milestone:";
+            @plugs.append: "Plugins used at ｢{ .key }｣ milestone:";
             for .value.kv -> $plug, %params {
-                @report.append: "\t｢$plug｣ called with: ", %params.gist;
+                @plugs.append: "\t｢$plug｣ called with: ", %params.gist;
             }
         }
-        @report.append("\n\nTemplates report");
+        my @templates = "Templates report", ;
         for %processed.kv -> $fn, $podf {
             next unless $podf.templates-used;
-            @report.append("$fn used\n" ~ $podf.templates-used.raku);
+            @templates.append("$fn used\n" ~ $podf.templates-used.raku);
         }
-        'link-plugin-report.txt' => @report.join("\n")
+        [ 'link-report.txt' => @report.join("\n"),
+        'plugin-report.txt' => @plugs.join("\n"),
+        'template-report.txt' => @templates.join("\n")
+        ]
     }
     CODE
 
-(PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/);
+(PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/ );
     %(
         :completion<run-app.raku>
     )
@@ -72,8 +75,6 @@ chdir TMP;
 (PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
     use Test;
     sub ($destination, $landing, $ext, %c-options, %options) {
-        say "destination $destination landing $landing ext $ext";
-        say "$destination/$landing\.$ext";
         ok $destination.IO.d, 'destination is a directory';
         ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
     }
@@ -81,7 +82,7 @@ chdir TMP;
 $rv = collect(MODE, :no-status, :no-cache,
         :end<report>, :full-render, :no-refresh, :no-preserve-state, :no-report );
 
-my $rpt = REPORT ~ '/link-plugin-report.txt';
+my $rpt = REPORT ~ '/link-report.txt';
 nok $rpt.IO.f, 'a report file is not generated';
 #empty-directory REPORT;
 
@@ -92,12 +93,16 @@ like $rpt.IO.slurp,
         /
         'Link report'
         .+ setup_rend .+ 'external' .+ 'nowhere.net.nul'
-        .+ 'Plugin report'
+        /, 'link report ok';
+like (REPORT ~ '/plugin-report.txt').IO.slurp,
+       / 'Plugin report'
         .+ '｢Compilation｣ milestone'
         .+ 'compiler'
-        .+ 'Templates report'
+       /, 'plugin report ok';
+like (REPORT ~ '/template-report.txt').IO.slurp,
+        / 'Templates report'
         .+ 'file-c'
-        /, 'file contains expected info';
+        /, 'template report contains expected info';
 
 # should call three tests
 collect(MODE, :no-status, :no-cache,
@@ -105,9 +110,9 @@ collect(MODE, :no-status, :no-cache,
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %options, --> Pair ) {
+    sub (%processed, @plugins-used, $pp, %options, --> Array ) {
         #only side effects
-        '' => ''
+        []
         }
     CODE
 lives-ok { collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<report>, :full-render, :no-refresh) },
