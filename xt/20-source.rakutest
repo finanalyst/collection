@@ -21,7 +21,7 @@ throws-like { collect(:no-processing) },
         'traps an incorrect option',
         message => / 'passed' .+ 'no-processing' /;
 
-throws-like { collect(:end<setup>, :no-cache, :no-preserve-state) },
+throws-like { collect(:after<setup>, :no-preserve-state) },
         X::RakuConfig::NoFiles,
         'traps lack of config file in root',
         message => / 'config.raku' .+ 'is not a file or' /;
@@ -49,7 +49,7 @@ throws-like { collect(:end<setup>, :no-cache, :no-preserve-state) },
     )
     DATA
 
-throws-like { collect(MODE, :no-status, :no-cache) },
+throws-like { collect(MODE, :no-status) },
         X::Collection::NoMode,
         'traps no mode sub-directory',
         message => / 'sub-directory' .+ ', not found'/;

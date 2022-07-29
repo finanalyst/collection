@@ -11,7 +11,7 @@ unless TMP.IO.d;
 
 chdir TMP;
 
-plan 5;
+plan 7;
 my $rv;
 
 # add a mode directory, with its config files, and plugins directory and some setup plugins
@@ -27,7 +27,7 @@ mktree MODE ~ '/m-sources';
         =end pod
         IND
 
-my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css>;
+my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css asset-mover>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
 (MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
@@ -52,8 +52,9 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
     %(
         plugins-required => %(
             setup => ('{ @pls[0] }', '{ @pls[1] }',) ,
-            render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', '{ @pls[7] }' ) ,
+            render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', '{ @pls[7] }', '{ @pls[8]}', ) ,
             compilation => ('{ @pls[4] }',),
+            transfer => (),
             report => ('{ @pls[3] }',),
             completion => ('{ @pls[5] }',),
         ),
@@ -76,15 +77,16 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
 for @pls {
     (MODE ~ "/some-plugs/$_/config.raku").IO.spurt(qq:to/CONF/);
         %(
-        { given $_ {
-        when 'setup1' { "setup => \'proc.raku\' " }
-        when 'setup_rend' { "render => True, setup => \'proc.raku\' " }
-        when 'reporter' { "report => True" }
-        when 'compiler' { "compilation => True" }
-        when 'completer' { "completion => True " }
-        when 'gather-css' { "render => False" }
-        default { "report => True, css => 'some-styling.css', " }
-    } },
+            { given $_ {
+                when 'setup1' { "setup => \'proc.raku\' " }
+                when 'setup_rend' { "render => True, setup => \'proc.raku\' " }
+                when 'reporter' { "report => True" }
+                when 'compiler' { "compilation => True" }
+                when 'completer' { "completion => True " }
+                when 'gather-css' { "render => False" }
+                when 'asset-mover' { "render => False" }
+                default { "report => True, css => 'some-styling.css', " }
+            } },
         );
         CONF
 }
@@ -119,16 +121,21 @@ for <setup1 setup_rend> {
         CONF
 
 }
-$rv = collect(MODE, :no-status, :no-cache, :end<setup>, :no-preserve-state, :recompile);
+
+$rv = collect(MODE, :no-status, :after<mode>, :no-preserve-state, :recompile);
+is $rv[1][0]<Mode>[0]<message>, 'No plugins defined', 'Mode plugin message correct';
+
+$rv = collect(MODE, :no-status, :before<setup>, :no-preserve-state, :recompile);
 #recompile to ensure that the cache is emptied
-is $rv.elems, 5, 'collect should return 5 elems at setup';
-isa-ok $rv[0], Pod::From::Cache, 'first of list';
-isa-ok $rv[1], Pod::From::Cache, 'second of list';
+is $rv.elems, 2, 'collect should return 2 elems';
+is $rv[0].elems, 5, 'collect should return 5 elems at setup';
+isa-ok $rv[0][0], Pod::From::Cache, 'first of list';
+isa-ok $rv[0][1], Pod::From::Cache, 'second of list';
 
 is-deeply-relaxed
-        $rv[0].list-changed-files.Set,
-        <sources/file-a.rakudoc sources/file-b.rakudoc sources/file-c.rakudoc sources/file-d.rakudoc sources/extra_0_setup1 sources/extra_1_setup_rend>.Set,
+        $rv[0][0].list-changed-files.Set,
+        <sources/extra_0_setup1 sources/extra_1_setup_rend>.Set,
         'cache altered';
-isa-ok $rv[0].pod('sources/extra_1_setup_rend')[0], Pod::Block, 'retrieved Pod::Block from first extra';
+isa-ok $rv[0][0].pod('sources/extra_1_setup_rend')[0], Pod::Block, 'retrieved Pod::Block from first extra';
 
 done-testing;

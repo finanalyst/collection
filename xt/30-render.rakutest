@@ -14,7 +14,7 @@ constant TEMPLATES = "{ MODE }/templates";
 constant ASSETS = 'assets';
 constant HTML = "{ MODE }/html";
 
-plan 9;
+plan 10;
 my $rv;
 
 bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
@@ -112,13 +112,16 @@ mktree "{ ASSETS }/images";
         }
         CONF
 
-$rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :recompile, :full-render);
-isa-ok $rv, ProcessedPod, 'got the correct object';
-is-deeply-relaxed $rv.custom.Set,
+$rv = collect(MODE, :no-status, :after<setup>, :no-preserve-state, :recompile);
+is $rv[1][2]<Render>[0]<message>, 'Plugin calls cancelled', 'no plugins when stopped by an after';
+
+$rv = collect(MODE, :no-status, :no-preserve-state, :before<render>, :recompile, :full-render);
+isa-ok $rv[0][0], ProcessedPod, 'got the correct object';
+is-deeply-relaxed $rv[0][0].custom.Set,
         <figure diagram sorted-table design>.Set,
         'plugin added the custom blocks';
-ok $rv.tmpl<sorted-table>:exists, 'template was added from rend2';
-ok $rv.tmpl<design>:exists, 'template was added from setup_rend';
+ok $rv[0][0].tmpl<sorted-table>:exists, 'template was added from rend2';
+ok $rv[0][0].tmpl<design>:exists, 'template was added from setup_rend';
 
 ok (HTML ~ '/assets/css/local.css').IO.f, 'file exists';
 like (HTML ~ '/assets/css/local.css').IO.slurp,
@@ -133,7 +136,7 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
         }
         CONF
 
-$rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :full-render);
+$rv = collect(MODE, :no-status, :no-preserve-state, :before<render>, :full-render);
 ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is not registered
@@ -148,7 +151,7 @@ ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
         CONF
 
 use Test::Output;
-stderr-like { $rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<render>, :full-render)},
+stderr-like { $rv = collect(MODE, :no-status, :no-preserve-state, :before<render>, :full-render)},
        /
        'is not registered as a plugin'
        /, 'transferring from unregistered plugin is ignored with warning';

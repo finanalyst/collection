@@ -20,17 +20,21 @@ bail-out "{ TMP } and { TMP }/{ REPORT } must exist. Have report-completion test
 unless TMP.IO.d and "{ TMP }/{ REPORT }".IO.d;
 
 chdir TMP;
-stderr-like { $rv = collect(:no-cache, :end<setup>, :recompile) },
+"{MODE}/processed-state.7z".IO.unlink #eliminate if exists
+if "{MODE}/processed-state.7z".IO.e;
+stderr-like {
+    $rv = collect( MODE, :after<mode>, :recompile) ;
+        },
         / 'Could not recover the archive' /,
         'detects the absence of preserved state';
-is $rv[2], True, 'Full-render turned on';
+is $rv[0][2], True, 'Full-render turned on';
 
 rmtree OUTPUT;
-stderr-like { $rv = collect(:no-cache, :end<all>, :without-processing) },
+stderr-like { $rv = collect( MODE, :after<all>, :without-processing) },
          / 'Cannot continue without processing' /,
         'traps no html output';
 
-$rv = collect(:no-cache, :end<report>, :no-status);
+$rv = collect( :after<report>, :no-status);
 ok "{MODE}/processed-state.7z".IO ~~ :f, 'got preserve state archive';
 my ($ok, %processed, %symbols) := restore-processed-state( MODE , :no-status );
 ok $ok, 'restoration was good';

@@ -20,16 +20,8 @@ unless TMP.IO.d and "{TMP}/{ MODE }".IO.d and "{TMP}/{PLUGS}".IO.d;
 
 #my @pls = <setup1 setup_rend rend2 reporter compiler completer unused>;
 
-mktree ASSETS ~ '/videos';
-mktree ASSETS ~ '/images';
-
 chdir TMP;
 
-(MODE ~ '/configs/04-asset-output-options.raku').IO.spurt(qq:to/CONF/);
-    %(
-        asset-out-path => "assets", # relative to destination directory
-    );
-    CONF
 # rewrite the plugins for reporter and completer
 
 (PLUGS ~ '/reporter/config.raku').IO.spurt( q:to/CONF/);
@@ -79,15 +71,15 @@ chdir TMP;
         ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
     }
     CODE
-$rv = collect(MODE, :no-status, :no-cache,
-        :end<report>, :full-render, :no-refresh, :no-preserve-state, :no-report );
+$rv = collect(MODE, :no-status,
+        :after<report>, :full-render, :no-refresh, :no-preserve-state, :without-report );
 
 my $rpt = REPORT ~ '/link-report.txt';
 nok $rpt.IO.f, 'a report file is not generated';
 #empty-directory REPORT;
 
-$rv = collect(MODE, :no-status, :no-cache,
-        :end<report>, :full-render, :no-preserve-state, :no-refresh, :!no-report );
+$rv = collect(MODE, :no-status,
+        :after<report>, :full-render, :no-preserve-state, :no-refresh, :!without-report );
 ok $rpt.IO.f, 'a report file is generated';
 like $rpt.IO.slurp,
         /
@@ -105,8 +97,8 @@ like (REPORT ~ '/template-report.txt').IO.slurp,
         /, 'template report contains expected info';
 
 # should call three tests
-collect(MODE, :no-status, :no-cache,
-        :end<completion>, :full-render, :no-preserve-state, :no-refresh );
+collect(MODE, :no-status,
+        :after<completion>, :full-render, :no-preserve-state, :no-refresh );
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
@@ -115,7 +107,7 @@ collect(MODE, :no-status, :no-cache,
         []
         }
     CODE
-lives-ok { collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<report>, :full-render, :no-refresh) },
+lives-ok { collect(MODE, :no-status, :no-preserve-state, :after<report>, :full-render, :no-refresh) },
         'allows a Nil return';
 
 done-testing;

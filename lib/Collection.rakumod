@@ -12,8 +12,10 @@ proto sub collect(|c) is export {
     X::Collection::BadOption.new(:passed(|c.keys.grep(*~~ Str))).throw
     unless all(|c.keys.grep(*~~ Str))
             eq
-            any(<no-status without-processing no-preserve-state no-refresh recompile full-render no-report no-completion no-cleanup
-                end no-cache collection-info dump-at debug-when verbose-when with-only>);
+            any(<no-status no-preserve-state no-refresh recompile full-render
+                without-processing without-report without-completion
+                before after collection-info
+                dump-at debug-when verbose-when with-only>);
     {*}
 }
 
@@ -95,6 +97,7 @@ class Asset-cache {
     #| the file currently being processed
     has Str $.current-file is rw = '';
     #| asset-sources provides a list of all the items in the cache
+    #| not all items in cache may be used by an individual rakudoc file
     method asset-sources {
         %!data-base.keys
     }
@@ -164,7 +167,7 @@ class Asset-cache {
     }
 }
 
-sub update-cache(Bool:D :$no-status is copy, Bool:D :$recompile, Bool:D :$no-refresh,
+sub update-cache(:$no-status, :$recompile, :$no-refresh,
                  :$doc-source, :$cache-path,
                  :@obtain, :@refresh, :@ignore, :@extensions
         --> Pod::From::Cache) {
@@ -198,12 +201,9 @@ sub update-cache(Bool:D :$no-status is copy, Bool:D :$recompile, Bool:D :$no-ref
             :progress($no-status ?? Nil !! &counter)) but Post-cache
 }
 
-multi sub collect(Str:D :$dump-at, |c) {
-    collect(:dump-at([$dump-at,]), |c)
-}
-multi sub collect(:$no-cache = False, |c) {
+multi sub collect(:$no-status = False, |c) {
     my $mode = get-config( :required('mode',))<mode>;
-    collect($mode,  |c)
+    collect($mode, :$no-status, |c)
 }
 multi sub collect(Str:D $mode,
                   :$no-status is copy,
@@ -211,24 +211,25 @@ multi sub collect(Str:D $mode,
                   :$no-refresh is copy,
                   :$recompile is copy,
                   :$full-render is copy,
-                  :$no-report is copy,
-                  :$no-completion is copy,
+                  :$without-report is copy,
+                  :$without-completion is copy,
                   :$collection-info is copy,
                   :$no-preserve-state is copy,
-                  Str :$end = 'all',
+                  Str :$before = '',
+                  Str :$after = 'all',
                   :@dump-at = (),
-                  :$debug-when = '', :$verbose-when = '', :$with-only = '',
-                  Bool :$no-cache = False
+                  Str :$debug-when = '', Str :$verbose-when = '', Str :$with-only = ''
                   ) {
     my $cache;
     my $mode-cache;
     my @plugins-used;
     my $rv;
+    my Bool $ret-before;
+    my Bool $ret-after;
     my %config = get-config( :required< sources cache >);
     $no-status = (%config<no-status> // False) without $no-status;
-    without $without-processing {
-        $without-processing = %config<without-processing> // False;
-    }
+    $without-processing = ( %config<without-processing> // False ) without $without-processing;
+
     # make sure $without-processing can proceed
     if $without-processing {
         my %t-config =get-config( :path("$mode/configs" ));
@@ -241,19 +242,13 @@ multi sub collect(Str:D $mode,
         }
     }
     unless $without-processing {
-        without $recompile {
-            $recompile = %config<recompile> // False
-        }
-        without $no-refresh {
-            $no-refresh = %config<no-refresh> // False
-        }
-        without $full-render {
-            $full-render = %config<full-render> // False
-        }
-        without $no-preserve-state {
-            $full-render = $no-preserve-state = %config<no-preserve-state> // False;
-        }
-    
+        $recompile = ( %config<recompile> // False ) without $recompile;
+        $full-render = ( %config<full-render> // False ) without $full-render;
+        $no-preserve-state = ( %config<no-preserve-state> // False ) without $no-preserve-state;
+        $full-render = $no-preserve-state if $no-preserve-state; # over-ride full-render if no state
+
+        say "Starting ｢Source｣ milestone" if $collection-info;
+
         $cache = update-cache(
                 :cache-path(%config<cache>), :doc-source(%config<sources>),
                 :$no-status,
@@ -263,25 +258,22 @@ multi sub collect(Str:D $mode,
                 :refresh(%config<source-refresh> // ()),
                 :ignore(%config<ignore> // ()),
                 :extensions(%config<extensions> // <pod6 rakudoc>)
-                                               );
-        $rv = milestone('Source', :with($cache), :@dump-at, :$collection-info);
-        return $rv if $end ~~ /:i Source /;
-        # === Zero / Source milestone ====================================
+        );
+        $ret-after = ?($after ~~ /:i Source /);
+        $ret-before = ?($before ~~ /:i Mode /); # call-plugins False because there are no plugins valid here
+        $rv = milestone('Mode', :with($cache), :@dump-at, :$collection-info, :@plugins-used, :!call-plugins );
+        return $rv if ($ret-after or $ret-before);
+        # === Source / Mode milestone ====================================
         # === no plugins because Mode config not available yet.
         X::Collection::NoMode.new(:$mode).throw
         unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
         %config ,= get-config( :path("$mode/configs"),
                 :required<mode-cache mode-sources plugins-required destination completion-options>);
         # include mode level control flags
-        without $no-completion {
-            $no-completion = %config<no-completion> // False
-        }
-        without $no-report {
-            $no-report = %config<no-report> // False
-        }
-        without $collection-info {
-            $collection-info = %config<collection-info> // False
-        }
+        $without-completion = ( %config<without-completion> // False ) without $without-completion;
+        $without-report = ( %config<without-report> // False ) without $without-report;
+        $collection-info = ( %config<collection-info> // False ) without $collection-info;
+
         $mode-cache = update-cache(
                 :$no-status,
                 :$recompile,
@@ -307,12 +299,22 @@ multi sub collect(Str:D $mode,
             $full-render = !$ok;
         }
         # %processed contains all processed data and is preserved by default after the rendering stage
+        $ret-after = ?($after ~~ /:i Mode /);
+        $ret-before = ?($before ~~ /:i Setup /);
+        #plugins called if (1) ret-before True, (2) Not $ret-after, (3) ( $ret-after = false & $ret-before = False)
+        # call if ret-before or ! ret-after or (! ret-after & ! ref-before )
+        #  call-pl  ret-after ret-before
+        #     F        T        T       (ret-after takes precedence)
+        #     F        T        F
+        #     T        F        T
+        #     T        F        F
 
         $rv = milestone('Setup',
-                :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
-                :@dump-at, :$collection-info, :@plugins-used, :%config,
-                :$mode, :call-plugins($source-changes or $collection-changes or $full-render));
-        return $rv if $end ~~ /:i Setup /;
+            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
+            :@dump-at, :$collection-info, :@plugins-used, :%config, :$mode,
+            :call-plugins( !$ret-after )
+        );
+        return $rv if ($ret-after or $ret-before);
         # if no cache changes, then no need to run setup
         # if full-render, then setup has to be done for all cache files to ensure pre-processing happens
         # === Source / Setup milestone ==================================================
@@ -340,6 +342,8 @@ multi sub collect(Str:D $mode,
             my @files;
             for <sources mode> -> $stage {
                 if $stage eq 'sources' {
+                    $ret-after = ?($after ~~ /:i Setup /);
+                    $ret-before = ?($before ~~ /:i Render /);
                     $rv = milestone('Render',
                             :with($pr),
                             :@dump-at,
@@ -347,8 +351,9 @@ multi sub collect(Str:D $mode,
                             :$mode,
                             :$collection-info,
                             :@plugins-used,
-                            :call-plugins);
-                    return $rv if $end ~~ /:i Render /;
+                            :call-plugins( !$ret-after)
+                    );
+                    return $rv if ($ret-after or $ret-before);
                     # ======== Setup / Render milestone =============================
                     @files = $full-render ?? $cache.sources.list !! $cache.list-changed-files.list;
                     @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
@@ -358,16 +363,19 @@ multi sub collect(Str:D $mode,
                 }
                 else {
                     # $stage eq mode
+                    $ret-after = ?($after ~~ /:i Render /);
+                    $ret-before = ?($before ~~ /:i Compilation /);
                     $rv = milestone('Compilation',
-                            :with($pr, %processed),
-                            :@dump-at,
-                            :%config,
-                            :$mode,
-                            :$collection-info,
-                            :@plugins-used,
-                            :call-plugins);
-                    return $rv if $end ~~ /:i Compilation /;
-                    # ==== Compilation Milestone ===================================
+                        :with($pr, %processed),
+                        :@dump-at,
+                        :%config,
+                        :$mode,
+                        :$collection-info,
+                        :@plugins-used,
+                        :call-plugins( !$ret-after )
+                    );
+                    return $rv if ($ret-after or $ret-before);
+                    # ==== Render / Compilation Milestone ===================================
                     # All the mode files assumed to depend on the source files, so all mode files are re-rendered
                     # if any source file is changed, or all sources to be rendered.
                     # But if only mode files have changed, then there is only a need to render the mode files.
@@ -436,27 +444,38 @@ multi sub collect(Str:D $mode,
                     }
                 }
             }
+            $ret-after = ?($after ~~ /:i Compilation /);
+            $ret-before = ?($before ~~ /:i Transfer /);
+            $rv = milestone('Transfer', :with(%processed, $pr), :@dump-at,
+                :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after )
+            );
+            return $rv if ($ret-after or $ret-before);
+            # ==== Compilation / Transfer Milestone ===================================
             for %config<asset-out-paths>.kv -> $type, $dir {
                 mktree $dir unless $dir.IO.d
             }
             $image-manager.asset-spurt("$mode/%config<destination>/%config<asset-out-path>");
             save-processed-state($mode, %processed, %symbols, :$no-status)
-            unless $no-preserve-state;
+                unless $no-preserve-state;
+            $ret-after = ?($after ~~ /:i Transfer /);
+            $ret-before = ?($before ~~ /:i Report /);
             $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
-                    :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins(!$no-report));
-            return $rv if $end ~~ /:i Report /;
-            # ==== Compilation / Report Milestone ===================================
+                :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after and !$without-report));
+            return $rv if ($ret-after or $ret-before);
+            # ==== Transfer / Report Milestone ===================================
         }
     }
+    $ret-after = ?($after ~~ /:i Report /);
+    $ret-before = ?($before ~~ /:i Completion /);
     $rv = milestone('Completion',
             :with("$mode/{ %config<destination> }".IO.absolute,
                   %config<landing-place>, %config<output-ext>, %config<completion-options>),
             :$mode, :@dump-at, :%config, :$collection-info, :$no-status,
-            :@plugins-used, :call-plugins(!$no-completion));
-    return $rv if $end ~~ /:i Completion /;
+            :@plugins-used, :call-plugins( !$ret-after and !$without-completion));
+    return $rv if ($ret-after or $ret-before);
     # === Report / Completion Milestone ================================
     @plugins-used
-    # inspection point end eq 'all'
+    # inspection point after eq 'all'
     # === All milestone (nothing else must happen) ================================
 }
 
@@ -522,11 +541,12 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     }
     @valid-confs
 }
-multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completion>),
+multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation transfer completion>),
                          :$with,
                          :%config, :$mode,
                          :$collection-info,
-                         :$no-status) {
+                         :$no-status
+                         --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
@@ -547,7 +567,8 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
 multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ ProcessedPod,
                          :%config, :$mode,
                          :$collection-info,
-                         :$no-status) {
+                         :$no-status
+                        --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
@@ -618,7 +639,8 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
 multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
                          :%config, :$mode,
                          :$collection-info,
-                         :$no-status) {
+                         :$no-status
+                         --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     my %options = %( :$collection-info, :$no-status);
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
@@ -675,17 +697,28 @@ sub counter(:$start, :$dec, :$header) {
 }
 
 sub milestone($mile, :$with, :@dump-at = (), :$collection-info, :$no-status,
-              :%config = {}, :$mode = '', :@plugins-used = (), Bool :$call-plugins = False) {
-    @plugins-used.append(%( $mile => manage-plugins($mile.lc, :$with, :%config, :$mode, :$collection-info,
-    :$no-status)))
-    if $call-plugins;
+              :%config = {}, :$mode = '',
+              :@plugins-used,
+              Bool :$call-plugins
+              --> Array ) {
+    if $mile ~~ /:i Mode/ {
+        @plugins-used.append: %( $mile => [:message('No plugins defined'), ] );
+    }
+    elsif $call-plugins {
+        @plugins-used.append:
+        %( $mile => manage-plugins($mile.lc, :$with, :%config, :$mode, :$collection-info, :$no-status))
+    }
+    else {
+        @plugins-used.append: %( $mile => [ :message('Plugin calls cancelled'), ] )
+    }
     if $mile.lc ~~ any(|@dump-at) {
         my $rv = '';
         for $with.list -> $ds {
             $rv ~= ($ds.raku ~ "\n\n")
         }
+        $rv ~= @plugins-used.raku;
         "dumped-{ $mode ?? $mode !! 'mode-unknown' }-at-{ $mile.lc }\.txt".IO.spurt($rv);
     }
-    say "Passed \<$mile> milestone" if $collection-info;
-    $with
+    say "Starting ｢$mile｣ milestone" if $collection-info;
+    [ $with, @plugins-used ];
 }

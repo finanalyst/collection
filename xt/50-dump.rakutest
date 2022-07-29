@@ -25,11 +25,10 @@ chdir TMP;
     )
     CONF
 lives-ok {
-    collect(:no-status, :full-render, :no-preserve-state, :dump-at(<source setup render compilation report completion>)) ;
+    collect(:no-status, :full-render, :no-preserve-state, :dump-at(<source setup render compilation transfer report completion>)) ;
 }, 'collect continues, but dumps';
 
-ok "dumped-mode-unknown-at-source\.txt".IO.f, "dumped-mode-unknown-at-source\.txt".IO.absolute ~ ' is a dump file';
-for <setup render compilation report completion> {
+for <setup render compilation transfer report completion> {
     ok "dumped-{MODE}-at-$_\.txt".IO.f, "dumped-{MODE}-at-$_\.txt".IO.absolute ~ ' is a dump file';
 }
 

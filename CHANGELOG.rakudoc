@@ -140,9 +140,20 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =item move up test for without-processing so no checking of caches
 =item revise no-preserve-state test.
 
-=head1 2022-07-23 v0.7.2
+=head1 2022-07-24 v0.8.0
 =item revise report plugin spec so that one plugin can produce multiple report files
 =item report plugin returns an Array of Pairs, not just a Pair
 =item change test accordingly
+=item revise post-cache documentation
+=item change no-report & no-completion to without-* to be consistent with without-processing
+=item remove no-cache, as its not in get-config
+=item Revise milestone handling
+=item1 collect process can be stopped before AND after each stage
+=item1 change :end to :after to be compatible with :before
+=item1 :after implies no plugins triggered for a milestone, before implies plugins triggered
+=item1 dump-at implies plugins triggered
+=item1 change tests to reflect new specifications
+=item1 milestone information object includes plugins-used array of hashes
+=item1 revise README documentation
 
 =end pod

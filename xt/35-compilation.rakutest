@@ -37,14 +37,14 @@ bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
 # test single file run
 # output directory at this point should be empty, so make sure
 empty-directory HTML;
-$rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<compilation>, :full-render, :with-only<file-c>);
+$rv = collect(MODE, :no-status, :no-preserve-state, :after<compilation>, :full-render, :with-only<file-c>);
 ok "{HTML}/file-c.html".IO.f, 'got file-c';
 is HTML.IO.dir(test => / '.html' /).elems, 1, 'only one output file';
 
 # test debug-when, together with the OUTPUT tests
 use Test::Output;
 output-like {
-    $rv = collect(MODE, :no-status, :no-cache, :no-preserve-state, :end<compilation>, :full-render, :debug-when<file-c>)
+    $rv = collect(MODE, :no-status, :no-preserve-state, :after<compilation>, :full-render, :debug-when<file-c>)
     },
     / 'Processing first pod declaration in file sources/file-c.rakudoc' /,
     'outputs info about file-c';
@@ -69,20 +69,20 @@ output-like {
     CODE
 
 stdout-like  {
-    $rv = collect(MODE, :collection-info, :no-status, :no-cache, :no-preserve-state, :end<compilation>, :full-render, :no-refresh) ;
+    $rv = collect(MODE, :collection-info, :no-status, :no-preserve-state, :before<compilation>, :full-render, :no-refresh) ;
 },
-    / 'Passed <Render> milestone' .+ 'is listed for milestone' .+ 'compilation'/,
+    / 'Starting ｢Render｣ milestone' .+ 'is listed for milestone' .+ 'compilation'/,
     'got collection info';
 
-is-deeply-relaxed $rv[1].keys.Set,
+is-deeply-relaxed $rv[0][1].keys.Set,
         <extra_0_setup1 extra_1_setup_rend file-a file-b file-c file-d>.Set,
         'got all the files in cache';
-is-deeply-relaxed $rv[0].plugin-datakeys.Set,
-        <image-manager rend2 setup_rend collection-footnotes collection-toc collection-glossary collection-meta mode-name gather-css>.Set,
+is-deeply-relaxed $rv[0][0].plugin-datakeys.Set,
+        <image-manager rend2 setup_rend collection-footnotes collection-toc collection-glossary collection-meta mode-name gather-css asset-mover>.Set,
         'name-spaces set up';
 is-deeply-relaxed "{MODE}/html".IO.dir(test => /'.html'/)>>.relative(MODE ~ '/html').Set,
         (<extra_0_setup1 extra_1_setup_rend file-a file-b file-c file-d> >>~>> '.html').Set,
         'got all the files in cache';
-isa-ok $rv[0].get-data('collection-toc'), Associative , 'plugin data key has content';
+isa-ok $rv[0][0].get-data('collection-toc'), Associative , 'plugin data key has content';
 
 done-testing;

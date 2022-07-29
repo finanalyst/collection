@@ -1,7 +1,7 @@
 ![github-tests-passing-badge](https://github.com/finanalyst/collection/actions/workflows/test.yaml/badge.svg)
 # Raku Collection Module
 >
-> **Description** A subroutine to collect content files written in Rakudoc (aka POD6). The collection process is in stages at the start of which plugins (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
+> **Description** A subroutine to collect content files written in Rakudoc (aka POD6). A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc files that describe the whole collection of sources (mode-sources), eg. the landing page (index.html) of a website, or the Contents page of the same sources in book form. The collection process is in stages at the start of which plugins (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
 
 > **Author** Richard Hainsworth aka finanalyst
 
@@ -10,19 +10,20 @@
 ## Table of Contents
 [Installation](#installation)  
 [Usage](#usage)  
-[Archiving and Minor Changes](#archiving-and-minor-changes)  
 [Life cycle of processing](#life-cycle-of-processing)  
 [Milestones](#milestones)  
-[Zeroth](#zeroth)  
-[Source](#source)  
-[Setup](#setup)  
-[Render](#render)  
-[Compilation](#compilation)  
-[Report](#report)  
-[Completion](#completion)  
-[Cleanup](#cleanup)  
-[Distribution Structure](#distribution-structure)  
-[Content](#content)  
+[Stopping or dumping information at milestones](#stopping-or-dumping-information-at-milestones)  
+[Source Milestone](#source-milestone)  
+[Mode Milestone](#mode-milestone)  
+[Setup Milestone](#setup-milestone)  
+[Render Milestone](#render-milestone)  
+[Compilation Milestone](#compilation-milestone)  
+[Transfer Milestone](#transfer-milestone)  
+[Report Milestone](#report-milestone)  
+[Completion Milestone](#completion-milestone)  
+[Cleanup Milestone](#cleanup-milestone)  
+[Collection Structure](#collection-structure)  
+[Collection Content](#collection-content)  
 [Extra assets (images, videos, etc)](#extra-assets-images-videos-etc)  
 [Cache](#cache)  
 [Mode](#mode)  
@@ -32,16 +33,23 @@
 [Second-level configuration](#second-level-configuration)  
 [Control flags](#control-flags)  
 [Plugin management](#plugin-management)  
+[Disabling a plugin](#disabling-a-plugin)  
+[Plugin types](#plugin-types)  
 [Setup](#setup)  
 [Render](#render)  
 [Compilation](#compilation)  
+[Transfer](#transfer)  
 [Report](#report)  
 [Completion](#completion)  
+[Problems and TODO items](#problems-and-todo-items)  
+[Archiving and Minor Changes](#archiving-and-minor-changes)  
+[Plugin development](#plugin-development)  
+[Dump file formatting](#dump-file-formatting)  
 [Post-cache methods](#post-cache-methods)  
-[multi method add(Str $fn, Array $p)](#multi-method-addstr-fn-array-p)  
-[multi method add(Str $fn)](#multi-method-addstr-fn)  
-[multi method add(Str $fn, Str :alias! )](#multi-method-addstr-fn-str-alias-)  
-[method anti-alias(Str $fn --&gt; Str )](#method-anti-aliasstr-fn----str-)  
+[multi method add(Str $fn, Array $p --&gt; Pod::From::Cache )](#multi-method-addstr-fn-array-p----podfromcache-)  
+[multi method mask(Str $fn --&gt; Pod::From::Cache)](#multi-method-maskstr-fn----podfromcache)  
+[multi method add-alias(Str $fn, Str :alias! --&gt; Pod::From::Cache)](#multi-method-add-aliasstr-fn-str-alias----podfromcache)  
+[method behind-alias(Str $fn --&gt; Str )](#method-behind-aliasstr-fn----str-)  
 [method pod(Str $fn)](#method-podstr-fn)  
 [Asset-cache methods](#asset-cache-methods)  
 [Copyright and License](#copyright-and-license)  
@@ -56,50 +64,58 @@ zef install Collection
 # Usage
 The Collection module expects there to be a `config.raku `file in the root of the collection, which provides information about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration, template, and plugin files described below are **Raku** programs that evaluate to a Hash. They are described in the documentation for the `RakuConfig` module.
 
-A concrete example of `Collection` is the [Collection-Raku-Documentation](https://github.com/finanalyst/collection-raku-documentation.git) module.
+A concrete example of `Collection` is the [Collection-Raku-Documentation (CRD)](https://github.com/finanalyst/collection-raku-documentation.git) module. _CRD_ contains a large number of plugins (see below). Some plugin examples are constructed for the extended tests. Since the test examples files are deleted by the final test, try:
 
-The `Collection` module provides the infrastructure, whilst `Collection-Raku-Documentation` provides an example of a concrete configuration.
+```
+prove6 -I. xt/1* xt/2* xt/3* xt/4* xt/5*
+```
+and then look at `xt/test-dir`.
 
-# Archiving and Minor Changes
-In principle, if a small change is made in a source file of a Collection, only the rendered version of that file should be changed, and the Collection pages (eg., the index and the glossaries) updated.
-
-When there are many source files, the process of saving and restoring state information may be longer than actually rerendering all the cached files. Consequently, the option `no-preserve-state` prevents the archiving of processed state.
+The main subroutine is `collect`. It requires a file `config.raku` to be in the `$CWD` (current working directory). In _CRD_ the executable `Raku-Doc` initiates the collection by setting up sources and installing a `config.raku` file. It is then simply a command line interface to `collect`.
 
 # Life cycle of processing
-After initialisation, which should only occur once, then the content files are processed in several stages separated by milestones. At each milestone, intermediary data can be reprocessed using plugins, the data after the plugins can be dumped, or the processed halted.
+The content files are processed in several stages separated by milestones. At each milestone, intermediary data can be processed using plugins, the data after the plugins can be dumped, or the processed halted.
 
 `collect` can be called with option flags, which have the same effect as configuration options. The run-time values of the [Control flags](Control flags.md) take precedence over the configuration options.
 
 `collect` should be called with a [Mode](Mode.md). A **Mode** is the name of a set of configuration files, templates, and plugins that control the way the source files are processed and rendered. The main configuration file must contain a key called `mode`, which defines the default mode that `collect` uses if called with no explicit mode, so if `collect` is called without a **Mode**, the default will be used.
 
-In **Collection-Raku-Documentation** `Raku-Doc` is an Command Line Interface for giving run time options to `collect`.
-
 # Milestones
 The `collect` sub can be called once the collection directory contains a `config.raku`, which in turn contains the location of a directory of rakudoc source files, which must contain recursively at least one source.
 
-The process of collecting, rendering and outputting the collection has a number of milestones. A milestone will have an inspection point, at which the intermediate data can be dumped **without stopping** the processing, eg.,
+Processing occurs during a stage named by the milestone which starts it. Each stage is affected by a set of [Control flags](Control flags.md). Certain flags will be passed to the underlying objects, eg. `RakuConfig` and `ProcessedPod` (see `Raku::Pod::Render`).
+
+Plugins may be called at each milestone (except 'Source' and 'Mode', where they are not defined). Plugins are described in more detail in [Plugin management](Plugin management.md). Plugins are milestone specific, with the call parameters and return values depending on the milestone.
+
+## Stopping or dumping information at milestones
+Intermediate data can be dumped at the milestone **without stopping** the processing, eg.,
 
 ```
-collect(:dump-at<post-cache render>);
+collect(:dump-at<source render>);
 ```
-or the processing can be **stopped** and the intermediate data inspected, eg.
+Alternatively, the processing can be **stopped** and intermediate data inspected, EITHER after the stage has run, but before the plugins for the next stage have been triggered, eg.,
 
 ```
-my $rv = collect(:end<source>);
+my $rv = collect(:after<setup>);
 ```
-The `end` and `dump-at` option values are the (case-insensitive) name(s) of the inspection point for the milestone. Clearly, `end` only takes one name, but dump may take one or all of them (each separately specified).
+OR after the previous stage has run and after the plugins for the milestone have been triggered, eg.,
 
-A milestone may also be where plugins (aka call-backs) can be defined. Plugins are described in more detail in [Plugin management](Plugin management.md).
+```
+my $rv = collect(:before<render>);
+```
+The return value `$rv` is an array of the objects provided to plugins at that milestone, and an array of the plugins triggered (note the plugins used will be a difference between the `:before` and `:after` stop points). The plugins-used array is not provided to all plugins, except at the Report milestone.
 
-The return value of `collect` at a milestone is the object provided to the plugins after all the plugins have been evaluated. The aim of this design is to give to developers the ability to test the effect of plugins at each stage on the object to be modified by the plugins.
+The return value `$rv` at `:after` will contain the object provided by the milestone after the named milestone. For example, milestone milestone 'Setup' is followed by milestone 'Render'. The return object for `:after<setup>` will be the return object for milestone 'Render'. See Milestones for more information.
 
-The `dump-at` option calls `pretty-dump` or `.raku` [TODO pretty-dump, when it handles BagHash and classes] on the same objects as above and then outputs them to a file(s) called `dump-at-<milestone name>.txt`.
+The object returned by `:before<render>` may be affected by the plugins that are triggered before the named stage.
 
-Processing occurs during a stage named by the milestone which starts it. Each stage is affected by a set of [Control flags](Control flags.md). Certain flags will be passed to the underlying objects, eg. `RakuConfig` and `ProcessedPod` (see `Raku::Pod::Render`.
+The `:before`, `:after` and `:dump-at` option values are the (case-insensitive) name(s) of the inspection point for the milestone. `:before` and `:after` only take one name, but `:dump-at` may take one or all of them in a space-delimited unordered list.
 
-The milestone name is the name of the inspection point, and the plugin type.
+The `dump-at` option calls `.raku` [TODO pretty-dump, when it handles BagHash and classes] on the same objects as above and then outputs them to a file(s) called `dump-at-<milestone name>.txt`.
 
-## Zeroth
+## Source Milestone
+(Skipped if the `:without-processing` flag is True)
+
 Since this is the start of the processing, no plugins are defined as there are no objects for them to operate on.
 
 The `config.raku` file must exist and must contain a minimum set of keys. It may optionally contain keys for the control flags that control the stage, see below. The intent is to keep the options for the root configuration file as small as possible and only refer to the source files. Most other options are configured by the Mode.
@@ -108,54 +124,38 @@ During the subsequent **Source** stage, the source files in the collection are b
 
 Any changes to the source files are cached by default.
 
-The control flags for the subsequent process are:
-
-*  **no-status** (default False)
-
-The compilation and caching of source files is slow, so a progress bar is provided by default. This is not useful when testing or batch processing, so `:no-status` prevents the progress bar.
+The control flags for this stage are:
 
 *  **no-refresh** (default False)
 
 Prevents source file updates from being brought in.
 
-An explicit configuration or run-time **no-refresh** = False is over-ridden by an explicit run-time or configuration **without-processing** = True.
-
-*  **without-processing** (default False)
-
-This option is used to skip every stage upto the **Completion**, for example starting the document server without checking for documentation updates or re-rendering templates.
-
 *  **recompile**
 
 Forces all the source files to be recompiled into the cache.
 
-## Source
+## Mode Milestone
+(Skipped if the `:without-processing` flag is True)
+
+Collection makes a distinction between Rakudoc source files that are the main content, and the source files needed to integrate the main content into a whole. The integration sources will differ according to the final output. For example, a book may have a Foreward, a Contents, a Glossary, etc, whilst a website will have a landing page (eg., _index.html_), and perhaps other index pages for subsections. A book may also organise content into sections that depend on metadata in the source files. A book will have a defined order of sections, but a website has no order. A website will require CSS files and perhaps jQuery scripts to be associated with Blocks. A book will have different formating requirements for pages.
+
+These differences are contained in the **mode** configuration, and the plugins and templates for the mode.
+
 At this milestone, the source files have been cached. The **mode** sub-directory has not been tested, and the configuration for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugins can be called.
 
-The **return value** of `collect` with inspection _source_ inspection points is a single `Pod::From::Cache` object that does a `Post-Cache` role.
+The **return value** of `collect` with `:after<source>` is a single `Pod::From::Cache` object that does a `Post-Cache` role (see below for `Post-Cache` methods).
 
 A `Pod::From::Cache` object provides a list of updated files, and a full set of source files. It will provide a list of Pod::Blocks contained in each content files, using the filename as the key.
 
-A **source** plugin can associate a `Pod::Block` with a key, interpreted as a source filename. Thus the Pod lists can be processed, eg. looking for search keys, and new pod files can be created that can then be rendered. The filtering is done with the `Pod-Cache` role. For example,
+During the stage the source files for the Mode are obtained, compiled and cached. The process is controlled by the same options as the _Source_ stage. For example, the **Mode** for `Collection-Raku-Documentation` is _Website_.
 
-```
-for $cache.list-files {
-    my $pod-tree = $cache.pod($_);
-    # process pod-tree
-    my Pod::Block $processed = something($pod-tree);
-    $cache.add("$_\-processed", [ $processed ]); # must be an Array
-    $cache.add($_); # omit this step if the unprocessed file is to be rendered
-}
-
-```
-When pod is extracted from the cache in the rendering phase, the `$_-processed` files will be available, but the `$_` files will return an undefined (False in Bool context) and not be rendered.
-
-The next, Mode, stage is when the source files for the Mode are obtained, compiled and cached. The process is controlled by the same options as the Source stage.
-
-If a sub-directory with the same name as _mode_ does not exist, or there are no config files in the `<mode>/config` directory, `collect` will throw an `X::Collection::NoMode` exception during this stage.
+If a sub-directory with the same name as _mode_ does not exist, or there are no config files in the `<mode>/config` directory, `collect` will throw an `X::Collection::NoMode` exception at the start of the stage.
 
 Mode source files are stored under the mode sub-directory and cached there. If the mode source files are stored remotely and updated independently of the collection, then the `mode-obtain` and `mode-refresh` keys are used.
 
-## Setup
+## Setup Milestone
+(Skipped if the `:without-processing` flag is True)
+
 If **setup** plugins are defined and in the mode's plugins-required<setup> list, then the cache objects for the sources and the mode's sources (and the **full-render** value) are passed to the program defined by the plugin's **setup** key.
 
 The purpose of this milestone is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine files in some way, or to gather information for a search algorithm.
@@ -170,26 +170,26 @@ During the setup stage,
 
 The Setup stage depends on the following options:
 
-*  **no-status** as before, turns off a progress bar
-
-*  **without-processing** skips the **setup** stage, unless the caches did not previously exist.
-
 *  **full-render**
 
-By default, only files that are changed are re-rendered, which includes an assumption that if any source file is changed, then all the **mode** sources must be re-rendered as well.
+By default, only files that are changed are re-rendered, which includes an assumption that if any source file is changed, then all the **mode** sources must be re-rendered as well. (See the Problems section below for a caveat.)
 
 When **full-render** is True, the output directory is emptied of content, forcing all files to be rendered.
 
 **full-render** may be combined with **no-refresh**, for example when templates or plugins are changed and the aim is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but the cache object will not contain any files generated by **setup** plugins.
 
-## Render
+## Render Milestone
+(Skipped if the `:without-processing` flag is True)
+
 At this milestone `render` plugins are supplied to the `ProcessedPod` object. New Pod::Blocks can be defined, and the templates associated with them can be created.
 
 The source files (by default only those that have been changed) are rendered. 
 
-The stage is controlled by the same options as _Setup_. So, it can be skipped by setting **without-processing**.
+The stage is controlled by the same options as _Setup_.
 
-## Compilation
+## Compilation Milestone
+(Skipped if the `:without-processing` flag is True)
+
 At this milestone plugins are provided to add compiled data to the `ProcessedPod` object, so that the sources in the mode's directory can function.
 
 During the **Render** stage, the `%processed` hash is constructed whose keys are the filenames of the output files, and whose values are a hash of the page components of each page.
@@ -198,38 +198,43 @@ The `compilation` plugins could, eg, collect page component data (eg., Table of 
 
 The return value of `collect` at the inspection point is a list of `ProcessedPod`, `%process`, with the `ProcessedPod` already changed by the `compilation` plugins.
 
-## Report
-Once a collection has been rendered, all the links between files, and to outside targets can be subject to various tests. It is also possible to subject all the rendered files to tests. This is accomplished using `report` plugins.
+## Transfer Milestone
+(Skipped if the `:without-processing` flag is True)
 
-In addition, all the plugins that have been used at each stage (except for the Report stage itself) are available.
+Plugins may refer to assets provided by a distribution. This is the stage to ensure they are referenced so that they are moved from the distribution directory to the output directory from which they are used at the completion stage.
+
+## Report Milestone
+(Skipped if the `:without-processing` flag is True)
+
+Once a collection has been rendered, all the links between files, and to outside targets can be subjected to tests. It is also possible to subject all the rendered files to tests. This is accomplished using `report` plugins.
+
+In addition, all the plugins that have been used at each stage (except for the Report stage itself) are listed. The aim is to provide information for debugging.
 
 The report stage is intended for testing the outputs and producing reports on the tests.
 
-## Completion
+## Completion Milestone
 Once the collection has been tested, it can be activated. For example, a collection could be processed into a book, or a `Cro` App run that makes the rendered files available on a browser. This is done using `completion` plugins.
 
-The **no-completion** option allows for the completion phase to be skipped.
+The **without-completion** option allows for the completion phase to be skipped.
 
-Setting **without-processing** to True and **no-completion** to True should have no effect unless
+Setting **without-processing** to True and **without-completion** to True should have no effect unless
 
 *  there are no caches, which will be the case the first time `collect` is run
 
 *  the destination directory is missing, which will be the case the first time `collect` is run
 
-Note that the **no-report** option is False by default, and will take effect even if **without-processing** is True, but processing is forced because caches or destination directories are missing.
-
-So this combination is useful to set up the collection and to get a report on the processing.
-
-## Cleanup
+## Cleanup Milestone
 Cleanup comes after `collect` has finished, so is not a part of `collect`.
 
 Currently, `collect` just returns with the value of the @plugins-used object.
 
-# Distribution Structure
+[This API may change if a use is found for Cleanup]
+
+# Collection Structure
 A distribution contains content files, which may be updated on a regular basis, a cache, templates, extra assets referenced in a content file (such as images), and one or more modes.
 
-## Content
-The content of the distribution is contained in **POD6** files. In addition to the source files, there are Collection content files which express things like the Table of Contents for the whole collection.
+## Collection Content
+The content of the distribution is contained in **rakudoc** files. In addition to the source files, there are Collection content files which express things like the Table of Contents for the whole collection.
 
 Collection content are held separately to the source content, so that each mode may have different pages.
 
@@ -285,7 +290,7 @@ For more see [Asset-cache methods](Asset-cache methods.md)
 The **cache** is a Precomp structure into which the content files are pre-preprocessed.
 
 ## Mode
-The **Mode** is the collection of templates and configuration for some output.
+The **Mode** is the collection of templates and configuration for some output. A collection may contain multiple Modes, each in their own subdirectory.
 
 The default Mode for **Collection-Raku-Documentation** is **Website**, for example.
 
@@ -401,6 +406,8 @@ All the following keys are mandatory. Where a key refers to a directory (path), 
 
 	*  **compilation** plugins prepare the `ProcessedPod` object for collection pages.
 
+	*  **assets** plugins that mark assets created in previous milestones
+
 	*  **report** plugins to test and report on the rendering process
 
 	*  **completion** plugins that define what happens after rendering
@@ -421,15 +428,13 @@ All optional control flags are False by default. They are:
 
 *  full-render
 
-*  no-report
+*  without-completion
+
+*  without-report
 
 *  without-processing
 
 *  no-preserved-state
-
-*  no-cache
-
-*  no-completion
 
 *  debug-when
 
@@ -438,7 +443,7 @@ All optional control flags are False by default. They are:
 *  no-code-escape
 
 # Control flags
-The control flags are also covered in [Milestones](Milestones.md).
+The control flags are also covered in [Milestones](Milestones.md). Control flags by default are False.
 
 *  **no-status**
 
@@ -472,19 +477,15 @@ Forces all files to be rendered. Even if there are no changes to source files, p
 
 This flag is set to False if **without-processing** is True.
 
-*  **no-report**
+*  **without-report**
 
-Normally, report plugins report on the final state of the output files. No-report prevents report plugins from being loaded or run.
+Normally, report plugins report on the final state of the output files. This flag prevents report plugins from being loaded or run.
 
-If **without-processing** is set, then the **Report** stage is skipped. If, however, the caches do not exist (deleted or first run), then the value of **without-processing** is ignored and the value of **no-report** is observed.
-
-*  **no-cache**
-
-RakuConfig will cache the previous configuration data by default. When testing a module, this is not desirable, so no-cache = True prevents caching.
+If **without-processing** is set, then the **Report** stage is skipped. If, however, the caches do not exist (deleted or first run), then the value of **without-processing** is ignored and the value of **without-report** is observed.
 
 *  **debug-when & verbose-when**
 
-ProcessedPod uses `debug` and `verbose`, which provide information about which blocks are processed (debug), and the result after the application of the template. This is a lot of information and generally, it is only one file that is of interest.
+ProcessedPod uses `debug` and `verbose`, which provide information about which blocks are processed (debug), and the result after the application of the template (verbose). This is a lot of information and generally, it is only one file that is of interest.
 
 These two flags take a string, eg., `:debug-when<Introduction.pod6> `, and when the filename matches the string, then the debug/verbose flag is set for that file only. (verbose is only effective when debug is True).
 
@@ -494,7 +495,9 @@ Causes collect to produce information about milestones and valid and invalid plu
 
 *  **with-only** filename
 
-Collect is run only with that filename, which must be in the sources, and is specified like `debug-when`.
+Collect is run only with that filename, which must be in the sources or mode-sources, and is specified like `debug-when`.
+
+The option takes a string containing the filename. An empty string means all filenames in sources and mode-sources.
 
 *  **no-code-escape**
 
@@ -503,27 +506,37 @@ Collect is run only with that filename, which must be in the sources, and is spe
 This has to be done at the Mode level and not left to `render` plugins.
 
 # Plugin management
-Plugins are **Raku** programs that are executed at specific milestones in the rendering process. The milestone are given in [Milestones](Milestones.md) above.
+Plugins are **Raku** programs that are executed at specific milestones in the rendering process. The milestone names are given in [Milestones](Milestones.md) above.
 
 The **plugins-required** key in the Mode's configuration contains a hash with keys whose names are the milestone names. Each key points to a list of plugin names, which are called in the order given.
 
-All plugins must reside within the mode directory given by `plugins`, but this directory may belong to another Collection so that plugins can and should be shared between collections & modes.
+All plugins must reside within the mode directory given by `plugins`, but this directory may belong to another Collection so that plugins could be shared between collections & modes. [TODO Revise plugin management so that common plugins can be maintained and developed separately to Collections].
 
-All plugin names must be the name of a sub-directory of the **plugins** path. Within each plugin sub-directory, there must be a `config.raku` file containing information for the plugin, and for `Collection`.
+All plugin names **must** be the name of a sub-directory of the **plugins** path. Within each plugin sub-directory, there must be a `config.raku` file containing information for the plugin, and for `Collection`. If _no_ `config.raku` files exists, the plugin is not valid and will be skipped.
 
-With the exception of 'render' plugins, the config file contains a key for the type, which points to the program to be called.
+With the exception of 'render' plugins, the config file must contain a key for the milestone type, which points to the program to be called, and when the file is evaluated, it yields a subroutine that takes the parameters needed for the plugin of that milestone. If no key exists with the name of the milestone, then the plugin is not valid.
 
 Plugin's may need other configurable data, which should be kept in the config file for the plugin.
 
 All plugins are expected to adhere to `no-status` and `collection-info`, which are interpretted as
 
-*  `no-status` if true means 'no output at all', equivalent to a **quite** flag
+*  `no-status` if true means 'no output at all', equivalent to a **quiet** flag
 
-*  `collection-info` if true means 'output extra information' (if need be), eqivalent to a **verbose** flag.
+*  `collection-info` if true means 'output extra information' (if need be), equivalent to a **verbose** flag.
 
+## Disabling a plugin
+When it's necessary to disable a plugin, this can be done by:
+
+*  Removing the plugin name from the `plugins-required` key of the Mode's config file;
+
+*  Renaming / removing the `config.raku` file name inside the plugin directory
+
+*  Renaming / removing the milestone key inside the plugin's `config.raku` file.
+
+## Plugin types
 The plugin types are as follows.
 
-## Setup
+### Setup
 Config hash must contain **setup** which is the name of a Raku program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
 ```
@@ -549,7 +562,7 @@ Has the values of 'collection-info' and 'no-status' flags.
 
 New files can be added to the cache object inside the sub using the `.add` method, see [Sources](Sources.md).
 
-## Render
+### Render
 The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
 
 If the `render` key is True, no callable is provided, and the plugin name will be added via the **.add-plugin** method of the `ProcessedPod` object. See `ProcessedPod` documentation.
@@ -587,7 +600,7 @@ It is possible to specify `path` but it must be relative to the plugin's sub-dir
 
 More information about these plugins can be found in the documentation in the `Raku::Pod::Render` distribution.
 
-## Compilation
+### Compilation
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
@@ -602,11 +615,26 @@ is a hash whose keys are source file names with a hash values containing TOC, Gl
 > **%options**  
 as for setup
 
+### Transfer
+The `transfer` key points to a Raku file that evaluates to a
+
+```
+sub (%processed, $pr, %options ) {...}
+```
+> **%processed**  
+as in Compilation
+
+> **$pr**  
+as in Compilation
+
+> **%options**  
+as for Setup
+
 ## Report
 The `report` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, @plugins-used, $pr, %options --> Pair ) {...}
+sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -620,13 +648,11 @@ as in Compilation
 > **%options**  
 as for Setup
 
-The plugin should return a Pair, where .key = (path/)name of the report file with extension, and .value is the text of the report in the appropriate format
-
-The aim is one report plugin -> one report output in a specified format.
+The plugin should return an Array of Pair, where for each Pair .key = (path/)name of the report file with extension, and .value is the text of the report in the appropriate format
 
 The `collect` sub will write the file to the correct directory.
 
-## Completion
+### Completion
 The `completion` key points to a Raku file that evaluates to a `sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}` object.
 
 *  **$destination**
@@ -647,26 +673,44 @@ As for Setup
 
 There is no return value specified for this plugin type.
 
+# Problems and TODO items
+## Archiving and Minor Changes
+In principle, if a small change is made in a source file of a Collection, only the rendered version of that file should be changed, and the Collection pages (eg., the index and the glossaries) updated. The archiving method chosen here is based on `Archive::Libarchive` and a `.7z` format. It works in tests where a small quantity of data is stored.
+
+**However**, when there are many source files (eg., the Raku documentation), the process of restoring state information is **significantly** longer than re-rendering all the cached files. Consequently, the option `no-preserve-state` prevents the archiving of processed state. (TODO understanding and optimising the de-archiving process.)
+
+## Plugin development
+The aim is to have plugins developed and maintained separately. This may require some change to the Collection API.
+
+## Dump file formatting
+The aim is to use `PrettyDump` instead of <.raku> to transform information into text. However, <PrettyDump> does not handle `Bags` properly.
+
 # Post-cache methods
-Post-cache is a role added to a `Pod::From::Load` object so that Setup plugins can act on Cache'd content but also add files to the Cache that will be rendered.
+Post-cache is a role added to a `Pod::From::Load` object so that Setup plugins can act on Cache'd content by adding pod files to the Cache (perhaps pre-processing primary source files) that will be rendered, masking primary pod files so that they are not rendered, or aliasing primary pod files.
 
-If the original file in the Cache is to be hidden, then a file with the same name is added to the Post-cache database. If the underlying cache object should remain visible, then another name should be given to a file in the Post-cache database.
+If a secondary source file in the Cache is given a name that is the same as a primary source file, then if the underlying cache object should remain visible, another name (alias) should be given to the file in the Post-cache database.
 
-The Post-cache methods `sources`, `list-files`, and `pod` have the same function and semantics as `Pod::From::Cache` with the caveat of hiding as described above. If there is no name in the Post-cache database, then it is passed on to the underlying cache.
+The Post-cache methods `sources`, `list-files`, and `pod` have the same function and semantics as `Pod::From::Cache` except that the post-cache database is searched first, and if contents are found there, the contents are returned (which is why post-cache file names hide primary file names). If there is no name in the Post-cache database, then it is passed on to the underlying cache.
 
-## multi method add(Str $fn, Array $p)
+## multi method add(Str $fn, Array $p --&gt; Pod::From::Cache )
 Adds the filename $fn to the cache. $p is expected to be an array of Pod::Blocks, but no check is made. This is intentional to allow the developer flexibility, but then a call to `pod( $fn )` will yield an array that is not POD6, which might not be expected.
 
-## multi method add(Str $fn)
+The invocant is returned, thus allowing add to be chained with mask and alias.
+
+## multi method mask(Str $fn --&gt; Pod::From::Cache)
 This will add only a filename to the database, and thus mask any existing filename in the underlying cache.
 
-## multi method add(Str $fn, Str :alias! )
-This will add a filename to the database, with the value of a key in the underlying cache, and thus mask any the original spelling of the filename in the underlying cache.
+Can be chained.
 
-## method anti-alias(Str $fn --&gt; Str )
-Returns the original name of the cached content file, if an alias has been created, otherwise returns the same fn.
+## multi method add-alias(Str $fn, Str :alias! --&gt; Pod::From::Cache)
+This will add a filename to the database, with the value of a key in the underlying cache. Chain with mask to prevent the original spelling of the filename in the underlying cache being visible.
+
+Can be chained.
 
 If the alias is already taken, an exception is thrown. This will even occur if the same alias is used for the same cached content file.
+
+## method behind-alias(Str $fn --&gt; Str )
+Returns the original name of the cached content file, if an alias has been created, otherwise returns the same filename.
 
 ## method pod(Str $fn)
 Will return
@@ -680,7 +724,7 @@ Will return
 *  throw a NoPodInCache Exception if there is no pod associated with either the database or the underlying cache. If the original filename is used after an alias have been generated, the Exception will also be thrown.
 
 # Asset-cache methods
-Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all render and compilation plugins, for example in the plugin callable:
+Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all plugins after the setup milestone, for example in the plugin callable:
 
 ```
 sub render-plugin( $pp ) {
@@ -692,6 +736,8 @@ sub render-plugin( $pp ) {
 By creating a name-space in the plugin data section and assigning it the value of the image-manager, the plugin callable can make the image-manager available to templates that get that data, which is a property in parameters called by the name-space.
 
 `ProcessedPod` provides data from the name-space of a Block, if it exists, as a parameter to the template called for the Block. Note that the default name-space for a block is all lower-case, unless a `name-space` config option is provided with the Pod Block in the content file.
+
+If a plugin provides an asset (eg., image, jquery script), it needs to provide a `render` callable that returns the triple so that Collect moves the asset from the plugin directory to the output directory where it can be served. This needs to be done separately if a CSS contains a url for local image.
 
 `$image-manager` is of type Asset-cache, which has the following methods:
 
@@ -738,4 +784,4 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 
 ----
-Rendered from README at 2022-07-19T23:22:52Z
+Rendered from README at 2022-07-29T09:24:59Z

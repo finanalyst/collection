@@ -8,17 +8,24 @@ constant PLUGS = "{MODE}/some-plugs";
 constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
 constant OUTPUT = "{MODE}/html";
-constant REPORT = "{MODE}/reports";
 constant ASSETS = "assets";
 
-plan 3;
+plan 4;
 my $rv;
 
-bail-out "{TMP} and {TMP}/{ REPORT } must exist. Have report-completion tests been run?"
-unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
+bail-out "{TMP} and {TMP}/{ OUTPUT } must exist. Have completion tests been run?"
+unless TMP.IO.d and "{TMP}/{ OUTPUT }".IO.d;
+
+mktree ASSETS ~ '/videos';
+mktree ASSETS ~ '/images';
 
 chdir TMP;
 
+(MODE ~ '/configs/04-asset-output-options.raku').IO.spurt(qq:to/CONF/);
+    %(
+        asset-out-path => "assets", # relative to destination directory
+    );
+    CONF
 "{ASSETS}/videos/fake-video.mp4".IO.spurt(:bin, "This is not a video");
 "{ASSETS}/images/fake-image.png".IO.spurt(:bin, "This is not an image");
 (PLUGS ~ '/rend2/config.raku' ).IO.spurt(q:to/CONF/);
@@ -30,11 +37,11 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/rend2/image-manager.raku' ).IO.spurt(q:to/CONF/);
-    sub ( $pp, %options ) {
+    sub ( $pp, %options -->Array ) {
         my $config = $pp.get-data('image-manager');
         $pp.add-data('image', $config);
         $pp.add-data('video-clip', $config);
-        %() # return empty list of pairs
+        [] # return empty list
     }
     CONF
 (PLUGS ~ '/rend2/rend2_templates.raku' ).IO.spurt(q:to/CONF/);
@@ -56,6 +63,20 @@ chdir TMP;
 (PLUGS ~ '/rend2/blocks.raku' ).IO.spurt(q:to/CONF/);
     <Image Video-clip>
     CONF
+mktree "{PLUGS}/asset-mover/extra/";
+"{PLUGS}/asset-mover/extra/css-fake-image.png".IO.spurt(:bin, "This is not an image for css");
+(PLUGS ~ '/asset-mover/config.raku').IO.spurt(q:to/CONF/);
+    %(
+        :render<image-mover.raku>,
+        :custom-raku(),
+        :template-raku(),
+    )
+    CONF
+(PLUGS ~ '/asset-mover/image-mover.raku' ).IO.spurt(q:to/CONF/);
+        sub ($processedpod, %options ) {
+        [ ('assets/images/css-fake-image.png', 'myself', 'extra/css-fake-image.png'), ]
+    }
+    CONF
 
 "sources/image-test.rakudoc".IO.spurt(q:to/PODFILE/);
     =begin pod :no-toc :no-glossary :no-meta :no-footnotes
@@ -69,10 +90,10 @@ chdir TMP;
     =end pod
     PODFILE
 
-$rv = collect( :no-status, :no-completion, :no-preserve-state, :no-report, :full-render );
-
+$rv = collect( :no-status, :no-preserve-state, :after<transfer>, :full-render );
 ok "{OUTPUT}/assets/videos/fake-video.mp4".IO.f, 'video asset in correct place';
 ok "{OUTPUT}/assets/images/fake-image.png".IO.f, 'image asset in correct place';
+ok "{OUTPUT}/assets/images/css-fake-image.png".IO.f, 'css url image asset in correct place';
 like "{OUTPUT}/assets/videos/fake-video.mp4".IO.slurp(:bin).decode,
         /
         'This is not a video'

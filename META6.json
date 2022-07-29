@@ -1,7 +1,7 @@
 {
   "name": "Collection",
-  "description": "Collects a content in Pod6 (aka Rakudoc) files and creates output based on configuration",
-  "version": "0.7.2",
+  "description": "Collects a collection of content files in Rakudoc (aka POD6) files and creates output based on configuration files",
+  "version": "0.8.0",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
@@ -20,9 +20,6 @@
     "Collection": "lib/Collection.rakumod",
     "Collection::Exceptions": "lib/Collection/Exceptions.rakumod"
   },
-  "resources": [
-    "min-templates.raku"
-  ],
   "support": {
     "bugtracker": "https://github.com/finanalyst/collection/issues",
     "email": "richard@hainsworth.wales",
