@@ -156,4 +156,8 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =item1 milestone information object includes plugins-used array of hashes
 =item1 revise README documentation
 
+=head1 2022-07-29 v0.8.1
+=item Do not fail if plugin misspelt / doesnt exist
+=item1 writes name to STDERR and continues
+
 =end pod

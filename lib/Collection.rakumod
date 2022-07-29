@@ -532,6 +532,10 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
         say "Plugin ｢$plug｣ is listed for milestone ｢$mile｣ " if $collection-info;
+        unless "$mode/{ %config<plugins> }/$plug".IO.d {
+            note "Plugin ｢$plug｣ does not exist but is listed for milestone ｢$mile｣. Ignored.";
+            next
+        }
         my $path = "$mode/{ %config<plugins> }/$plug/config.raku";
         next unless $path.IO.f;
         my %plugin-conf = get-config(:$path);

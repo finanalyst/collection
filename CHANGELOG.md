@@ -32,6 +32,8 @@
 [2021-04-02 v0.5.0](#2021-04-02-v050)  
 [2022-07-17 v.0.7.0](#2022-07-17-v070)  
 [2022-07-22 v0.7.1](#2022-07-22-v071)  
+[2022-07-24 v0.8.0](#2022-07-24-v080)  
+[2022-07-29 v0.8.1](#2022-07-29-v081)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -214,15 +216,49 @@
 *  add no-preserve-state option to prevent archiving if need be
 
 # 2022-07-22 v0.7.1
-
-
 *  move up test for without-processing so no checking of caches
 
 *  revise no-preserve-state test.
+
+# 2022-07-24 v0.8.0
+*  revise report plugin spec so that one plugin can produce multiple report files
+
+*  report plugin returns an Array of Pairs, not just a Pair
+
+*  change test accordingly
+
+*  revise post-cache documentation
+
+*  change no-report & no-completion to without-* to be consistent with without-processing
+
+*  remove no-cache, as its not in get-config
+
+*  Revise milestone handling
+
+*  collect process can be stopped before AND after each stage
+
+*  change :end to :after to be compatible with :before
+
+*  :after implies no plugins triggered for a milestone, before implies plugins triggered
+
+*  dump-at implies plugins triggered
+
+*  change tests to reflect new specifications
+
+*  milestone information object includes plugins-used array of hashes
+
+*  revise README documentation
+
+# 2022-07-29 v0.8.1
+
+
+*  Do not fail if plugin misspelt / doesnt exist
+
+*  writes name to STDERR and continues
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-07-21T23:04:34Z
+Rendered from CHANGELOG at 2022-07-29T19:48:28Z
