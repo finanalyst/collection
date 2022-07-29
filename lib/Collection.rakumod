@@ -528,6 +528,7 @@ sub save-processed-state($mode, %processed, %symbols, :$no-status) {
 }
 
 sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
+    return [] unless %config<plugins-required>{$mile}:exists;
     my @valid-confs;
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {

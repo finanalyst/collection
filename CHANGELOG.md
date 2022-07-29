@@ -256,9 +256,11 @@
 
 *  writes name to STDERR and continues
 
+*  Ignore milestone if it is not a key 'plugins-required'
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-07-29T19:48:28Z
+Rendered from CHANGELOG at 2022-07-29T20:03:23Z

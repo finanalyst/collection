@@ -159,5 +159,6 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =head1 2022-07-29 v0.8.1
 =item Do not fail if plugin misspelt / doesnt exist
 =item1 writes name to STDERR and continues
+=item Ignore milestone if it is not a key 'plugins-required'
 
 =end pod
