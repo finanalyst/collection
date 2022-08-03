@@ -262,9 +262,11 @@
 
 *  small changes in no-preserve-state and full render logic
 
+*  remove preserve-state archive if it exists and if no-preserve-state
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-08-03T09:16:54Z
+Rendered from CHANGELOG at 2022-08-03T21:05:36Z

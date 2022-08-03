@@ -163,5 +163,6 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 
 =head1 2022-08-03 v0.8.2
 =item small changes in no-preserve-state and full render logic
+=item remove preserve-state archive if it exists and if no-preserve-state
 
 =end pod

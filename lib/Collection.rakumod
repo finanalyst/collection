@@ -21,6 +21,7 @@ proto sub collect(|c) is export {
 
 #| The string used by plugins to describe themselves
 constant MYSELF = 'myself';
+constant PRESERVE = 'processed-state.7z';
 
 #| adds a filter to a cache object
 #| Anything that exists in the %!extra hash is returned
@@ -245,7 +246,11 @@ multi sub collect(Str:D $mode,
         $recompile = ( %config<recompile> // False ) without $recompile;
         $full-render = ( %config<full-render> // False ) without $full-render;
         $no-preserve-state = ( %config<no-preserve-state> // False ) without $no-preserve-state;
-        $full-render = True if $no-preserve-state; # over-ride full-render if no state
+        if $no-preserve-state {
+            $full-render = True; # over-ride full-render if no preserve state
+            my $file = "$*CWD/$mode/{ PRESERVE }";
+            rmtree $file if $file.IO.e;
+        };
 
         say "Starting ｢Source｣ milestone" if $collection-info;
 
@@ -482,7 +487,7 @@ multi sub collect(Str:D $mode,
 sub restore-processed-state($mode, :$no-status --> Array) is export {
     use Archive::Libarchive;
     use Archive::Libarchive::Constants;
-    my $file = "$*CWD/$mode/processed-state.7z";
+    my $file = "$*CWD/$mode/{ PRESERVE }";
     my $ok = $file.IO.f;
     note "Could not recover the archive with processed state ｢$file｣. Turning on full-render."
     unless $ok;
@@ -510,7 +515,7 @@ sub save-processed-state($mode, %processed, %symbols, :$no-status) {
     my Archive::Libarchive $arc;
     say "Saving processed state to archive" unless $no-status;
     my $timer = now;
-    my $file = "$*CWD/$mode/processed-state.7z";
+    my $file = "$*CWD/$mode/{ PRESERVE }";
     try {
         $arc .= new(
                 :operation(LibarchiveOverwrite),
