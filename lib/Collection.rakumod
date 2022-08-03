@@ -245,7 +245,7 @@ multi sub collect(Str:D $mode,
         $recompile = ( %config<recompile> // False ) without $recompile;
         $full-render = ( %config<full-render> // False ) without $full-render;
         $no-preserve-state = ( %config<no-preserve-state> // False ) without $no-preserve-state;
-        $full-render = $no-preserve-state if $no-preserve-state; # over-ride full-render if no state
+        $full-render = True if $no-preserve-state; # over-ride full-render if no state
 
         say "Starting ｢Source｣ milestone" if $collection-info;
 
@@ -293,7 +293,7 @@ multi sub collect(Str:D $mode,
             $full-render = True;
         }
         # processed and symbols must exist for partial processing to work
-        if !$full-render {
+        unless $full-render {
             my $ok;
             ($ok, %processed, %symbols) = restore-processed-state($mode, :$no-status);
             $full-render = !$ok;

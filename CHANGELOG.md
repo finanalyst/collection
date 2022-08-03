@@ -34,6 +34,7 @@
 [2022-07-22 v0.7.1](#2022-07-22-v071)  
 [2022-07-24 v0.8.0](#2022-07-24-v080)  
 [2022-07-29 v0.8.1](#2022-07-29-v081)  
+[2022-08-03 v0.8.2](#2022-08-03-v082)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -250,17 +251,20 @@
 *  revise README documentation
 
 # 2022-07-29 v0.8.1
-
-
 *  Do not fail if plugin misspelt / doesnt exist
 
 *  writes name to STDERR and continues
 
 *  Ignore milestone if it is not a key 'plugins-required'
 
+# 2022-08-03 v0.8.2
+
+
+*  small changes in no-preserve-state and full render logic
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-07-29T20:03:23Z
+Rendered from CHANGELOG at 2022-08-03T09:16:54Z
