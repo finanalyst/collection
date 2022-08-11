@@ -243,15 +243,6 @@ multi sub collect(Str:D $mode,
         }
     }
     unless $without-processing {
-        $recompile = ( %config<recompile> // False ) without $recompile;
-        $full-render = ( %config<full-render> // False ) without $full-render;
-        $no-preserve-state = ( %config<no-preserve-state> // False ) without $no-preserve-state;
-        if $no-preserve-state {
-            $full-render = True; # over-ride full-render if no preserve state
-            my $file = "$*CWD/$mode/{ PRESERVE }";
-            rmtree $file if $file.IO.e;
-        };
-
         say "Starting ｢Source｣ milestone" if $collection-info;
 
         $cache = update-cache(
@@ -278,6 +269,14 @@ multi sub collect(Str:D $mode,
         $without-completion = ( %config<without-completion> // False ) without $without-completion;
         $without-report = ( %config<without-report> // False ) without $without-report;
         $collection-info = ( %config<collection-info> // False ) without $collection-info;
+        $recompile = ( %config<recompile> // False ) without $recompile;
+        $full-render = ( %config<full-render> // False ) without $full-render;
+        $no-preserve-state = ( %config<no-preserve-state> // False ) without $no-preserve-state;
+        if $no-preserve-state {
+            $full-render = True; # over-ride full-render if no preserve state
+            my $file = "$*CWD/$mode/{ PRESERVE }";
+            rmtree $file if $file.IO.e;
+        };
 
         $mode-cache = update-cache(
                 :$no-status,

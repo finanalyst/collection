@@ -35,6 +35,7 @@
 [2022-07-24 v0.8.0](#2022-07-24-v080)  
 [2022-07-29 v0.8.1](#2022-07-29-v081)  
 [2022-08-03 v0.8.2](#2022-08-03-v082)  
+[2022-08-11 v0.8.3](#2022-08-11-v083)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -258,15 +259,18 @@
 *  Ignore milestone if it is not a key 'plugins-required'
 
 # 2022-08-03 v0.8.2
-
-
 *  small changes in no-preserve-state and full render logic
 
 *  remove preserve-state archive if it exists and if no-preserve-state
+
+# 2022-08-11 v0.8.3
+
+
+*  move some config logic to after mode config loaded
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-08-03T21:05:36Z
+Rendered from CHANGELOG at 2022-08-11T21:14:04Z
