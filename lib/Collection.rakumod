@@ -450,7 +450,7 @@ multi sub collect(Str:D $mode,
             }
             $ret-after = ?($after ~~ /:i Compilation /);
             $ret-before = ?($before ~~ /:i Transfer /);
-            $rv = milestone('Transfer', :with(%processed, $pr), :@dump-at,
+            $rv = milestone('Transfer', :with($pr, %processed), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after )
             );
             return $rv if ($ret-after or $ret-before);
@@ -487,9 +487,9 @@ sub restore-processed-state($mode, :$no-status --> Array) is export {
     use Archive::Libarchive;
     use Archive::Libarchive::Constants;
     my $file = "$*CWD/$mode/{ PRESERVE }";
-    my $ok = $file.IO.f;
+    my $ok = $file.IO ~~ :e & :f;
     note "Could not recover the archive with processed state ｢$file｣. Turning on full-render."
-    unless $ok;
+        unless $ok;
     return [$ok] unless $ok;
     my Archive::Libarchive $arc .= new(
     :operation(LibarchiveExtract),
@@ -530,7 +530,6 @@ sub save-processed-state($mode, %processed, %symbols, :$no-status) {
     }
     say "Saving state took { now - $timer } secs" unless $no-status;
 }
-
 sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     return [] unless %config<plugins-required>{$mile}:exists;
     my @valid-confs;
@@ -542,7 +541,7 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
             next
         }
         my $path = "$mode/{ %config<plugins> }/$plug/config.raku";
-        next unless $path.IO.f;
+        next unless $path.IO ~~ :e & :f;
         my %plugin-conf = get-config(:$path);
         next unless %plugin-conf{$mile}:exists and %plugin-conf{$mile}.defined;
         say "Plugin ｢$plug｣ is valid with keys ｢{ %plugin-conf.keys.join(',') }｣" if $collection-info;
@@ -550,7 +549,8 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     }
     @valid-confs
 }
-multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation transfer completion>),
+
+multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completion >),
                          :$with,
                          :%config, :$mode,
                          :$collection-info,
@@ -560,8 +560,8 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation transfer 
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         # only run callable and closure within the directory of the plugin
-        my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-        my $path = $callable.IO.dirname;
+        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure;
         try {
             &closure = indir($path, { EVALFILE $callable });
@@ -585,8 +585,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
         # Since the configuration matches what the add-plugin method expects as named parameters
         if %plugin-conf<render> ~~ Str {
             # as opposed to being a Boolean value, then its a program
-            my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-            my $path = $callable.IO.dirname;
+            my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
             my &closure;
             try {
                 &closure = indir($path, { EVALFILE $callable })
@@ -594,7 +593,6 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
             }
-            # a plugin should only affect the report directly
             # so a plugin should not write directly
             my @asset-files;
             try {
@@ -628,7 +626,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                 }
                 my $to-path = "$mode/%config<destination>/$to".IO;
                 mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
-                unless $from.IO.f {
+                unless $from.IO ~~ :e & :f {
                     note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
                             ~ "｢$from｣ is not a valid file. Skipping.";
                     next
@@ -654,8 +652,8 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
     my %options = %( :$collection-info, :$no-status);
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
     for @valids -> (:key($plug), :value(%plugin-conf)) {
-        my $callable = "$mode/%config<plugins>/$plug/{ %plugin-conf{$mile} }".IO.absolute;
-        my $path = $callable.IO.dirname;
+        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure;
         try {
             &closure = indir($path, { EVALFILE $callable });
@@ -675,6 +673,66 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
         }
         for $resp.list {
             "$mode/{ %config<report-path> }/{ .key }".IO.spurt( .value )
+        }
+    }
+    @valids
+}
+multi sub manage-plugins(Str:D $mile where *eq 'transfer', :$with,
+         :%config, :$mode,
+         :$collection-info,
+         :$no-status
+        --> Array ) {
+    my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
+    my %options = %( :$collection-info, :$no-status);
+    for @valids -> (:key($plug), :value(%plugin-conf)) {
+        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
+        my &closure;
+        try {
+            &closure = indir($path, { EVALFILE $callable })
+        }
+        if $! {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
+        }
+        # so a plugin should not write directly
+        my @asset-files;
+        try {
+            @asset-files = indir($path, { &closure.(|$with, %options) });
+        }
+        if $! {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
+        }
+        for @asset-files -> ($to, $other-plug, $file) {
+            # copy the files returned - the use case for this is css and script files to be
+            # served with html files. The sub-directory paths are needed local to the output files
+            # they will be named in the templates provided by the plugins
+            # the simplest case is when a plugin asks for a plugin from its own
+            # directory. But there is also the case of moving files from other
+            # directories. How to do this securely? We can allow transfers from a plugin directory
+            # so the plugin-data space will contain a path for each registered plugin.
+            # consequently, we have a three element copy
+            my $from;
+            if $other-plug eq MYSELF {
+                $from = "$path/$file";
+            }
+            else {
+                my $config = $with.get-data($other-plug);
+                # returns Nil if no data
+                unless $config {
+                    note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                        ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
+                    next
+                    }
+                $from = $config<path> ~ '/' ~ $file
+            }
+            my $to-path = "$mode/%config<destination>/$to".IO;
+            mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
+            unless $from.IO ~~ :e & :f {
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                    ~ "｢$from｣ is not a valid file. Skipping.";
+                next
+                }
+            $from.IO.copy($to-path);
         }
     }
     @valids

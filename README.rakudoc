@@ -228,9 +228,12 @@ already changed by the C<compilation> plugins.
 
 (Skipped if the C<:without-processing> flag is True)
 
-Plugins may refer to assets provided by a distribution. This is the stage to ensure they are referenced
-so that they are moved from the distribution directory to the output directory from which they are
-used at the completion stage.
+Plugins may generate assets that are not transfered by them, or it is important to ensure
+that a plugin runs after all other plugins.
+
+In addition, render plugins may create files that are transfered at the render stage, but should
+be removed after all plugins have run. So a transfer milestone plugin can be created to
+clean up the plugin's local directory.
 
 =head2 Report Milestone
 
@@ -654,11 +657,15 @@ where
 =item2 B<to> is the destination under the C<%config<destination> > directory where the asset will be
 looked for, eg., an image file to be served.
 
-=item2 B<plugin> is the name of the plugin in whose directory the asset is contained, where the value C<myself>
+=item2 B<from-plug> is the name of the plugin in whose directory the asset is contained, where the value C<myself>
 means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
 
 =item2 B<file> is the filename local to the source plugin's subdirectory that is to be copied to the destination.
 This may contain a path relative to the plugin's subdirectory.
+
+=item2 For example for an HTML file, this would be the relative
+URL for the C<src> field. Eg., C<to = 'asset/image'>, C<file = 'new-image.png'>, C<from-plug = 'myself'>
+and the html would be C< <img src="asset/image/new-image.png" /> >.
 
 Since a render plugin is to be added using the C<ProcessedPod> interface, it must have the C<custom-raku> and
 C<template-raku> keys defined, even if they evaluate to blank (eg. C<:custom-raku()> ).
@@ -673,6 +680,12 @@ It is possible to specify C<path> but it must be relative to the plugin's sub-di
 More information about these plugins can be found in the documentation in the C<Raku::Pod::Render> distribution.
 
 =head3 Compilation
+
+Note that the structure files are rendered after the C<compilation> stage, BUT the information for rendering
+the structure files, that is the custom blocks and the templates must accompany a C< render > plugin.
+Compilation plugins are to process the data accumulated during the rendering of the content files,
+and to make it available for the custom blocks / templates that will be invoked when the structure documents
+are rendered.
 
 The C<compilation> key must point to a Raku program that delivers a sub object
 
@@ -692,7 +705,7 @@ as for setup
 
 The C<transfer> key points to a Raku file that evaluates to a
 
-    sub (%processed, $pr, %options ) {...}
+    sub ($pr, %processed, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -702,6 +715,9 @@ as in Compilation
 
 =defn %options
 as for Setup
+
+=defn return object
+as for the render plugin
 
 =head2 Report
 

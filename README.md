@@ -201,7 +201,9 @@ The return value of `collect` at the inspection point is a list of `ProcessedPod
 ## Transfer Milestone
 (Skipped if the `:without-processing` flag is True)
 
-Plugins may refer to assets provided by a distribution. This is the stage to ensure they are referenced so that they are moved from the distribution directory to the output directory from which they are used at the completion stage.
+Plugins may generate assets that are not transfered by them, or it is important to ensure that a plugin runs after all other plugins.
+
+In addition, render plugins may create files that are transfered at the render stage, but should be removed after all plugins have run. So a transfer milestone plugin can be created to clean up the plugin's local directory.
 
 ## Report Milestone
 (Skipped if the `:without-processing` flag is True)
@@ -582,9 +584,11 @@ where
 
 	*  **to** is the destination under the `%config<destination> ` directory where the asset will be looked for, eg., an image file to be served.
 
-	*  **plugin** is the name of the plugin in whose directory the asset is contained, where the value `myself` means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
+	*  **from-plug** is the name of the plugin in whose directory the asset is contained, where the value `myself` means the path of the plugin calling the render callable. Actually, 'myself' is the value of Collection::MYSELF.
 
 	*  **file** is the filename local to the source plugin's subdirectory that is to be copied to the destination. This may contain a path relative to the plugin's subdirectory.
+
+	*  For example for an HTML file, this would be the relative URL for the `src` field. Eg., `to = 'asset/image'`, `file = 'new-image.png'`, `from-plug = 'myself'` and the html would be `<img src="asset/image/new-image.png" /> `.
 
 Since a render plugin is to be added using the `ProcessedPod` interface, it must have the `custom-raku` and `template-raku` keys defined, even if they evaluate to blank (eg. `:custom-raku()` ).
 
@@ -601,6 +605,8 @@ It is possible to specify `path` but it must be relative to the plugin's sub-dir
 More information about these plugins can be found in the documentation in the `Raku::Pod::Render` distribution.
 
 ### Compilation
+Note that the structure files are rendered after the `compilation` stage, BUT the information for rendering the structure files, that is the custom blocks and the templates must accompany a `render ` plugin. Compilation plugins are to process the data accumulated during the rendering of the content files, and to make it available for the custom blocks / templates that will be invoked when the structure documents are rendered.
+
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
@@ -619,7 +625,7 @@ as for setup
 The `transfer` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, $pr, %options ) {...}
+sub ($pr, %processed, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -629,6 +635,9 @@ as in Compilation
 
 > **%options**  
 as for Setup
+
+> **return object**  
+as for the render plugin
 
 ## Report
 The `report` key points to a Raku file that evaluates to a
@@ -784,4 +793,4 @@ If a plugin provides an asset (eg., image, jquery script), it needs to provide a
 
 
 ----
-Rendered from README at 2022-07-29T09:24:59Z
+Rendered from README at 2022-08-27T21:44:05Z

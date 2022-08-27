@@ -27,7 +27,7 @@ mktree MODE ~ '/m-sources';
         =end pod
         IND
 
-my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css asset-mover>;
+my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css asset-mover image-mover>;
 mktree MODE ~ '/configs';
 mktree(MODE ~ "/some-plugs/$_") for @pls;
 (MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
@@ -35,13 +35,15 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :mode-cache<m-cache>,
         :mode-sources<m-sources>,
         :no-refresh, # for test dont want to refresh or obtain
+        :no-preserve-state,
         :!recompile,
         :mode-ignore(),
         :mode-obtain(),
         :mode-refresh(),
         :mode-extensions<rakudoc pod6>,
         :!full-render,
-        :!no-report,
+        :!without-report,
+        :!without-processing,
         :plugins<some-plugs>,
         :report-path<reports>,
         :templates<templates>,
@@ -51,19 +53,19 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
 (MODE ~ '/configs/02-plugin.raku').IO.spurt(qq:to/CONF/);
     %(
         plugins-required => %(
-            setup => ('{ @pls[0] }', '{ @pls[1] }',) ,
-            render => ('{ @pls[1] }', '{ @pls[2] }', '{ @pls[3] }', '{ @pls[7] }', '{ @pls[8]}', ) ,
-            compilation => ('{ @pls[4] }',),
-            transfer => (),
-            report => ('{ @pls[3] }',),
-            completion => ('{ @pls[5] }',),
+            :setup(<setup1 setup_rend>),
+            :render(<setup_rend rend2 reporter gather-css asset-mover image-mover>),
+            :compilation(<compiler>,),
+            :transfer(<image-mover gather-css>),
+            :report(<reporter>,),
+            :completion(<completer>,),
         ),
     );
     CONF
 
 (MODE ~ '/configs/03-completion-options.raku').IO.spurt(qq:to/CONF/);
     %(
-        :!no-completion,
+        :!without-completion,
         :destination<html>,
         :landing-place<index>,
         :output-ext<html>,
@@ -85,6 +87,7 @@ for @pls {
                 when 'completer' { "completion => True " }
                 when 'gather-css' { "render => False" }
                 when 'asset-mover' { "render => False" }
+                when 'image-mover' { "render => False" }
                 default { "report => True, css => 'some-styling.css', " }
             } },
         );

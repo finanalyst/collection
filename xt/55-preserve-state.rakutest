@@ -20,10 +20,10 @@ bail-out "{ TMP } and { TMP }/{ REPORT } must exist. Have report-completion test
 unless TMP.IO.d and "{ TMP }/{ REPORT }".IO.d;
 
 chdir TMP;
-"{MODE}/processed-state.7z".IO.unlink #eliminate if exists
-if "{MODE}/processed-state.7z".IO.e;
+"{MODE}/{ Collection::PRESERVE }".IO.unlink #eliminate if exists
+        if "{MODE}/{ Collection::PRESERVE }".IO.e;
 stderr-like {
-    $rv = collect( MODE, :after<mode>, :recompile) ;
+        $rv = collect( MODE, :after<mode>, :recompile, :!no-preserve-state ) ;
         },
         / 'Could not recover the archive' /,
         'detects the absence of preserved state';
@@ -34,8 +34,8 @@ stderr-like { $rv = collect( MODE, :after<all>, :without-processing) },
          / 'Cannot continue without processing' /,
         'traps no html output';
 
-$rv = collect( :after<report>, :no-status);
-ok "{MODE}/processed-state.7z".IO ~~ :f, 'got preserve state archive';
+$rv = collect( :after<report>, :no-status, :!no-preserve-state);
+ok "{MODE}/{ Collection::PRESERVE }".IO ~~ :f, 'got preserve state archive';
 my ($ok, %processed, %symbols) := restore-processed-state( MODE , :no-status );
 ok $ok, 'restoration was good';
 isa-ok %processed<file-a>, 'PodFile', 'processed seems to have expected data';

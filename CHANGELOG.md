@@ -36,6 +36,7 @@
 [2022-07-29 v0.8.1](#2022-07-29-v081)  
 [2022-08-03 v0.8.2](#2022-08-03-v082)  
 [2022-08-11 v0.8.3](#2022-08-11-v083)  
+[2022-08-22 v0.9.0](#2022-08-22-v090)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -264,13 +265,24 @@
 *  remove preserve-state archive if it exists and if no-preserve-state
 
 # 2022-08-11 v0.8.3
-
-
 *  move some config logic to after mode config loaded
+
+# 2022-08-22 v0.9.0
+
+
+*  create transfer plugin type for transfer milestone
+
+*  modify README about Transfer milestone
+
+*  add tests for transfer plugins
+
+*  error: Exceptions options made consistent with module.
+
+*  changed config for test suite so that no-preserve-state is True
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-08-11T21:14:04Z
+Rendered from CHANGELOG at 2022-08-27T21:43:48Z

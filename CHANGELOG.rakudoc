@@ -168,4 +168,11 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =head1 2022-08-11 v0.8.3
 =item move some config logic to after mode config loaded
 
+=head1 2022-08-22 v0.9.0
+=item create transfer plugin type for transfer milestone
+=item1 modify README about Transfer milestone
+=item1 add tests for transfer plugins
+=item error: Exceptions options made consistent with module.
+=item changed config for test suite so that no-preserve-state is True
+
 =end pod

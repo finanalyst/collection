@@ -59,6 +59,7 @@ mktree "{ ASSETS }/images";
         :render<css-collect.raku>,
         :template-raku(),
         :custom-raku(),
+        :transfer<cleanup.raku>
         )
         CONF
 
@@ -66,7 +67,7 @@ mktree "{ ASSETS }/images";
 (PLUGS ~ '/setup_rend/setup_rend_templates.raku').IO.spurt(q:to/CONF/);
         %(
         design => sub ( %a, %b ) {
-                '<designer-tag>' ~ %a<contents> ~ '</designer-tag'
+                '<designer-tag>' ~ %a<contents> ~ '</designer-tag>'
         },
         diagram => sub (%a, %b ) {
                 '<diag>' ~ %a<contents> ~ '</diag>'
@@ -112,6 +113,12 @@ mktree "{ ASSETS }/images";
         }
         CONF
 
+(PLUGS ~ '/gather-css/cleanup.raku').IO.spurt(q:to/CONF/);
+        sub ( $pp, %processed, %options ) {
+            'local.css'.IO.unlink;
+            [] # empty array of triples
+        }
+        CONF
 $rv = collect(MODE, :no-status, :after<setup>, :no-preserve-state, :recompile);
 is $rv[1][2]<Render>[0]<message>, 'Plugin calls cancelled', 'no plugins when stopped by an after';
 
