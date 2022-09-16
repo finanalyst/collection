@@ -1,0 +1,4 @@
+#!/usr/bin/env raku
+use v6.d;
+use Collection::RefreshPlugins;
+sub MAIN(|c) { refresh(|c) }

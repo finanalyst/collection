@@ -489,7 +489,7 @@ sub restore-processed-state($mode, :$no-status --> Array) is export {
     my $file = "$*CWD/$mode/{ PRESERVE }";
     my $ok = $file.IO ~~ :e & :f;
     note "Could not recover the archive with processed state ｢$file｣. Turning on full-render."
-        unless $ok;
+        unless $ok or $no-status;
     return [$ok] unless $ok;
     my Archive::Libarchive $arc .= new(
     :operation(LibarchiveExtract),
@@ -536,11 +536,11 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
         say "Plugin ｢$plug｣ is listed for milestone ｢$mile｣ " if $collection-info;
-        unless "$mode/{ %config<plugins> }/$plug".IO.d {
+        unless "$mode/plugins/$plug".IO.d {
             note "Plugin ｢$plug｣ does not exist but is listed for milestone ｢$mile｣. Ignored.";
             next
         }
-        my $path = "$mode/{ %config<plugins> }/$plug/config.raku";
+        my $path = "$mode/plugins/$plug/config.raku";
         next unless $path.IO ~~ :e & :f;
         my %plugin-conf = get-config(:$path);
         next unless %plugin-conf{$mile}:exists and %plugin-conf{$mile}.defined;
@@ -560,7 +560,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         # only run callable and closure within the directory of the plugin
-        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $path = "$mode/plugins/$plug".IO.absolute;
         my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure;
         try {
@@ -581,7 +581,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
-        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $path = "$mode/plugins/$plug".IO.absolute;
         # Since the configuration matches what the add-plugin method expects as named parameters
         if %plugin-conf<render> ~~ Str {
             # as opposed to being a Boolean value, then its a program
@@ -652,7 +652,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
     my %options = %( :$collection-info, :$no-status);
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
     for @valids -> (:key($plug), :value(%plugin-conf)) {
-        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $path = "$mode/plugins/$plug".IO.absolute;
         my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure;
         try {
@@ -685,7 +685,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'transfer', :$with,
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
-        my $path = "$mode/%config<plugins>/$plug".IO.absolute;
+        my $path = "$mode/plugins/$plug".IO.absolute;
         my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;
         my &closure;
         try {

@@ -1,0 +1,93 @@
+use v6.d;
+use Test;
+use Collection::RefreshPlugins;
+use Test::Run :runs_ok;
+use File::Directory::Tree;
+
+plan *;
+
+my $dir = 'xt/trial-test';
+my $mode = "$dir/Website";
+my $pub-dir = 'xt/released-plugins';
+for ($dir, $pub-dir) {
+    rmtree $_ if .IO ~~ :e;
+    mktree $_;
+}
+#make a bad config
+"$dir/config.raku".IO.spurt(q:to/CONF/);
+    <one two three] #invalid config
+    CONF
+my @args = <<raku -I. bin/collection-refresh-plugins -test>>;
+@args.append: "-collection=$dir";
+runs_ok(
+    :@args,
+    :exitcode(1),
+    :err(/ 'access ｢config.raku｣' /),
+    'No config.raku'
+);
+#make a bad plugins.rakuon
+"$dir/plugins.rakuon".IO.spurt(q:to/CONF/);
+    <one two three] #invalid config
+    CONF
+#rewrite a good config.raku
+"$dir/config.raku".IO.spurt(q:to/CONF/);
+    %(
+        :cache<doc-cache>, # location relative to collection root of cached Pod
+        :sources<raku-docs/doc>, # location of sources
+        :source-obtain(),#<git https://github.com/Raku/doc.git raku-docs/>,
+        :source-refresh(),
+        :!no-status, # show progress
+        :mode<Website>, # the default mode, which must exist
+        :extensions< rakudoc pod pod6 p6 pm pm6 >,
+    )
+    CONF
+runs_ok(
+    :@args,
+    :exitcode(1),
+    :err(/ 'access' .+ 'plugins.rakuon｣' /),
+    'Bad plugins-conf'
+);
+$Collection::RefreshPlugins::release-dir = $pub-dir;
+my $rv;
+throws-like {
+    Collection::RefreshPlugins::create-plugin-conf(:collection($dir), :test) },
+    Collection::RefreshPlugins::NoReleasedDir,
+    message => / 'not a valid Collection Released' /,
+    'traps lack of manifest.rakuon in release directory';
+"$pub-dir/manifest.rakuon".IO.spurt(q:to/MANIFEST/);
+    %( :dummy() );
+    MANIFEST
+throws-like {
+    Collection::RefreshPlugins::create-plugin-conf(:collection($dir), :test) },
+    Collection::RefreshPlugins::NoModes,
+    message => / 'no Mode directories' .+ $dir /,
+    'traps no modes';
+mktree $mode;
+"$mode/config.raku".IO.spurt(q:to/CONF/);
+    %(
+        :plugin-format<html>,
+        plugins-required => %(
+            :setup<raku-doc-setup>,
+            :render<
+                raku-styling website camelia simple-extras listfiles images font-awesome filterlines
+                leafletmap graphviz latex-render
+                gather-js-jq gather-css
+            >,
+            :transfer<gather-js-jq gather-css>,
+            :report(),
+            :compilation<website listfiles>,
+            :completion<cro-app>,
+        ),
+    )
+    CONF
+
+#my @args = <<raku -I. bin/collection-refresh-plugins -test>>;
+#@args.append: "-collection=$dir";
+#runs_ok(
+#    :@args,
+#    :exitcode(1),
+#    :out(/ 'something' /),
+#    :err(/ 'Creating ｢plugins.rakuon｣ in' /),
+#    'No modes'
+#             );
+done-testing;
