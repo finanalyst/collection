@@ -103,7 +103,7 @@ like %p-conf<version>, / ^ '2.' \d+ \. \d+ /, 'auth/version is default';
 # map plugins to non-defaults
 "$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
     %(
-        :METADATA( %(
+        :_metadata_( %(
             :collection-plugin-root<xt/released-plugins>,
             :update-behaviour<auto>,
         )),
@@ -137,7 +137,7 @@ is %p-conf<name>, 'new-camelia', 'custom alternative plugin for camelia';
 # check error conditions
 "$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
     %(
-        :METADATA( %(
+        :_metadata_( %(
             :collection-plugin-root<xt/released-plugins>,
             :update-behaviour<auto>,
         )),
@@ -166,7 +166,7 @@ throws-like { Collection::RefreshPlugins::refresh(:collection($dir), :test) },
     'catches the assumed auth for a new plugin name';
 "$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
     %(
-        :METADATA( %(
+        :_metadata_( %(
             :collection-plugin-root<xt/released-plugins>,
             :update-behaviour<auto>,
         )),

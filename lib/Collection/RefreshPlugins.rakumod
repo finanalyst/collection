@@ -59,7 +59,7 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export
             }
         }
     }
-    $release-dir = %plugins<METADATA><collection-plugin-root>;
+    $release-dir = %plugins<_metadata_><collection-plugin-root>;
     # git actions disabled when testing and on first run
     if !$test and $git-pull {
         my $proc = run('git', '-C', $release-dir, 'pull', '-q', :err);
@@ -68,7 +68,7 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export
         $git-pull = False;
     }
     my %released = analyse-manifest;
-    for %plugins.keys.grep({ !.match(/ METADATA /) }) -> $mode {
+    for %plugins.keys.grep({ .match(/ ^ <plugin-name> $ /) }) -> $mode {
         my %config = get-config("$collection/$mode");
         # get unique plugin names from all milestones
         my @required = (gather for %config<plugins-required>.values { take .list.Slip }).unique;
@@ -150,14 +150,14 @@ our sub create-plugin-conf(:$collection, :$test --> Associative) {
     unless ($release-dir.IO ~~ :d)
         and ("$release-dir/manifest.rakuon".IO ~~ :e & :f);
     %plugins = %(
-        :METADATA(%(
+        :_metadata_(%(
             :collection-plugin-root($release-dir),
             :update-behaviour<auto>,
             # other value is forced
 
         )),
     );
-    my @modes = $collection.IO.dir.grep({ .d && .basename ~~ / ^ \w / });
+    my @modes = $collection.IO.dir.grep({ .d && .basename ~~ / <plugin-name> / });
     NoModes.new(:$collection).throw unless +@modes;
     for @modes -> $mode {
         my %config = get-config(~$mode, :required('plugin-format',));

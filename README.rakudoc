@@ -65,16 +65,18 @@ mode, so if C<collect> is called without a B<Mode>, the default will be used.
 
 =head1 Modes
 
-A Mode is
-=item the name of the process by which a I<Collection> is rendered and presented.
+A Mode:
+=item is the name of the process by which a I<Collection> is rendered and presented.
 At present, only C<Website> is implemented, but it is planned to have Modes for
 C<epub> and C<pdf> formats. The presentation may be serving HTML files locally,
 or the creation of a single epub file for publishing.
 
-=item the name of a sub-directory under the Collection directory. A Mode sub-directory
-must contain:
+=item is the name of a sub-directory under the Collection directory.
+=item may not be named with any '_' in it. This allows for sub-directories in a
+Collection folder that are not modes, eg., a Raku documentation repository
 
-=item2 a sub-directory C<configs>, not a C<config.raku> file.
+=item A Mode sub-directory must contain:
+=item2 a sub-directory C<configs>, and/or a C<config.raku> file.
 
 =head1 Milestones
 
@@ -872,7 +874,7 @@ the default name/auth/version are used.
 =head2 Mapping released plugins to mode directories
 
 The file C<plugins.rakuon> contains a hash with the following keys:
-=item C<METADATA>. Contains a hash with data for the C<refresh> functionality.
+=item C<_metadata_>. Contains a hash with data for the C<refresh> functionality.
 =item2 C<collection-plugin-root> This contains the name of a directory reachable from the Collection
 root directory with the released plugins are downloaded.
 =item2 C<update-behaviour> Defines what happens when a new released plugin has an increased
@@ -884,8 +886,10 @@ updating is then plugin by plugin with a C<-force> flag set.
 
 =item3 B<Note> The update behaviour is not initially implemented.
 
-=item Every other toplevel key is interpreted as a Mode. This means
-a mode cannot be named C<METADATA>. The Mode key will point to a hash with the keys:
+=item Every other toplevel key that meets the plugin naming convenstion
+is interpreted as a Mode. This means a mode cannot be named C<_metadata_>.
+
+=item The Mode key will point to a hash with the keys:
 =item2 C<_mode_format> Each mode may only contain plugins from one Format, eg., I<html>.
 =item2 By the plugin naming rules, a I<plugin> may not be named C<_mode_format>.
 =item2 Every other key in a mode hash must be a plugin name contained
@@ -999,7 +1003,7 @@ behaviour might lead to an infinite loop.
 recent version of the plugin
 
 =item2 Several behaviours are possible:
-=item3 The default I<update-behaviour> is given in the C<METADATA> hash of C<plugins.rakuon>
+=item3 The default I<update-behaviour> is given in the C<_metadata_> hash of C<plugins.rakuon>
 =item3 I<force> Leave the existing links in place, issue a warning,
 update to latest only when forced. Include suggestion to change plugins.rakuon file
 to suppress warnings.

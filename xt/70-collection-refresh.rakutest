@@ -73,7 +73,7 @@ my %conf;
 lives-ok { %conf = EVALFILE "$dir/plugins.rakuon" },
     'gets %conf';
 is +%conf.keys, 2, 'two keys in conf';
-is %conf<METADATA><collection-plugin-root>, $pub-dir, 'got root right';
+is %conf<_metadata_><collection-plugin-root>, $pub-dir, 'got root right';
 is %conf<Website><_mode_format>, 'html', 'minimal mode format';
 
 done-testing;
