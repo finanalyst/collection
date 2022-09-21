@@ -1,10 +1,9 @@
 use v6.d;
 use RakuConfig;
+use Collection::Entities;
+use File::Directory::Tree;
 
 unit module Collection::RefreshPlugins;
-#| the location of the released plugins (a github repo)
-#| it can be changed when creating a plugin-conf file.
-our $release-dir = "$*HOME/.local/share/Collection";
 
 class NoModes is Exception {
     has $.collection;
@@ -13,15 +12,26 @@ class NoModes is Exception {
     }
 }
 class NoReleasedDir is Exception {
-    has $.released-dir;
+    has $.release-dir;
     method message {
-        "｢$!released-dir｣ is not a valid Collection Released Plugins directory"
+        "｢$!release-dir｣ is not a valid Collection Released Plugins directory"
     }
 }
-#class BadPluginsConf is Exception {
-#    has $!warning;
-#    method message
-#}
+class GitFail is Exception {
+    has $.err;
+    method message {
+        "Failed to run ｢git pull｣, got ", $.err
+    }
+}
+class MapFail is Exception {
+    has $.note;
+    method message {
+        $.note
+    }
+}
+
+our proto sub refresh(|) {*}
+
 multi sub refresh(Str:D :$collections!, Bool :$test = False) is export {
     for $collections.split(/\s+ | \,/) {
         if .IO.d {
@@ -34,38 +44,102 @@ multi sub refresh(Str:D :$collections!, Bool :$test = False) is export {
     }
 }
 multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export {
+    state Bool $git-pull = True;
     my %plugins;
     try {
         %plugins = get-config(:path("$collection/plugins.rakuon"));
         CATCH {
             when RakuConfig::NoFiles {
-                note("Creating ｢plugins.rakuon｣ in ｢$collection｣");
+                note("Creating ｢plugins.rakuon｣ in ｢$collection｣") unless $test;
                 %plugins = create-plugin-conf(:$collection, :$test);
-                .resume
             }
             default {
-                exit note("Trying to access ｢$collection/plugins.rakuon｣ but got " ~ .message)
+                .rethrow;
+                #exit note("Trying to access ｢$collection/plugins.rakuon｣ but got " ~ .message)
             }
         }
     }
-    # Collect a list of plugins that need attention
-    # 1) plugins in required plugins without a sub-directory in '<mode>/plugins'
-    # 2) plugins in plugins.conf
-    my %plugins2b-processed;
-    for %plugins.keys.grep({ !.match(/ 'FORMAT' /) }) -> $mode {
+    $release-dir = %plugins<METADATA><collection-plugin-root>;
+    # git actions disabled when testing and on first run
+    if !$test and $git-pull {
+        my $proc = run('git', '-C', $release-dir, 'pull', '-q', :err);
+        my $err = $proc.err.slurp(:close);
+        GitFail.new(:$err).throw if $err;
+        $git-pull = False;
+    }
+    my %released = analyse-manifest;
+    for %plugins.keys.grep({ !.match(/ METADATA /) }) -> $mode {
         my %config = get-config("$collection/$mode");
         # get unique plugin names from all milestones
-        my SetHash $required .= new;
-        $required.set($_.values) for %config<plugins-required>;
-        my @existing-plugs = "$collection/$mode/plugins"
-            .IO.dir(test => { .IO.d })
-            .grep({ .match(/ ^ \w /) });
-        %plugins2b-processed{ $mode } = $required (<=) @existing-plugs;
-        # get from plugins.rakuon
-        #### How to verify that that a plugin given by plugins.rakuon is linked properly????
+        my @required = (gather for %config<plugins-required>.values { take .list.Slip }).unique;
+        my $format = %config<plugin-format>;
+        for @required -> $plug {
+            with %plugins{$mode}{$plug} {
+                my $n-plug = %plugins{$mode}{$plug}<name> // $plug;
+                my $n-auth = %plugins{$mode}{$plug}<auth> // 'collection';
+                MapFail.new(:note(qq:to/WARN/)).throw unless %released{$format}{$n-plug}{$n-auth};
+                    Auth error? No released plugin ｢$n-plug｣_v?_auth_｢$n-auth｣ for ｢$plug｣ in ｢$mode｣
+                        If a 'name' key is set in 'plugins.rakuon', has the 'auth' key been set too?
+                    WARN
+                my $n-v = %plugins{$mode}{$n-plug}<major>
+                    // %released{$format}{$n-plug}{$n-auth}<latest>;
+                MapFail.new(:note(qq:to/WARN/)).throw unless ($n-v ~~ any( %released{$format}{$n-plug}{$n-auth}<vers>.list));
+                    Major part error? No released plugin ｢{ $n-plug }_v{ $n-v }_auth_{ $n-auth }｣ corresponding to ｢$plug｣ in ｢$mode｣
+                    WARN
+
+                next if ?(%plugins{$mode}{$plug}<mapped>) and %plugins{$mode}{$plug}<mapped> eq "{ $n-plug }_v{ $n-v }_auth_$n-auth";
+                # Here is where code would be needed for notifying about an update
+                %plugins{$mode}{$plug}<mapped> = "{ $n-plug }_v{ $n-v }_auth_$n-auth"
+            }
+            else {
+                # no plugin, so not yet mapped, so there will not be a plugin config
+                # no constraint so use default
+                %plugins{$mode}{$plug}<mapped> =
+                    $plug ~ '_v' ~ %released{$format}{$plug}<collection><latest> ~ '_auth_collection';
+            }
+            mktree("$collection/$mode/plugins") unless "$collection/$mode/plugins/".IO ~~ :e & :d;
+            my $p-ref = "$collection/$mode/plugins/$plug";
+            say "Mapping ｢$plug｣ to ｢{ %plugins{$mode}{$plug}<mapped> }｣" unless $test;
+            $p-ref.IO.unlink if $p-ref.IO ~~ :e;
+            "$release-dir/plugins/{ $format }/{ %plugins{$mode}{$plug}<mapped> }".IO
+                .symlink($p-ref);
+        }
     }
-    # make links
+    write-plugin-conf(%plugins, :$collection)
 }
+our sub analyse-manifest(--> Associative) {
+    my %manifest = get-config(:path("$release-dir/manifest.rakuon"));
+    my %released = %manifest<plugins>.map({ .key => %() });
+    for %released.keys -> $format {
+        for %manifest<plugins>{$format}.keys -> $rp {
+            if $rp ~~ / <plugin-name> '_v' $<v> = (\d+) '_auth_' $<auth> = (.+) $ / {
+                my ($p, $v, $a) = ~$<plugin-name>, +$<v>, ~$<auth>;
+                with %released{$format}{$p} {
+                    if $a (elem) $_<auths> {
+                        $_{$a}<vers>.append: $v;
+                        $_{$a}<latest> = $_{$a}<vers>.max
+                    }
+                    else {
+                        $_<auths>.set($a);
+                        $_{$a}<vers> = [$v];
+                        $_{$a}<latest> = $v
+                    }
+                }
+                else {
+                    %released{$format}{$p} = %(
+                        auths => SetHash.new($a),
+                        $a => %(
+                            vers => [$v],
+                            latest => $v
+                        ),
+                    )
+                }
+            }
+        }
+    }
+    %released
+}
+
 our sub create-plugin-conf(:$collection, :$test --> Associative) {
     my %plugins;
     unless $test {
@@ -75,18 +149,19 @@ our sub create-plugin-conf(:$collection, :$test --> Associative) {
     NoReleasedDir.new(:$release-dir).throw
     unless ($release-dir.IO ~~ :d)
         and ("$release-dir/manifest.rakuon".IO ~~ :e & :f);
-    %plugins = :collection-plugin-root($release-dir), ;
-    my @modes = $collection.IO.dir(test => { .IO.d }).grep({ .basename ~~ / ^ \w+ / });
+    %plugins = %(
+        :METADATA(%(
+            :collection-plugin-root($release-dir),
+            :update-behaviour<auto>,
+            # other value is forced
+
+        )),
+    );
+    my @modes = $collection.IO.dir.grep({ .d && .basename ~~ / ^ \w / });
     NoModes.new(:$collection).throw unless +@modes;
     for @modes -> $mode {
-        my %config;
-        try {
-            %config = get-config("$collection/$mode", :required<plugin-format>);
-            CATCH {
-                default { exit note("Trying to access Mode ｢$collection/$mode｣ configuration, but got " ~ .message) }
-            }
-        }
-        %plugins{~$mode}<FORMAT> = %config<plugin-format>
+        my %config = get-config(~$mode, :required('plugin-format',));
+        %plugins{$mode.basename}<_mode_format> = %config<plugin-format>
     }
     write-plugin-conf(%plugins, :$collection);
     %plugins

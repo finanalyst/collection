@@ -37,6 +37,7 @@
 [2022-08-03 v0.8.2](#2022-08-03-v082)  
 [2022-08-11 v0.8.3](#2022-08-11-v083)  
 [2022-08-22 v0.9.0](#2022-08-22-v090)  
+[2022-09-07 v0.9.1](#2022-09-07-v091)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -268,8 +269,6 @@
 *  move some config logic to after mode config loaded
 
 # 2022-08-22 v0.9.0
-
-
 *  create transfer plugin type for transfer milestone
 
 *  modify README about Transfer milestone
@@ -280,9 +279,32 @@
 
 *  changed config for test suite so that no-preserve-state is True
 
+# 2022-09-07 v0.9.1
+
+
+*  distinguish between 'plugin' and 'callable' at a milestone for that plugin.
+
+*  remove references to Cleanup milestone, which was never used.
+
+*  add a list of milestones towards the top.
+
+*  add Collection::RefreshPlugins
+
+*  add collection-refresh-plugins
+
+*  remove **plugins** key for mode config (The ability to add arbitrary names was designed to allow for the multiple use of plugins. This specification has changed. Now plugins are released with semantic versioning, and plugins are released for each Major version. Updating is done via the plugins.conf file.
+
+*  plugin-format is now added as a mandatory key for Mode configuration
+
+*  honour no-status in preserve-state
+
+*  finished refresh-plugins, finalised format for 'plugins.rakuon'
+
+*  tests added
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-08-27T21:43:48Z
+Rendered from CHANGELOG at 2022-09-21T20:47:32Z

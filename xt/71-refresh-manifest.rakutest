@@ -1,0 +1,91 @@
+use v6.d;
+use Test;
+use Collection::RefreshPlugins;
+use Collection::Entities;
+
+my $dir = 'xt/trial-test';
+my $mode = "$dir/Website";
+my $pub-dir = 'xt/released-plugins';
+
+plan 6;
+
+bail-out "tests depend on existence of $dir" unless $dir.IO ~~ :e & :d;
+$release-dir = $pub-dir;
+
+"$pub-dir/manifest.rakuon".IO.spurt(q:to/MANIF/);
+%(
+    :plugins( %(
+		:html( %(
+			:camelia_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+            :camelia_v1_auth_collection( %(
+				:version<1.1.0>,
+			)),
+            :camelia_v2_auth_collection( %(
+				:version<2.1.0>,
+			)),
+            :new-camelia_v0_auth_finanalyst( %(
+                :version<1.1.0>,
+            )),
+			:cro-app_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:cro-app_v1_auth_collection( %(
+				:version<1.1.1>,
+			)),
+			:cro-app_v2_auth_collection( %(
+				:version<2.1.5>,
+			)),
+			:filterlines_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:filterlines_v1_auth_collection( %(
+				:version<1.1.0>,
+			)),
+			:filterlines_v2_auth_collection( %(
+				:version<2.1.0>,
+			)),
+			:filterlines_v0_auth_someoneelse( %(
+				:version<0.1.0>,
+			)),
+			:filterlines_v1_auth_someoneelse( %(
+				:version<1.1.0>,
+			)),
+			:font-awesome_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+        )),
+        :markdown( %(
+			:gather-css_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:gather-js-jq_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:graphviz_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:images_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:latex-render_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+			:leafletmap_v0_auth_collection( %(
+				:version<0.1.0>,
+			)),
+        )),
+    )),
+)
+MANIF
+
+my %released;
+lives-ok { %released = Collection::RefreshPlugins::analyse-manifest }, 'manifest is OK';
+is-deeply %released.keys.sort, <html markdown >, 'expected 1-level keys';
+is %released<html><camelia><collection><vers>.elems, 3, 'no of vers correct';
+is %released<html><camelia><collection><latest>, 2, 'expected latest version';
+is %released<html><filterlines><auths>.keys.sort, <collection someoneelse>, 'two auths for filterlines';
+is %released<html><filterlines><someoneelse><latest>, 1, 'non-default latest version';
+
+done-testing;

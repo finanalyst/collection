@@ -1,0 +1,198 @@
+use v6.d;
+use Test;
+use File::Directory::Tree;
+use Collection::RefreshPlugins;
+use Collection::Entities;
+use RakuConfig;
+
+my $dir = 'xt/trial-test';
+my $mode = "$dir/Website";
+my $pub-dir = 'xt/released-plugins';
+
+plan 13;
+
+rmtree($pub-dir);
+rmtree($dir);
+mktree $dir;
+mktree $mode;
+mktree $pub-dir;
+
+$release-dir = $pub-dir;
+"$mode/config.raku".IO.spurt(q:to/CONF/);
+%(
+    :plugin-format<html>,
+    plugins-required => %(
+        :render<
+            camelia font-awesome filterlines
+        >,
+        :completion<cro-app>,
+    ),
+)
+CONF
+# manifest.rakon file created in refresh-mapping.rakutest
+# make config files to go with the plugin names
+my %man = %(
+    :plugins( %(
+        :html( %(
+            :camelia_v0_auth_collection( %(
+                :version<0.1.0>,
+            )),
+            :camelia_v1_auth_collection( %(
+                :version<1.1.0>,
+            )),
+            :camelia_v2_auth_collection( %(
+                :version<2.1.0>,
+            )),
+            :new-camelia_v0_auth_finanalyst( %(
+                :version<1.1.0>,
+            )),
+            :cro-app_v0_auth_collection( %(
+                :version<0.1.0>,
+            )),
+            :cro-app_v1_auth_collection( %(
+                :version<1.1.1>,
+            )),
+            :cro-app_v2_auth_collection( %(
+                :version<2.1.5>,
+            )),
+            :filterlines_v0_auth_collection( %(
+                :version<0.1.0>,
+            )),
+            :filterlines_v1_auth_collection( %(
+                :version<1.1.0>,
+            )),
+            :filterlines_v2_auth_collection( %(
+                :version<2.1.0>,
+            )),
+            :filterlines_v0_auth_someoneelse( %(
+                :version<0.1.0>,
+            )),
+            :filterlines_v1_auth_someoneelse( %(
+                :version<1.1.0>,
+            )),
+            :font-awesome_v0_auth_collection( %(
+                :version<0.1.0>,
+            )),
+        )),
+    )),
+);
+"$pub-dir/manifest.rakuon".IO.spurt(format-config(%man));
+for <camelia new-camelia font-awesome filterlines cro-app> -> $p {
+    for 0 .. 3 -> $v {
+        for <collection someoneelse finanalyst> -> $a {
+            my $d = "{ $p }_v{ $v }_auth_$a";
+            with %man<plugins><html>{$d} {
+                "$pub-dir/plugins/html/$d".IO.mkdir;
+                "$pub-dir/plugins/html/$d/config.raku".IO.spurt(qq:to/CONF/)
+                    \%( :version<{ .<version> }>, :auth\<{$a}>, :name\<{$p}> );
+                CONF
+            }
+        }
+    }
+}
+lives-ok { Collection::RefreshPlugins::refresh(:collection($dir), :test) },
+    'refresh works';
+ok "$mode/plugins".IO.d, 'plugins directory in mode created';
+ok "$mode/plugins/camelia".IO.d, 'expected plugin created';
+my %p-conf = get-config("$mode/plugins/filterlines");
+is %p-conf<auth>, 'collection', 'default auth';
+like %p-conf<version>, / ^ '2.' \d+ \. \d+ /, 'auth/version is default';
+%p-conf = get-config("$mode/plugins/cro-app");
+is %p-conf<auth>, 'collection', 'default auth';
+like %p-conf<version>, / ^ '2.' \d+ \. \d+ /, 'auth/version is default';
+# map plugins to non-defaults
+"$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
+    %(
+        :METADATA( %(
+            :collection-plugin-root<xt/released-plugins>,
+            :update-behaviour<auto>,
+        )),
+        :Website( %(
+            :camelia( %(
+                :name<new-camelia>,
+                :auth<finanalyst>,
+            )),
+            :cro-app( %(
+                :mapped<cro-app_v0_auth_collection>,
+                :major<1>,
+            )),
+            :filterlines( %(
+                :mapped<filterlines_v2_auth_collection>,
+                :auth<someoneelse>,
+            )),
+            :font-awesome( %(
+                :mapped<font-awesome_v0_auth_collection>,
+            )),
+            :_mode_format<html>,
+        )),
+    )
+    PLUGS
+lives-ok { Collection::RefreshPlugins::refresh(:collection($dir), :test) },
+    'refresh works with customised plugins.rakuon';
+%p-conf = get-config("$mode/plugins/filterlines");
+is %p-conf<auth>, 'someoneelse', 'non-default auth';
+like %p-conf<version>, / ^ '1.' \d+ \. \d+ /, 'auth is non-default, version is latest for auth';
+%p-conf = get-config("$mode/plugins/camelia");
+is %p-conf<name>, 'new-camelia', 'custom alternative plugin for camelia';
+# check error conditions
+"$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
+    %(
+        :METADATA( %(
+            :collection-plugin-root<xt/released-plugins>,
+            :update-behaviour<auto>,
+        )),
+        :Website( %(
+            :camelia( %(
+                :name<new-camelia>,
+            )),
+            :cro-app( %(
+                :mapped<cro-app_v0_auth_collection>,
+                :major<1>,
+            )),
+            :filterlines( %(
+                :mapped<filterlines_v2_auth_collection>,
+                :auth<someoneelse>,
+            )),
+            :font-awesome( %(
+                :mapped<font-awesome_v0_auth_collection>,
+            )),
+            :_mode_format<html>,
+        )),
+    )
+    PLUGS
+throws-like { Collection::RefreshPlugins::refresh(:collection($dir), :test) },
+    Collection::RefreshPlugins::MapFail,
+    message => /'Auth error?'/,
+    'catches the assumed auth for a new plugin name';
+"$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
+    %(
+        :METADATA( %(
+            :collection-plugin-root<xt/released-plugins>,
+            :update-behaviour<auto>,
+        )),
+        :Website( %(
+            :camelia( %(
+                :name<new-camelia>,
+                :auth<finanalyst>,
+            )),
+            :cro-app( %(
+                :mapped<cro-app_v0_auth_collection>,
+                :major<4>,
+            )),
+            :filterlines( %(
+                :mapped<filterlines_v2_auth_collection>,
+                :auth<someoneelse>,
+            )),
+            :font-awesome( %(
+                :mapped<font-awesome_v0_auth_collection>,
+            )),
+            :mode_format<html>,
+        )),
+    )
+    PLUGS
+throws-like { Collection::RefreshPlugins::refresh(:collection($dir), :test) },
+    Collection::RefreshPlugins::MapFail,
+    message => /'Major part error?'/,
+    'catches a request for too high a Major component';
+
+done-testing;

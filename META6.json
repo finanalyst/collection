@@ -11,13 +11,14 @@
     "Raku::Pod::Render",
     "Pod::From::Cache",
     "Terminal::Spinners",
-    "RakuConfig",
+    "RakuConfig:ver<0.7.2+>",
     "Archive::Libarchive"
   ],
   "build-depends": [],
   "test-depends": [],
   "provides": {
     "Collection": "lib/Collection.rakumod",
+    "Collection::Entities": "lib/Collection/Entities.rakumod",
     "Collection::Exceptions": "lib/Collection/Exceptions.rakumod",
     "Collection::RefreshPlugins": "lib/Collection/RefreshPlugins.rakumod"
   },

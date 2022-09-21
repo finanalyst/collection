@@ -181,11 +181,13 @@ Hence it is not necessary to cache intermediate data except for rendering collec
 =item add a list of milestones towards the top.
 =item add Collection::RefreshPlugins
 =item add collection-refresh-plugins
-=item remove plugins key for mode config (The ability to add arbitrary names was
+=item remove B<plugins> key for mode config (The ability to add arbitrary names was
 designed to allow for the multiple use of plugins. This specification has changed.
 Now plugins are released with semantic versioning, and plugins are released for
 each Major version. Updating is done via the plugins.conf file.
 =item plugin-format is now added as a mandatory key for Mode configuration
 =item honour no-status in preserve-state
+=item finished refresh-plugins, finalised format for 'plugins.rakuon'
+=item tests added
 
 =end pod

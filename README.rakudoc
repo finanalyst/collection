@@ -815,11 +815,10 @@ by a later API.
 =item A new plugin may have been written as a drop-in replacement for an older version, and the new
 plugin may have a different name, or auth, or version.
 
-=head2 Collection released plugin management system
+In order to implement this flexibility, the following are specified:
 
-So a plugin manager (whether command line or GUI) must be compliant with the following system:
-=item There is a I<release> directory to contain all Collection plugins, probably a clone of the
-github repository.
+=item There is a released plugins directory (see L<Released plugins directory>) to contain all
+Collection plugins.
 
 =item The semantic versioning scheme is mandated for Collection plugins. A version is
 C<v<major>.<minor>,<patch>>. Changes at the C< <patch> > level do not affect the plugin's functionality.
@@ -838,11 +837,13 @@ to the plugin required in the Mode configuration. Thus
 =item2 changes in API can be frozen to earlier versions of the plugin for some concrete Mode.
 =item2 different plugin versions can be used for different collection/modes
 =item2 a differently named plugin can be mapped to a plugin required by a specific collection/mode.
+=item3 B<Note> an alternate plugin, as given by C<name> may also have a non-default C<auth>, so
+C<auth> may need to be added to C<plugins.rakuon> as well.
 
 =item Consequently, all released plugins are defined for
-=item2 a Format (eg. html)
-=item2 a Major version
-=item2 an Auth name
+=item2 a B<format> (eg. html)
+=item2 a B<major> version
+=item2 an B<auth> name
 =item The mapping information from a released plugin to a Mode is contained in a file in the root
 of a Collection.
 
@@ -852,95 +853,93 @@ of a Collection.
 from the released version to the directory where
 each mode expects its plugins to be located.
 
-To implement this system
 =item Each Collection root directory (the directory containing the topmost C<config.raku> file)
 will contain the file C<plugins.rakuon>.
+
 =item The plugin management tool (PMT)
-=item2 runs through the plugins-required
+=item2 checks if a C<plugins.rakuon> exists. If not, it generates a minimal one.
+=item2 runs through the plugins-required of each B<Mode> in the collection.
 =item2 for each distinct plugin verifies whether
 =item3 the plugin has an entry in C<plugins.rakuon>, in which case
-=item4 the PMT maps the released plugin name/auth/ver to the plugin-required name using the rules
-of C<plugins.rakuon> as given below
-=item3 the released version matches the plugin version (the full major.minor.patch version)
-=item2 if a released version has larger minor/patch values, then the new directory is linked
-(copied) to the Mode's plugin name
+=item4 the PMT maps (or remaps if the constraint is new)
+the released plugin name/auth/ver to the plugin-required name using the rules
+of C<plugins.rakuon> as given in L<Mapping released plugins to mode directories>
 
-=head2 Plugin refreshing
-
-Collection contains the utility C<collection-refresh-plugins> as a
-CLI Plugin Management System (PMS). It is called as follows:
-
-    collection-refresh-plugins [-collection=<path>] [-collections='path1 path2 path3']
-
-C<-collection> is the path to a Collection directory. By default it is the Current Working Directory.
-
-C<-collections> is a space delimited list of paths to Collections
-
-When a Collection directory contains a file C<plugins.rakuon>, then the utility will inspect the release directory,
-updates it, and maps (copy) the most recent plugins according this file. See below for more detail about
-the specification of C<plugins.rakuon>.
-
-When a Collection does not contain a file <plugins.rakuon>, it generates one from the C<plugin-required>
-key of each of the C<config.raku> files in each Mode. During this process, the user is prompted
-for the directory name (relative to the current working directory) of released plugin directory.
+=item3 the plugin does not have an entry, which means it has not yet been mapped,
+and there are no constraints on the plugin, so
+the default name/auth/version are used.
 
 =head2 Mapping released plugins to mode directories
 
 The file C<plugins.rakuon> contains a hash with the following keys:
-=item C<collection-plugin-root> This contains the name of a directory reachable from the Collection
+=item C<METADATA>. Contains a hash with data for the C<refresh> functionality.
+=item2 C<collection-plugin-root> This contains the name of a directory reachable from the Collection
 root directory with the released plugins are downloaded.
+=item2 C<update-behaviour> Defines what happens when a new released plugin has an increased
+Major number. Possible values are:
 
-=item Every other toplevel key is interpreted as a Mode. It will point to a hash with the keys:
-=item2 C<FORMAT> Each mode may only contain plugins from one Format, eg., I<html>.
-=item2 This implies that a I<Mode> may not be named C<FORMAT>.
-=item2 Every other key at this level (meaning within the hash for a Mode and not FORMAT)
-must be a plugin name contained in the Mode's plugins-required configuration.
+=item3 I<auto> All relevant plugin names are updated to the new version, a message is issued
+=item3 I<conserve> Plugins are not updated to the new version, a warning is issued,
+updating is then plugin by plugin with a C<-force> flag set.
 
-=item2 There may be zero other keys at this level
+=item3 B<Note> The update behaviour is not initially implemented.
+
+=item Every other toplevel key is interpreted as a Mode. This means
+a mode cannot be named C<METADATA>. The Mode key will point to a hash with the keys:
+=item2 C<_mode_format> Each mode may only contain plugins from one Format, eg., I<html>.
+=item2 By the plugin naming rules, a I<plugin> may not be named C<_mode_format>.
+=item2 Every other key in a mode hash must be a plugin name contained
+in the Mode's plugins-required configuration.
+
+=item2 There may be zero plugin keys
+
 =item2 If a plugin in the plugins-required configuration list does not have an entry
-at this level, then the values for that plugin are the defaults.
+at this level, then it has not been mapped to a sub-directory of the C<released-directory>.
 
-=item2 If a key exists, it must point to a Hash, which must contain at least one of the following keys
-=item3 Name => the name of the plugin
-=item4 the default name is the plugin-required's name
+=item2 A plugin key that exists must point to a Hash, which must at least contain:
+=item3 mapped => the name of the released plugin
+=item2 The plugin hash may also point to one or more of:
+=item3 name => the name of the alternate released plugin
+=item4 the default name (if the key is absent) is the plugin-required's name
 =item4 if a different name is given, a released plugin is mapped to the required directory in the
 mode sub-directory
 
-=item3 Major => the major number preceeded by 'v'
-=item4 the default value is the greatest released major value
-=item4 A Major value is the maximum Major version permitted, thus freezing at that version
-=item3 Auth => the auth value
-=item4 the default value is 'collection'
-=item2 If there is no distributed plugin for a specified C<Auth | Major | Name >, then an error is thrown.
+=item3 major => the major number preceeded by 'v'
+=item4 the default value (if the key is absent) is the greatest released major value
+=item4 A major value is the maximum major value of the full version permitted, thus freezing at that version
+=item3 auth => the auth value
+=item4 the default value (if the key is absent) is 'collection'
+=item2 If there is no distributed plugin for a specified C<auth | major | name >, then an error is thrown.
 
 Some examples:
 =begin item
 The Raku-Collection-Raku-Documentation, Website mode, requires the plugin C<Camelia>. The plugin exists
 as a HTML format. It has version 1.0.0, and an auth 'collection'. It is distributed as
-C<html/camelia_v_1_auth_collection>. Suppose a version with a new API is created. Then
+C<html/camelia_v1_auth_collection>. Suppose a version with a new API is created. Then
 two versions of the plugin will be distributed, including the new one
-C<html/camelia_v_2_auth_collection>.
+C<html/camelia_v2_auth_collection>.
 
-If no key for camelia is in the hash for mode Website, then the defaults will be implimented and
+If the key for camelia in the hash for mode Website only contains an empty C<version> key,
+then the defaults will be implied and
 a link (or copy) will be made between the released directory
-C<html/camelia_auth_collection__ver_2> and C<Website/plugins/camelia>
+C<html/camelia_v2_auth_collection> and C<Website/plugins/camelia>
 =end item
 =begin item
 If plugins.rakuon contains the following:
 C<Website => %( :FORMAT<html>, :camelia( %( :major(1), ) ) >
-then the link will be between C<html/camelia_auth_collection__ver_1> and C<Website/plugins/camelia>
+then the link will be between C<html/camelia_v1_auth_collection> and C<Website/plugins/camelia>
 =end item
 =begin item
 Suppose there is another valid C<auth> string B<raku-dev> and there is a distributed plugin
-I<html/camelia_auth_raku-dev__ver_2>, and suppose C<plugins.rakuon> contains the following:
+I<html/camelia_v2_auth_raku-dev>, and suppose C<plugins.rakuon> contains the following:
 C<Website => %( :FORMAT<html>, :camelia( %( :auth<raku-dev>, ) ) > then the link will be made
-between C<html/camelia_auth_raku-dev__ver_2> and C<Website/plugins/camelia>
+between C<html/camelia_v2_auth_raku-dev> and C<Website/plugins/camelia>
 =end item
 =begin item
 Suppose a different icon is developed called C<new-camelia> by C<auth> B<raku-dev>, then
 C<plugins.rakuon> may contain the following:
 C<Website => %( :FORMAT<html>, camelia( %( :name<new-camelia>, :auth<raku-dev>, ) ) > then
-a link (copy) is made between C<html/new-camelia_auth_raku-dev__ver_2> and C<Website/plugins/camelia>
+a link (copy) is made between C<html/new-camelia_v2_auth_raku-dev> and C<Website/plugins/camelia>
 =end item
 =item2 Note how the auth must be given for a renaming if there is not a C<collection> version
 of the plugin
@@ -955,7 +954,7 @@ then that will be used instead. But when C<refresh-collection-plugins> is first
 used, then the non-default name must be supplied.
 
 The directory is initialised to point at the C<https://github.com/finanalyst/collection-plugins>
-repo and the C<mainfest.rakuon> file is downloaded.
+repo and the C<manifest.rakuon> file is downloaded.
 
 If another release directory location is desired, then
 =item it can be specified when
@@ -972,6 +971,59 @@ sub MAIN(|c) {
     refresh( |c );
 }
 =end code
+
+=head2 Refresh process
+
+The intent is for the released plugins to be held in a single directory (called the
+I<released plugins> directory), and for the references in a Collection-Mode
+C<plugins> directory to be links (OS dependent) to the I<released plugins> directory.
+
+The I<released plugins> directory is a Github repository, so doing a C<git pull>
+will pull in the most recent versions of the plugins. Consequently, each Collection-Mode
+plugin reference will automatically be updated.
+
+A C<git pull> is therefore one form of a refresh. (TODO if an OS does not have
+directory links, then this form of refresh will need to be enhanced with a
+copy operation).
+
+Refresh needs to deal with other situations
+=item A new plugin name is added to the Collection-Mode's C<plugins-required> list.
+=item2 A link needs to be added to the Collections-Mode's C<plugins> directory.
+=item A new entry exists for the plugin name in the C<plugins.rakuon>
+=item2 An entry changes the release name associated with the Collection-Mode plugin.
+=item3 If the desired released plugin does not exist, then an Exception is thrown. Default
+behaviour might lead to an infinite loop.
+
+=item A released plugin major version has increased since the last refresh.
+=item2 The default is for a Collection-Mode plugin initially to be linked to the most
+recent version of the plugin
+
+=item2 Several behaviours are possible:
+=item3 The default I<update-behaviour> is given in the C<METADATA> hash of C<plugins.rakuon>
+=item3 I<force> Leave the existing links in place, issue a warning,
+update to latest only when forced. Include suggestion to change plugins.rakuon file
+to suppress warnings.
+
+=item3 I<auto> (default) Automatically update to the latest version, issuing a message
+
+=head2 CLI Plugin Management System
+
+Collection contains the utility C<collection-refresh-plugins> as a
+ (PMS). It is called as follows:
+
+    collection-refresh-plugins [-collection=<path>] [-collections='path1 path2 path3']
+
+C<-collection> is the path to a Collection directory. By default it is the Current Working Directory.
+
+C<-collections> is a space delimited list of paths to Collections
+
+When a Collection directory contains a file C<plugins.rakuon>, then the utility will inspect the release directory,
+updates it, and maps (copy) the most recent plugins according this file. See below for more detail about
+the specification of C<plugins.rakuon>.
+
+When a Collection does not contain a file <plugins.rakuon>, it generates one from the C<plugin-required>
+key of each of the C<config.raku> files in each Mode. During this process, the user is prompted
+for the directory name (relative to the current working directory) of released plugin directory.
 
 =head1 Problems and TODO items
 

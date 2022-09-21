@@ -1,7 +1,7 @@
 ![github-tests-passing-badge](https://github.com/finanalyst/collection/actions/workflows/test.yaml/badge.svg)
 # Raku Collection Module
 >
-> **Description** A subroutine to collect content files written in Rakudoc (aka POD6). A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc files that describe the whole collection of sources (mode-sources), eg. the landing page (index.html) of a website, or the Contents page of the same sources in book form. The collection process is in stages at the start of which plugins (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
+> **Description** Software to collect content files written in Rakudoc (aka POD6) and render them in a chosen format. Extensive use is made of plugins to customise the rendering. A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc files that describe the whole collection of sources (mode-sources), eg. the landing page (index.html) of a website, or the Contents page of the same sources in book form. The collection process is in stages at the start of which plugin callables (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
 
 > **Author** Richard Hainsworth aka finanalyst
 
@@ -11,6 +11,7 @@
 [Installation](#installation)  
 [Usage](#usage)  
 [Life cycle of processing](#life-cycle-of-processing)  
+[Modes](#modes)  
 [Milestones](#milestones)  
 [Stopping or dumping information at milestones](#stopping-or-dumping-information-at-milestones)  
 [Source Milestone](#source-milestone)  
@@ -21,7 +22,6 @@
 [Transfer Milestone](#transfer-milestone)  
 [Report Milestone](#report-milestone)  
 [Completion Milestone](#completion-milestone)  
-[Cleanup Milestone](#cleanup-milestone)  
 [Collection Structure](#collection-structure)  
 [Collection Content](#collection-content)  
 [Extra assets (images, videos, etc)](#extra-assets-images-videos-etc)  
@@ -41,9 +41,13 @@
 [Transfer](#transfer)  
 [Report](#report)  
 [Completion](#completion)  
+[Plugin updating](#plugin-updating)  
+[Mapping released plugins to mode directories](#mapping-released-plugins-to-mode-directories)  
+[Released plugins directory](#released-plugins-directory)  
+[Refresh process](#refresh-process)  
+[CLI Plugin Management System](#cli-plugin-management-system)  
 [Problems and TODO items](#problems-and-todo-items)  
 [Archiving and Minor Changes](#archiving-and-minor-changes)  
-[Plugin development](#plugin-development)  
 [Dump file formatting](#dump-file-formatting)  
 [Post-cache methods](#post-cache-methods)  
 [multi method add(Str $fn, Array $p --&gt; Pod::From::Cache )](#multi-method-addstr-fn-array-p----podfromcache-)  
@@ -55,37 +59,71 @@
 [Copyright and License](#copyright-and-license)  
 
 ----
-This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
+This module is used by the module **Collection-Raku-Documentation**, but is intended to be more general, such as building a personal site.
 
 # Installation
+To install the distribution, a refresh utility (see [Plugin refreshing](Plugin refreshing.md)), and the default plugin directory (see [Released plugin directory](Released plugin directory.md)), use
+
 ```
 zef install Collection
 ```
+For those who really want to have a non-default plugin directory, it is possible. But **warning**: extra user input will be needed for other utilities, so read the whole of this file), eg, to have a hidden directory `.Collection` in the home directory (under *nix), use
+
+```
+PluginPath=~/.Collection zef install Collection
+```
 # Usage
-The Collection module expects there to be a `config.raku `file in the root of the collection, which provides information about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration, template, and plugin files described below are **Raku** programs that evaluate to a Hash. They are described in the documentation for the `RakuConfig` module.
+The Collection module expects there to be a `config.raku` file in the root of the collection, which provides information about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration, template, and plugin files described below are **Raku** programs that evaluate to a Hash. They are described in the documentation for the `RakuConfig` module.
 
 A concrete example of `Collection` is the [Collection-Raku-Documentation (CRD)](https://github.com/finanalyst/collection-raku-documentation.git) module. _CRD_ contains a large number of plugins (see below). Some plugin examples are constructed for the extended tests. Since the test examples files are deleted by the final test, try:
 
 ```
-prove6 -I. xt/1* xt/2* xt/3* xt/4* xt/5*
+NoDelete=1 prove6 -I. xt
 ```
-and then look at `xt/test-dir`.
+and then look at eg., `xt/test-dir`.
 
 The main subroutine is `collect`. It requires a file `config.raku` to be in the `$CWD` (current working directory). In _CRD_ the executable `Raku-Doc` initiates the collection by setting up sources and installing a `config.raku` file. It is then simply a command line interface to `collect`.
 
 # Life cycle of processing
-The content files are processed in several stages separated by milestones. At each milestone, intermediary data can be processed using plugins, the data after the plugins can be dumped, or the processed halted.
+The content files are processed in several stages separated by milestones. At each milestone, intermediary data can be processed using plugin callables, the data after the plugin callables can be dumped, or the processed halted.
 
 `collect` can be called with option flags, which have the same effect as configuration options. The run-time values of the [Control flags](Control flags.md) take precedence over the configuration options.
 
 `collect` should be called with a [Mode](Mode.md). A **Mode** is the name of a set of configuration files, templates, and plugins that control the way the source files are processed and rendered. The main configuration file must contain a key called `mode`, which defines the default mode that `collect` uses if called with no explicit mode, so if `collect` is called without a **Mode**, the default will be used.
+
+# Modes
+A Mode is
+
+*  the name of the process by which a _Collection_ is rendered and presented. At present, only `Website` is implemented, but it is planned to have Modes for `epub` and `pdf` formats. The presentation may be serving HTML files locally, or the creation of a single epub file for publishing.
+
+*  the name of a sub-directory under the Collection directory. A Mode sub-directory must contain:
+
+	*  a sub-directory `configs`, not a `config.raku` file.
 
 # Milestones
 The `collect` sub can be called once the collection directory contains a `config.raku`, which in turn contains the location of a directory of rakudoc source files, which must contain recursively at least one source.
 
 Processing occurs during a stage named by the milestone which starts it. Each stage is affected by a set of [Control flags](Control flags.md). Certain flags will be passed to the underlying objects, eg. `RakuConfig` and `ProcessedPod` (see `Raku::Pod::Render`).
 
-Plugins may be called at each milestone (except 'Source' and 'Mode', where they are not defined). Plugins are described in more detail in [Plugin management](Plugin management.md). Plugins are milestone specific, with the call parameters and return values depending on the milestone.
+Plugin callables may be called at each milestone (except 'Source' and 'Mode', where they are not defined). Plugins are described in more detail in [Plugin management](Plugin management.md). plugin callables are milestone specific, with the call parameters and return values depending on the milestone.
+
+The milestones are:
+
+*  Source
+
+*  Mode
+
+*  Setup
+
+*  Render
+
+*  Compilation
+
+*  Transfer
+
+*  Report
+
+*  Completion
 
 ## Stopping or dumping information at milestones
 Intermediate data can be dumped at the milestone **without stopping** the processing, eg.,
@@ -93,21 +131,21 @@ Intermediate data can be dumped at the milestone **without stopping** the proces
 ```
 collect(:dump-at<source render>);
 ```
-Alternatively, the processing can be **stopped** and intermediate data inspected, EITHER after the stage has run, but before the plugins for the next stage have been triggered, eg.,
+Alternatively, the processing can be **stopped** and intermediate data inspected, EITHER after the stage has run, but before the plugin callables for the next stage have been triggered, eg.,
 
 ```
 my $rv = collect(:after<setup>);
 ```
-OR after the previous stage has run and after the plugins for the milestone have been triggered, eg.,
+OR after the previous stage has run and after the plugin callables for the milestone have been triggered, eg.,
 
 ```
 my $rv = collect(:before<render>);
 ```
-The return value `$rv` is an array of the objects provided to plugins at that milestone, and an array of the plugins triggered (note the plugins used will be a difference between the `:before` and `:after` stop points). The plugins-used array is not provided to all plugins, except at the Report milestone.
+The return value `$rv` is an array of the objects provided to plugin callables at that milestone, and an array of the plugin callables triggered (note the plugin callables used will be a difference between the `:before` and `:after` stop points). The plugins-used array is not provided to all plugin callables, except at the Report milestone.
 
 The return value `$rv` at `:after` will contain the object provided by the milestone after the named milestone. For example, milestone milestone 'Setup' is followed by milestone 'Render'. The return object for `:after<setup>` will be the return object for milestone 'Render'. See Milestones for more information.
 
-The object returned by `:before<render>` may be affected by the plugins that are triggered before the named stage.
+The object returned by `:before<render>` may be affected by the plugin callables that are triggered before the named stage.
 
 The `:before`, `:after` and `:dump-at` option values are the (case-insensitive) name(s) of the inspection point for the milestone. `:before` and `:after` only take one name, but `:dump-at` may take one or all of them in a space-delimited unordered list.
 
@@ -141,7 +179,7 @@ Collection makes a distinction between Rakudoc source files that are the main co
 
 These differences are contained in the **mode** configuration, and the plugins and templates for the mode.
 
-At this milestone, the source files have been cached. The **mode** sub-directory has not been tested, and the configuration for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugins can be called.
+At this milestone, the source files have been cached. The **mode** sub-directory has not been tested, and the configuration for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugin callables can be called.
 
 The **return value** of `collect` with `:after<source>` is a single `Pod::From::Cache` object that does a `Post-Cache` role (see below for `Post-Cache` methods).
 
@@ -156,7 +194,7 @@ Mode source files are stored under the mode sub-directory and cached there. If t
 ## Setup Milestone
 (Skipped if the `:without-processing` flag is True)
 
-If **setup** plugins are defined and in the mode's plugins-required<setup> list, then the cache objects for the sources and the mode's sources (and the **full-render** value) are passed to the program defined by the plugin's **setup** key.
+If **setup** plugin callables are defined and in the mode's plugins-required<setup> list, then the cache objects for the sources and the mode's sources (and the **full-render** value) are passed to the program defined by the plugin's **setup** key.
 
 The purpose of this milestone is to allow for content files to be pre-processed, perhaps to creates several sub-files from one big file, or to combine files in some way, or to gather information for a search algorithm.
 
@@ -176,7 +214,7 @@ By default, only files that are changed are re-rendered, which includes an assum
 
 When **full-render** is True, the output directory is emptied of content, forcing all files to be rendered.
 
-**full-render** may be combined with **no-refresh**, for example when templates or plugins are changed and the aim is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but the cache object will not contain any files generated by **setup** plugins.
+**full-render** may be combined with **no-refresh**, for example when templates or plugins are changed and the aim is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but the cache object will not contain any files generated by **setup** plugin callables.
 
 ## Render Milestone
 (Skipped if the `:without-processing` flag is True)
@@ -190,13 +228,13 @@ The stage is controlled by the same options as _Setup_.
 ## Compilation Milestone
 (Skipped if the `:without-processing` flag is True)
 
-At this milestone plugins are provided to add compiled data to the `ProcessedPod` object, so that the sources in the mode's directory can function.
+At this milestone plugin callables are provided to add compiled data to the `ProcessedPod` object, so that the sources in the mode's directory can function.
 
 During the **Render** stage, the `%processed` hash is constructed whose keys are the filenames of the output files, and whose values are a hash of the page components of each page.
 
-The `compilation` plugins could, eg, collect page component data (eg., Table of Contents, Glossaries, Footnotes), and write them into the `ProcessedPod` object separately so there is a TOC, Glossary, etc structure whose keys are filenames.
+The `compilation` plugin callables could, eg, collect page component data (eg., Table of Contents, Glossaries, Footnotes), and write them into the `ProcessedPod` object separately so there is a TOC, Glossary, etc structure whose keys are filenames.
 
-The return value of `collect` at the inspection point is a list of `ProcessedPod`, `%process`, with the `ProcessedPod` already changed by the `compilation` plugins.
+The return value of `collect` at the inspection point is a list of `ProcessedPod`, `%process`, with the `ProcessedPod` already changed by the `compilation` plugin callables.
 
 ## Transfer Milestone
 (Skipped if the `:without-processing` flag is True)
@@ -208,14 +246,14 @@ In addition, render plugins may create files that are transfered at the render s
 ## Report Milestone
 (Skipped if the `:without-processing` flag is True)
 
-Once a collection has been rendered, all the links between files, and to outside targets can be subjected to tests. It is also possible to subject all the rendered files to tests. This is accomplished using `report` plugins.
+Once a collection has been rendered, all the links between files, and to outside targets can be subjected to tests. It is also possible to subject all the rendered files to tests. This is accomplished using `report` plugin callables.
 
-In addition, all the plugins that have been used at each stage (except for the Report stage itself) are listed. The aim is to provide information for debugging.
+In addition, all the plugin callables that have been used at each stage (except for the Report stage itself) are listed. The aim is to provide information for debugging.
 
 The report stage is intended for testing the outputs and producing reports on the tests.
 
 ## Completion Milestone
-Once the collection has been tested, it can be activated. For example, a collection could be processed into a book, or a `Cro` App run that makes the rendered files available on a browser. This is done using `completion` plugins.
+Once the collection has been tested, it can be activated. For example, a collection could be processed into a book, or a `Cro` App run that makes the rendered files available on a browser. This is done using `completion` plugin callables.
 
 The **without-completion** option allows for the completion phase to be skipped.
 
@@ -224,13 +262,6 @@ Setting **without-processing** to True and **without-completion** to True should
 *  there are no caches, which will be the case the first time `collect` is run
 
 *  the destination directory is missing, which will be the case the first time `collect` is run
-
-## Cleanup Milestone
-Cleanup comes after `collect` has finished, so is not a part of `collect`.
-
-Currently, `collect` just returns with the value of the @plugins-used object.
-
-[This API may change if a use is found for Cleanup]
 
 # Collection Structure
 A distribution contains content files, which may be updated on a regular basis, a cache, templates, extra assets referenced in a content file (such as images), and one or more modes.
@@ -251,7 +282,7 @@ The assets are all held in the same directory, specified by the configuration ke
 
 (Asset files relating to the rendering of a content file, such as css, javascript, etc, are managed by plugins, see below for more on plugins.)
 
-A class to manage asset files is added to the `ProcessedPod` object with a role, so the assets can be manipulated by plugins and templates. Assets that are in fact used by a Pod content file are marked as used. The aim of this functionality is to allow for report-stage plugins to detect whether all images have been used.
+A class to manage asset files is added to the `ProcessedPod` object with a role, so the assets can be manipulated by plugins and templates. Assets that are in fact used by a Pod content file are marked as used. The aim of this functionality is to allow for report-stage plugin callables to detect whether all images have been used.
 
 Plugins can also transform the assets, and create new files in the ProcessedPod object for inclusion in the output.
 
@@ -396,11 +427,11 @@ All the following keys are mandatory. Where a key refers to a directory (path), 
 
 *  **destination** directory where the output files are rendered
 
-*  **plugins** is a string with the location of the plugins directory, either relative to root of the mode directory, or an absolute path. It is possible for the plugins directory to contain unused plugins. See [Plugin management](Plugin management.md)
-
 *  **report-path** is the path to which `report` plugins should output their reports.
 
-*  **plugins-required** points to a hash whose keys are milestone names where plugins can be applied
+*  **plugin-format** defines the format the plugins relate to. Each Mode is specified to produce output in a specific format, and the plugins, which include templates, are related to the format. Published plugins are stored for a particular format.
+
+*  **plugins-required** points to a hash whose keys are milestone names where plugin callables can be applied
 
 	*  **setup** a list of plugin names, see [Plugin management](Plugin management.md), for pre-processing cache contents
 
@@ -481,7 +512,7 @@ This flag is set to False if **without-processing** is True.
 
 *  **without-report**
 
-Normally, report plugins report on the final state of the output files. This flag prevents report plugins from being loaded or run.
+Normally, report plugin callables report on the final state of the output files. This flag prevents report plugin callables from being loaded or run.
 
 If **without-processing** is set, then the **Report** stage is skipped. If, however, the caches do not exist (deleted or first run), then the value of **without-processing** is ignored and the value of **without-report** is observed.
 
@@ -505,22 +536,22 @@ The option takes a string containing the filename. An empty string means all fil
 
 `ProcessedPod` has a special flag for turning off escaping in code sections when a highlighter is used to pre-process code. In some cases, the highlighter also does HTML escaping, so RPR has to avoid it.
 
-This has to be done at the Mode level and not left to `render` plugins.
+This has to be done at the Mode level and not left to `render` plugin callables.
 
 # Plugin management
-Plugins are **Raku** programs that are executed at specific milestones in the rendering process. The milestone names are given in [Milestones](Milestones.md) above.
+Plugin callables are **Raku** programs that are executed at specific milestones in the rendering process. The milestone names are given in [Milestones](Milestones.md) above.
 
 The **plugins-required** key in the Mode's configuration contains a hash with keys whose names are the milestone names. Each key points to a list of plugin names, which are called in the order given.
 
-All plugins must reside within the mode directory given by `plugins`, but this directory may belong to another Collection so that plugins could be shared between collections & modes. [TODO Revise plugin management so that common plugins can be maintained and developed separately to Collections].
+All plugins must reside within the mode **plugins**.
 
-All plugin names **must** be the name of a sub-directory of the **plugins** path. Within each plugin sub-directory, there must be a `config.raku` file containing information for the plugin, and for `Collection`. If _no_ `config.raku` files exists, the plugin is not valid and will be skipped.
+All plugin names **must** be the name of a sub-directory under the **plugins** subdirectory. Within each plugin sub-directory, there must be a `config.raku` file containing information for the plugin, and for `Collection`. If _no_ `config.raku` files exists, the plugin is not valid and will be skipped.
 
-With the exception of 'render' plugins, the config file must contain a key for the milestone type, which points to the program to be called, and when the file is evaluated, it yields a subroutine that takes the parameters needed for the plugin of that milestone. If no key exists with the name of the milestone, then the plugin is not valid.
+With the exception of 'render' plugin callables, the config file must contain a key for the milestone type, which points to the program to be called, and when the file is evaluated, it yields a subroutine that takes the parameters needed for the plugin of that milestone. If no key exists with the name of the milestone, then the plugin is not valid.
 
 Plugin's may need other configurable data, which should be kept in the config file for the plugin.
 
-All plugins are expected to adhere to `no-status` and `collection-info`, which are interpretted as
+All plugin callables are expected to adhere to `no-status` and `collection-info`, which are interpretted as
 
 *  `no-status` if true means 'no output at all', equivalent to a **quiet** flag
 
@@ -602,10 +633,8 @@ So the config file must have:
 
 It is possible to specify `path` but it must be relative to the plugin's sub-directory.
 
-More information about these plugins can be found in the documentation in the `Raku::Pod::Render` distribution.
-
 ### Compilation
-Note that the structure files are rendered after the `compilation` stage, BUT the information for rendering the structure files, that is the custom blocks and the templates must accompany a `render ` plugin. Compilation plugins are to process the data accumulated during the rendering of the content files, and to make it available for the custom blocks / templates that will be invoked when the structure documents are rendered.
+Note that the structure files are rendered after the `compilation` stage, BUT the information for rendering the structure files, that is the custom blocks and the templates must accompany a `render ` plugin. Compilation plugin callables are to process the data accumulated during the rendering of the content files, and to make it available for the custom blocks / templates that will be invoked when the structure documents are rendered.
 
 The `compilation` key must point to a Raku program that delivers a sub object
 
@@ -662,8 +691,11 @@ The plugin should return an Array of Pair, where for each Pair .key = (path/)nam
 The `collect` sub will write the file to the correct directory.
 
 ### Completion
-The `completion` key points to a Raku file that evaluates to a `sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}` object.
+The `completion` key points to a Raku file that evaluates to a
 
+```
+sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}
+```
 *  **$destination**
 
 is the name of the output path from the mode directory (defined in the mode configuration)
@@ -674,7 +706,7 @@ is the first file to be processed since, eg., for a website, order is not suffic
 
 *  **%completion-options** (actually specified as %config<completion-options>)
 
-is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served. More complex plugins will require more options.
+is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served.
 
 *  **%options**
 
@@ -682,20 +714,218 @@ As for Setup
 
 There is no return value specified for this plugin type.
 
+# Plugin updating
+The local computer may contain
+
+*  More than one collection, eg. a personal website and a Raku documentation collection
+
+*  Each Collection may have more than one Mode, eg., a HTML website, an epub producer.
+
+*  A collection/mode combination may rely on a previous API of a plugin, which may be broken by a later API.
+
+*  A new plugin may have been written as a drop-in replacement for an older version, and the new plugin may have a different name, or auth, or version.
+
+In order to implement this flexibility, the following are specified:
+
+*  There is a released plugins directory (see [Released plugins directory](Released plugins directory.md)) to contain all Collection plugins.
+
+*  The semantic versioning scheme is mandated for Collection plugins. A version is `v<major>.<minor>,<patch>`. Changes at the `<patch> ` level do not affect the plugin's functionality. Changes at the `<minor> ` level introduce new functionality, but are backward compatible. Changes at the `<major> ` level break backward compatibility.
+
+*  Each distributed plugin is contained in the release directory in a subdirectory named by the plugin name, the auth field, and the major version number (minor and patch numbers are not included because they should not by definition affect the API).
+
+*  Each Mode configuration only contains the name of the plugin (without the auth, or version names).
+
+*  The developer may define which name/version/auth of a released plugin is to be mapped to the plugin required in the Mode configuration. Thus
+
+	*  changes in API can be frozen to earlier versions of the plugin for some concrete Mode.
+
+	*  different plugin versions can be used for different collection/modes
+
+	*  a differently named plugin can be mapped to a plugin required by a specific collection/mode.
+
+		*  **Note** an alternate plugin, as given by `name` may also have a non-default `auth`, so `auth` may need to be added to `plugins.rakuon` as well.
+
+*  Consequently, all released plugins are defined for
+
+	*  a **format** (eg. html)
+
+	*  a **major** version
+
+	*  an **auth** name
+
+*  The mapping information from a released plugin to a Mode is contained in a file in the root of a Collection.
+
+*  When the plugins are updated
+
+	*  all the latest versions for each Format/Name/Version/Auth are downloaded.
+
+	*  a symlink is generated (or if the OS does not allow symlink, the whole directory is copied) from the released version to the directory where each mode expects its plugins to be located.
+
+*  Each Collection root directory (the directory containing the topmost `config.raku` file) will contain the file `plugins.rakuon`.
+
+*  The plugin management tool (PMT)
+
+	*  checks if a `plugins.rakuon` exists. If not, it generates a minimal one.
+
+	*  runs through the plugins-required of each **Mode** in the collection.
+
+	*  for each distinct plugin verifies whether
+
+		*  the plugin has an entry in `plugins.rakuon`, in which case
+
+			*  the PMT maps (or remaps if the constraint is new) the released plugin name/auth/ver to the plugin-required name using the rules of `plugins.rakuon` as given in [Mapping released plugins to mode directories](Mapping released plugins to mode directories.md)
+
+		*  the plugin does not have an entry, which means it has not yet been mapped, and there are no constraints on the plugin, so the default name/auth/version are used.
+
+## Mapping released plugins to mode directories
+The file `plugins.rakuon` contains a hash with the following keys:
+
+*  `METADATA`. Contains a hash with data for the `refresh` functionality.
+
+	*  `collection-plugin-root` This contains the name of a directory reachable from the Collection root directory with the released plugins are downloaded.
+
+	*  `update-behaviour` Defines what happens when a new released plugin has an increased Major number. Possible values are:
+
+		*  _auto_ All relevant plugin names are updated to the new version, a message is issued
+
+		*  _conserve_ Plugins are not updated to the new version, a warning is issued, updating is then plugin by plugin with a `-force` flag set.
+
+		*  **Note** The update behaviour is not initially implemented.
+
+*  Every other toplevel key is interpreted as a Mode. This means a mode cannot be named `METADATA`. The Mode key will point to a hash with the keys:
+
+	*  `_mode_format` Each mode may only contain plugins from one Format, eg., _html_.
+
+	*  By the plugin naming rules, a _plugin_ may not be named `_mode_format`.
+
+	*  Every other key in a mode hash must be a plugin name contained in the Mode's plugins-required configuration.
+
+	*  There may be zero plugin keys
+
+	*  If a plugin in the plugins-required configuration list does not have an entry at this level, then it has not been mapped to a sub-directory of the `released-directory`.
+
+	*  A plugin key that exists must point to a Hash, which must at least contain:
+
+		*  mapped => the name of the released plugin
+
+	*  The plugin hash may also point to one or more of:
+
+		*  name => the name of the alternate released plugin
+
+			*  the default name (if the key is absent) is the plugin-required's name
+
+			*  if a different name is given, a released plugin is mapped to the required directory in the mode sub-directory
+
+		*  major => the major number preceeded by 'v'
+
+			*  the default value (if the key is absent) is the greatest released major value
+
+			*  A major value is the maximum major value of the full version permitted, thus freezing at that version
+
+		*  auth => the auth value
+
+			*  the default value (if the key is absent) is 'collection'
+
+	*  If there is no distributed plugin for a specified `auth | major | name `, then an error is thrown.
+
+Some examples:
+
+*  The Raku-Collection-Raku-Documentation, Website mode, requires the plugin `Camelia`. The plugin exists as a HTML format. It has version 1.0.0, and an auth 'collection'. It is distributed as `html/camelia_v1_auth_collection`. Suppose a version with a new API is created. Then two versions of the plugin will be distributed, including the new one `html/camelia_v2_auth_collection`.
+
+If the key for camelia in the hash for mode Website only contains an empty `version` key, then the defaults will be implied and a link (or copy) will be made between the released directory `html/camelia_v2_auth_collection` and `Website/plugins/camelia`
+
+*  If plugins.rakuon contains the following: `Website =` %( :FORMA"> \{\{\{ contents }}}
+
+, :camelia( %( :major(1), ) ) > then the link will be between `html/camelia_v1_auth_collection` and `Website/plugins/camelia`
+
+*  Suppose there is another valid `auth` string **raku-dev** and there is a distributed plugin _html/camelia_v2_auth_raku-dev_, and suppose `plugins.rakuon` contains the following: `Website =` %( :FORMA"> \{\{\{ contents }}}
+
+, :camelia( %( :auth<raku-dev>, ) ) > then the link will be made between `html/camelia_v2_auth_raku-dev` and `Website/plugins/camelia`
+
+*  Suppose a different icon is developed called `new-camelia` by `auth` **raku-dev**, then `plugins.rakuon` may contain the following: `Website =` %( :FORMA"> \{\{\{ contents }}}
+
+, camelia( %( :name<new-camelia>, :auth<raku-dev>, ) ) > then a link (copy) is made between `html/new-camelia_v2_auth_raku-dev` and `Website/plugins/camelia`
+
+	*  Note how the auth must be given for a renaming if there is not a `collection` version of the plugin
+
+## Released plugins directory
+When Collection is installed, a directory called (by default) `$*HOME/.local/share/Collection` is created (on a Linux system this will be the same as `~/.local/share/Collection`).
+
+If the Environment variable `PluginPath` is set to a valid path name upon installation, then that will be used instead. But when `refresh-collection-plugins` is first used, then the non-default name must be supplied.
+
+The directory is initialised to point at the `https://github.com/finanalyst/collection-plugins` repo and the `manifest.rakuon` file is downloaded.
+
+If another release directory location is desired, then
+
+*  it can be specified when `refresh-collection-plugins` is first run for each collection, in which case the file `plugin.rakuon` is given the value for the `:collection-plugin-root`.
+
+*  a custom Raku program for refreshing Collection files can be written, eg., the github repo is to be located in `~/.my_own_collection`
+
+```
+use v6.d;
+use Collection::RefreshPlugins;
+sub MAIN(|c) {
+    $Collection::RefreshPlugins::release-dir = "$*HOME/.my_own_collection";
+    refresh( |c );
+}
+
+```
+## Refresh process
+The intent is for the released plugins to be held in a single directory (called the _released plugins_ directory), and for the references in a Collection-Mode `plugins` directory to be links (OS dependent) to the _released plugins_ directory.
+
+The _released plugins_ directory is a Github repository, so doing a `git pull` will pull in the most recent versions of the plugins. Consequently, each Collection-Mode plugin reference will automatically be updated.
+
+A `git pull` is therefore one form of a refresh. (TODO if an OS does not have directory links, then this form of refresh will need to be enhanced with a copy operation).
+
+Refresh needs to deal with other situations
+
+*  A new plugin name is added to the Collection-Mode's `plugins-required` list.
+
+	*  A link needs to be added to the Collections-Mode's `plugins` directory.
+
+*  A new entry exists for the plugin name in the `plugins.rakuon`
+
+	*  An entry changes the release name associated with the Collection-Mode plugin.
+
+		*  If the desired released plugin does not exist, then an Exception is thrown. Default behaviour might lead to an infinite loop.
+
+*  A released plugin major version has increased since the last refresh.
+
+	*  The default is for a Collection-Mode plugin initially to be linked to the most recent version of the plugin
+
+	*  Several behaviours are possible:
+
+		*  The default _update-behaviour_ is given in the `METADATA` hash of `plugins.rakuon`
+
+		*  _force_ Leave the existing links in place, issue a warning, update to latest only when forced. Include suggestion to change plugins.rakuon file to suppress warnings.
+
+		*  _auto_ (default) Automatically update to the latest version, issuing a message
+
+## CLI Plugin Management System
+Collection contains the utility `collection-refresh-plugins` as a (PMS). It is called as follows:
+
+```
+collection-refresh-plugins [-collection=<path>] [-collections='path1 path2 path3']
+```
+`-collection` is the path to a Collection directory. By default it is the Current Working Directory.
+
+`-collections` is a space delimited list of paths to Collections
+
+When a Collection directory contains a file `plugins.rakuon`, then the utility will inspect the release directory, updates it, and maps (copy) the most recent plugins according this file. See below for more detail about the specification of `plugins.rakuon`.
+
+When a Collection does not contain a file <plugins.rakuon>, it generates one from the `plugin-required` key of each of the `config.raku` files in each Mode. During this process, the user is prompted for the directory name (relative to the current working directory) of released plugin directory.
+
 # Problems and TODO items
 ## Archiving and Minor Changes
 In principle, if a small change is made in a source file of a Collection, only the rendered version of that file should be changed, and the Collection pages (eg., the index and the glossaries) updated. The archiving method chosen here is based on `Archive::Libarchive` and a `.7z` format. It works in tests where a small quantity of data is stored.
 
 **However**, when there are many source files (eg., the Raku documentation), the process of restoring state information is **significantly** longer than re-rendering all the cached files. Consequently, the option `no-preserve-state` prevents the archiving of processed state. (TODO understanding and optimising the de-archiving process.)
 
-## Plugin development
-The aim is to have plugins developed and maintained separately. This may require some change to the Collection API.
-
 ## Dump file formatting
 The aim is to use `PrettyDump` instead of <.raku> to transform information into text. However, <PrettyDump> does not handle `Bags` properly.
 
 # Post-cache methods
-Post-cache is a role added to a `Pod::From::Load` object so that Setup plugins can act on Cache'd content by adding pod files to the Cache (perhaps pre-processing primary source files) that will be rendered, masking primary pod files so that they are not rendered, or aliasing primary pod files.
+Post-cache is a role added to a `Pod::From::Load` object so that Setup plugin callables can act on Cache'd content by adding pod files to the Cache (perhaps pre-processing primary source files) that will be rendered, masking primary pod files so that they are not rendered, or aliasing primary pod files.
 
 If a secondary source file in the Cache is given a name that is the same as a primary source file, then if the underlying cache object should remain visible, another name (alias) should be given to the file in the Post-cache database.
 
@@ -733,7 +963,7 @@ Will return
 *  throw a NoPodInCache Exception if there is no pod associated with either the database or the underlying cache. If the original filename is used after an alias have been generated, the Exception will also be thrown.
 
 # Asset-cache methods
-Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all plugins after the setup milestone, for example in the plugin callable:
+Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all plugin callables after the setup milestone, for example in the plugin callable:
 
 ```
 sub render-plugin( $pp ) {
@@ -793,4 +1023,4 @@ If a plugin provides an asset (eg., image, jquery script), it needs to provide a
 
 
 ----
-Rendered from README at 2022-08-27T21:44:05Z
+Rendered from README at 2022-09-21T20:47:24Z
