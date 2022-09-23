@@ -18,7 +18,9 @@
   "test-depends": [],
   "provides": {
     "Collection": "lib/Collection.rakumod",
-    "Collection::Exceptions": "lib/Collection/Exceptions.rakumod"
+    "Collection::Entities": "lib/Collection/Entities.rakumod",
+    "Collection::Exceptions": "lib/Collection/Exceptions.rakumod",
+    "Collection::RefreshPlugins": "lib/Collection/RefreshPlugins.rakumod"
   },
   "resources": [],
   "support": {

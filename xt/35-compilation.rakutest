@@ -5,7 +5,7 @@ use File::Directory::Tree;
 use Collection;
 constant TMP = 'xt/test-dir';
 constant MODE = 'test-mode';
-constant PLUGS = "{MODE}/some-plugs";
+constant PLUGS = "{MODE}/plugins";
 constant CONFS = "{MODE}/configs";
 constant TEMPLATES = "{MODE}/templates";
 constant HTML = "{ MODE }/html";

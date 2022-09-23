@@ -2,6 +2,7 @@ use Test;
 plan 3;
 use File::Directory::Tree;
 use Test::Deeply::Relaxed;
+use RakuConfig;
 
 use Collection;
 use Pod::From::Cache;
@@ -22,9 +23,9 @@ throws-like { collect(:no-processing) },
         message => / 'passed' .+ 'no-processing' /;
 
 throws-like { collect(:after<setup>, :no-preserve-state) },
-        X::RakuConfig::NoFiles,
+        RakuConfig::NoFiles,
         'traps lack of config file in root',
-        message => / 'config.raku' .+ 'is not a file or' /;
+        message => / 'contains neither ｢config.raku｣ nor ｢configs/｣' /;
 
 'config.raku'.IO.spurt(qq:to/DATA/);
     %(

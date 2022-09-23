@@ -2,25 +2,37 @@
 
 =TITLE Raku Collection Module
 
-=DESCRIPTION A subroutine to collect content files written in Rakudoc (aka POD6).
+=DESCRIPTION Software to collect content files written in Rakudoc (aka POD6) and render
+them in a chosen format. Extensive use is made of plugins to customise the rendering.
 A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc
 files that describe the whole collection of sources (mode-sources), eg. the landing page (I<index.html>) of a website,
 or the Contents page of the same sources in book form.
 The collection process is in stages
-at the start of which plugins (Raku programs) can be added that transform intermediate data or add
+at the start of which plugin callables (Raku programs) can be added that transform intermediate data or add
 templates, or add new Pod::Blocks for the rendering.
 
 =AUTHOR Richard Hainsworth aka finanalyst
 
-This module is used by Collection-Raku-Documentation, but is intended to be more general, such as building a blog site.
+This module is used by the module B<Collection-Raku-Documentation>,
+but is intended to be more general, such as building a personal site.
 
 =head1 Installation
 
+To install the distribution, a refresh utility (see L<Plugin refreshing>),
+and the default plugin directory (see L<Released plugin directory>), use
+
     zef install Collection
+
+For those who really want to have a non-default plugin directory, it is possible.
+But B<warning>: extra user input will be needed for
+other utilities, so read the whole of this file), eg, to have a hidden directory
+C<.Collection> in the home directory (under *nix), use
+
+    PluginPath=~/.Collection zef install Collection
 
 =head1 Usage
 
-The Collection module expects there to be a C<config.raku >file in the root of the collection, which provides information
+The Collection module expects there to be a C<config.raku> file in the root of the collection, which provides information
 about how to obtain the content (Pod6/rakudoc> sources, a default Mode to render and output the collection. All the configuration,
 template, and plugin files described below are B<Raku> programs that evaluate to a Hash. They are described in the
 documentation for the C<RakuConfig> module.
@@ -29,9 +41,9 @@ A concrete example of C<Collection> is the L<Collection-Raku-Documentation (CRD)
 module. I<CRD> contains a large number of plugins (see below). Some plugin examples are constructed
 for the extended tests. Since the test examples files are deleted by the final test, try:
 
-    prove6 -I. xt/1* xt/2* xt/3* xt/4* xt/5*
+    NoDelete=1 prove6 -I. xt
 
-and then look at C<xt/test-dir>.
+and then look at eg., C<xt/test-dir>.
 
 The main subroutine is C<collect>. It requires a file C<config.raku> to be in the C<$CWD> (current working directory).
 In I<CRD> the executable C<Raku-Doc> initiates the collection by setting up sources and installing a C<config.raku>
@@ -41,7 +53,7 @@ file. It is then simply a command line interface to C<collect>.
 
 The content files are processed in several stages separated
 by milestones. At each milestone, intermediary data can be processed
-using plugins, the data after the plugins can be dumped, or the processed halted.
+using plugin callables, the data after the plugin callables can be dumped, or the processed halted.
 
 C<collect> can be called with option flags, which have the same effect as configuration options. The run-time values
 of the L<Control flags> take precedence over the configuration options.
@@ -50,6 +62,21 @@ C<collect> should be called with a L<Mode>. A B<Mode> is the name of a set of co
 and plugins that control the way the source files are processed and rendered. The main configuration file must
 contain a key called C<mode>, which defines the default mode that C<collect> uses if called with no explicit
 mode, so if C<collect> is called without a B<Mode>, the default will be used.
+
+=head1 Modes
+
+A Mode:
+=item is the name of the process by which a I<Collection> is rendered and presented.
+At present, only C<Website> is implemented, but it is planned to have Modes for
+C<epub> and C<pdf> formats. The presentation may be serving HTML files locally,
+or the creation of a single epub file for publishing.
+
+=item is the name of a sub-directory under the Collection directory.
+=item may not be named with any '_' in it. This allows for sub-directories in a
+Collection folder that are not modes, eg., a Raku documentation repository
+
+=item A Mode sub-directory must contain:
+=item2 a sub-directory C<configs>, and/or a C<config.raku> file.
 
 =head1 Milestones
 
@@ -62,9 +89,19 @@ Each stage is affected by a set of L<Control flags>.
 Certain flags will be passed to the underlying objects, eg. C<RakuConfig> and C<ProcessedPod> (see
 C<Raku::Pod::Render>).
 
-Plugins may be called at each milestone (except 'Source' and 'Mode', where they are not defined).
-Plugins are described in more detail in L<Plugin management>. Plugins are milestone specific, with the call
+Plugin callables may be called at each milestone (except 'Source' and 'Mode', where they are not defined).
+Plugins are described in more detail in L<Plugin management>. plugin callables are milestone specific, with the call
 parameters and return values depending on the milestone.
+
+The milestones are:
+=item Source
+=item Mode
+=item Setup
+=item Render
+=item Compilation
+=item Transfer
+=item Report
+=item Completion
 
 =head2 Stopping or dumping information at milestones
 
@@ -75,24 +112,24 @@ B<without stopping> the processing, eg.,
 
 Alternatively, the processing can be B<stopped> and intermediate data inspected,
 EITHER after the stage has run,
-but before the plugins for the next stage have been triggered, eg.,
+but before the plugin callables for the next stage have been triggered, eg.,
 
     my $rv = collect(:after<setup>);
 
-OR after the previous stage has run and after the plugins for the milestone have been triggered, eg.,
+OR after the previous stage has run and after the plugin callables for the milestone have been triggered, eg.,
 
     my $rv = collect(:before<render>);
 
-The return value C<$rv> is an array of the objects provided to plugins at that milestone, and an array of
-the plugins triggered (note the plugins used will be a difference between the C<:before> and C<:after> stop points).
-The plugins-used array is not provided to all plugins, except at the Report milestone.
+The return value C<$rv> is an array of the objects provided to plugin callables at that milestone, and an array of
+the plugin callables triggered (note the plugin callables used will be a difference between the C<:before> and C<:after> stop points).
+The plugins-used array is not provided to all plugin callables, except at the Report milestone.
 
 The return value C<$rv> at C<:after> will contain the object provided by the milestone after the named milestone.
 For example, milestone milestone 'Setup' is followed by milestone 'Render'.
 The return object for C<:after<setup>> will be the
 return object for milestone 'Render'. See Milestones for more information.
 
-The object returned by C<:before<render>> may be affected by the plugins that are triggered before the named stage.
+The object returned by C<:before<render>> may be affected by the plugin callables that are triggered before the named stage.
 
 The C<:before>, C<:after> and C<:dump-at> option values are the (case-insensitive) name(s) of the inspection point for the milestone.
 C<:before> and C<:after> only take one name, but C<:dump-at> may take one or all of them in a space-delimited unordered list.
@@ -148,7 +185,7 @@ pages.
 These differences are contained in the B<mode> configuration, and the plugins and templates for the mode.
 
 At this milestone, the source files have been cached. The B<mode> sub-directory has not been tested, and the configuration
-for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugins can be called.
+for the mode has not been used. Since plugin management is dependent on the mode configuration, no plugin callables can be called.
 
 The B<return value> of C<collect> with C<:after<source>> is a single
 C<Pod::From::Cache> object that does a C<Post-Cache> role (see below for C<Post-Cache> methods).
@@ -169,7 +206,7 @@ updated independently of the collection, then the C<mode-obtain> and C<mode-refr
 
 (Skipped if the C<:without-processing> flag is True)
 
-If B<setup> plugins are defined and in the mode's plugins-required<setup> list, then the cache objects for
+If B<setup> plugin callables are defined and in the mode's plugins-required<setup> list, then the cache objects for
 the sources and the mode's sources (and the B<full-render> value)
 are passed to the program defined by the plugin's B<setup> key.
 
@@ -193,7 +230,7 @@ When B<full-render> is True, the output directory is emptied of content, forcing
 
 B<full-render> may be combined with B<no-refresh>, for example when templates or plugins are changed and the aim
 is to see what effect they have on exactly the same sources. In such a case, the cache will not be changed, but
-the cache object will not contain any files generated by B<setup> plugins.
+the cache object will not contain any files generated by B<setup> plugin callables.
 =end item
 
 =head2 Render Milestone
@@ -211,18 +248,18 @@ The stage is controlled by the same options as I<Setup>.
 
 (Skipped if the C<:without-processing> flag is True)
 
-At this milestone plugins are provided to add compiled data to the C<ProcessedPod> object, so that the sources
+At this milestone plugin callables are provided to add compiled data to the C<ProcessedPod> object, so that the sources
 in the mode's directory can function.
 
 During the B<Render> stage, the C<%processed> hash is constructed whose keys are the filenames of the output files, and whose
 values are a hash of the page components of each page.
 
-The C<compilation> plugins could, eg, collect page component data (eg., Table of Contents, Glossaries, Footnotes),
+The C<compilation> plugin callables could, eg, collect page component data (eg., Table of Contents, Glossaries, Footnotes),
 and write them into the C<ProcessedPod> object separately so there is a TOC, Glossary, etc structure whose keys
 are filenames.
 
 The return value of C<collect> at the inspection point is a list of C<ProcessedPod>, C<%process>, with the C<ProcessedPod>
-already changed by the C<compilation> plugins.
+already changed by the C<compilation> plugin callables.
 
 =head2 Transfer Milestone
 
@@ -240,9 +277,9 @@ clean up the plugin's local directory.
 (Skipped if the C<:without-processing> flag is True)
 
 Once a collection has been rendered, all the links between files, and to outside targets can be subjected to
-tests. It is also possible to subject all the rendered files to tests. This is accomplished using C<report> plugins.
+tests. It is also possible to subject all the rendered files to tests. This is accomplished using C<report> plugin callables.
 
-In addition, all the plugins that have been used at each stage (except for the Report stage itself) are listed.
+In addition, all the plugin callables that have been used at each stage (except for the Report stage itself) are listed.
 The aim is to provide information for debugging.
 
 The report stage is intended for testing the outputs and producing reports on the tests.
@@ -250,21 +287,13 @@ The report stage is intended for testing the outputs and producing reports on th
 =head2 Completion Milestone
 
 Once the collection has been tested, it can be activated. For example, a collection could be processed into a book,
-or a C<Cro> App run that makes the rendered files available on a browser. This is done using C<completion> plugins.
+or a C<Cro> App run that makes the rendered files available on a browser. This is done using C<completion> plugin callables.
 
 The B<without-completion> option allows for the completion phase to be skipped.
 
 Setting B<without-processing> to True and B<without-completion> to True should have no effect unless
 =item there are no caches, which will be the case the first time C<collect> is run
 =item the destination directory is missing, which will be the case the first time C<collect> is run
-
-=head2 Cleanup Milestone
-
-Cleanup comes after C<collect> has finished, so is not a part of C<collect>.
-
-Currently, C<collect> just returns with the value of the @plugins-used object.
-
-[This API may change if a use is found for Cleanup]
 
 =head1 Collection Structure
 
@@ -298,7 +327,7 @@ plugins, see below for more on plugins.)
 
 A class to manage asset files is added to the C<ProcessedPod> object with a role, so the assets can be manipulated by
 plugins and templates. Assets that are in fact used by a Pod content file are marked as used. The aim of
-this functionality is to allow for report-stage plugins to detect whether all images have been used.
+this functionality is to allow for report-stage plugin callables to detect whether all images have been used.
 
 Plugins can also transform the assets, and create new files in the ProcessedPod object for inclusion in
 the output.
@@ -441,12 +470,12 @@ Where a key refers to a directory (path), it should normally be relative to the 
 These are all passed at the B<Render> milestone directly to the C<ProcessedPod> object.
 
 =item B<destination> directory where the output files are rendered
-=item B<plugins> is a string with the location of the plugins directory, either relative to
-root of the mode directory, or an absolute path. It is possible for the plugins directory to contain
-unused plugins. See L<Plugin management>
-
 =item B<report-path> is the path to which C<report> plugins should output their reports.
-=item B<plugins-required> points to a hash whose keys are milestone names where plugins can be applied
+=item B<plugin-format> defines the format the plugins relate to. Each Mode is specified to produce
+output in a specific format, and the plugins, which include templates, are related to the format.
+Published plugins are stored for a particular format.
+
+=item B<plugins-required> points to a hash whose keys are milestone names where plugin callables can be applied
 =item2 B<setup> a list of plugin names, see L<Plugin management>, for pre-processing cache contents
 =item2 B<render> plugins used to render Pod::Blocks
 =item2 B<compilation> plugins prepare the C<ProcessedPod> object for collection pages.
@@ -525,8 +554,8 @@ This flag is set to False if B<without-processing> is True.
 =begin item
 B<without-report>
 
-Normally, report plugins report on the final state of the output files. This flag prevents
-report plugins from being loaded or run.
+Normally, report plugin callables report on the final state of the output files. This flag prevents
+report plugin callables from being loaded or run.
 
 If B<without-processing> is set, then the B<Report> stage is skipped. If, however,
 the caches do not exist (deleted or first run), then the value of B<without-processing> is ignored and
@@ -566,33 +595,32 @@ C<ProcessedPod> has a special flag for turning off escaping in code sections
 when a highlighter is used to pre-process code. In some cases, the highlighter also
 does HTML escaping, so RPR has to avoid it.
 
-This has to be done at the Mode level and not left to C<render> plugins.
+This has to be done at the Mode level and not left to C<render> plugin callables.
 =end item
 =head1 Plugin management
 
-Plugins are B<Raku> programs that are executed at specific milestones in the rendering process.
+Plugin callables are B<Raku> programs that are executed at specific milestones in the rendering process.
 The milestone names are given in L<Milestones> above.
 
 The B<plugins-required> key in the Mode's configuration contains a hash with keys whose names are the
 milestone names. Each key points to a list of plugin names, which are called in the order
 given.
 
-All plugins must reside within the mode directory given by C<plugins>, but this directory may belong
-to another Collection so that plugins could be shared between collections & modes. [TODO Revise plugin management
-so that common plugins can be maintained and developed separately to Collections].
+All plugins must reside within the mode B<plugins>.
 
-All plugin names B<must> be the name of a sub-directory of the B<plugins> path. Within each plugin sub-directory,
+All plugin names B<must> be the name of a sub-directory under the B<plugins> subdirectory.
+Within each plugin sub-directory,
 there must be a C<config.raku> file containing information for the plugin, and for C<Collection>.
 If I<no> C<config.raku> files exists, the plugin is not valid and will be skipped.
 
-With the exception of 'render' plugins, the config file must contain a key for the milestone type,
+With the exception of 'render' plugin callables, the config file must contain a key for the milestone type,
 which points to the program to be called, and when the file is evaluated, it yields a subroutine that
 takes the parameters needed for the plugin of that milestone. If no key exists with the name of the milestone,
 then the plugin is not valid.
 
 Plugin's may need other configurable data, which should be kept in the config file for the plugin.
 
-All plugins are expected to adhere to C<no-status> and C<collection-info>, which are interpretted as
+All plugin callables are expected to adhere to C<no-status> and C<collection-info>, which are interpretted as
 =item C<no-status> if true means 'no output at all', equivalent to a B<quiet> flag
 =item C<collection-info> if true means 'output extra information' (if need be), equivalent to a B<verbose> flag.
 
@@ -677,13 +705,11 @@ So the config file must have:
 
 It is possible to specify C<path> but it must be relative to the plugin's sub-directory.
 
-More information about these plugins can be found in the documentation in the C<Raku::Pod::Render> distribution.
-
 =head3 Compilation
 
 Note that the structure files are rendered after the C<compilation> stage, BUT the information for rendering
 the structure files, that is the custom blocks and the templates must accompany a C< render > plugin.
-Compilation plugins are to process the data accumulated during the rendering of the content files,
+Compilation plugin callables are to process the data accumulated during the rendering of the content files,
 and to make it available for the custom blocks / templates that will be invoked when the structure documents
 are rendered.
 
@@ -746,8 +772,9 @@ The C<collect> sub will write the file to the correct directory.
 
 =head3 Completion
 
-The C<completion> key points to a Raku file that evaluates to
-a C<sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}> object.
+The C<completion> key points to a Raku file that evaluates to a
+
+    sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}
 
 =begin item
 B<$destination>
@@ -767,7 +794,7 @@ B<%completion-options> (actually specified as %config<completion-options>)
 
 is the set of options that the completion plugin will require from the Mode-level configuration. For example,
 the very simple C<cro-run> plugin requires the path to the static html files, the hostname, and the port on which the files
-are served. More complex plugins will require more options.
+are served.
 
 =end item
 
@@ -778,6 +805,229 @@ As for Setup
 =end item
 
 There is no return value specified for this plugin type.
+
+=head1 Plugin updating
+
+The local computer may contain
+=item More than one collection, eg. a personal website and a Raku documentation collection
+=item Each Collection may have more than one Mode, eg., a HTML website, an epub producer.
+=item A collection/mode combination may rely on a previous API of a plugin, which may be broken
+by a later API.
+
+=item A new plugin may have been written as a drop-in replacement for an older version, and the new
+plugin may have a different name, or auth, or version.
+
+In order to implement this flexibility, the following are specified:
+
+=item There is a released plugins directory (see L<Released plugins directory>) to contain all
+Collection plugins.
+
+=item The semantic versioning scheme is mandated for Collection plugins. A version is
+C<v<major>.<minor>,<patch>>. Changes at the C< <patch> > level do not affect the plugin's functionality.
+Changes at the C< <minor> > level introduce new functionality, but are backward compatible.
+Changes at the C< <major> > level break backward compatibility.
+
+=item Each distributed plugin is contained in the release directory in a subdirectory
+named by the plugin name, the
+auth field, and the major version number (minor and patch numbers are not included because
+they should not by definition affect the API).
+
+=item Each Mode configuration only contains the name of the plugin (without the auth, or version names).
+=item The developer may define which name/version/auth of a released plugin is to be mapped
+to the plugin required in the Mode configuration. Thus
+
+=item2 changes in API can be frozen to earlier versions of the plugin for some concrete Mode.
+=item2 different plugin versions can be used for different collection/modes
+=item2 a differently named plugin can be mapped to a plugin required by a specific collection/mode.
+=item3 B<Note> an alternate plugin, as given by C<name> may also have a non-default C<auth>, so
+C<auth> may need to be added to C<plugins.rakuon> as well.
+
+=item Consequently, all released plugins are defined for
+=item2 a B<format> (eg. html)
+=item2 a B<major> version
+=item2 an B<auth> name
+=item The mapping information from a released plugin to a Mode is contained in a file in the root
+of a Collection.
+
+=item When the plugins are updated
+=item2 all the latest versions for each Format/Name/Version/Auth are downloaded.
+=item2 a symlink is generated (or if the OS does not allow symlink, the whole directory is copied)
+from the released version to the directory where
+each mode expects its plugins to be located.
+
+=item Each Collection root directory (the directory containing the topmost C<config.raku> file)
+will contain the file C<plugins.rakuon>.
+
+=item The plugin management tool (PMT)
+=item2 checks if a C<plugins.rakuon> exists. If not, it generates a minimal one.
+=item2 runs through the plugins-required of each B<Mode> in the collection.
+=item2 for each distinct plugin verifies whether
+=item3 the plugin has an entry in C<plugins.rakuon>, in which case
+=item4 the PMT maps (or remaps if the constraint is new)
+the released plugin name/auth/ver to the plugin-required name using the rules
+of C<plugins.rakuon> as given in L<Mapping released plugins to mode directories>
+
+=item3 the plugin does not have an entry, which means it has not yet been mapped,
+and there are no constraints on the plugin, so
+the default name/auth/version are used.
+
+=head2 Mapping released plugins to mode directories
+
+The file C<plugins.rakuon> contains a hash with the following keys:
+=item C<_metadata_>. Contains a hash with data for the C<refresh> functionality.
+=item2 C<collection-plugin-root> This contains the name of a directory reachable from the Collection
+root directory with the released plugins are downloaded.
+=item2 C<update-behaviour> Defines what happens when a new released plugin has an increased
+Major number. Possible values are:
+
+=item3 I<auto> All relevant plugin names are updated to the new version, a message is issued
+=item3 I<conserve> Plugins are not updated to the new version, a warning is issued,
+updating is then plugin by plugin with a C<-force> flag set.
+
+=item3 B<Note> The update behaviour is not initially implemented.
+
+=item Every other toplevel key that meets the plugin naming convenstion
+is interpreted as a Mode. This means a mode cannot be named C<_metadata_>.
+
+=item The Mode key will point to a hash with the keys:
+=item2 C<_mode_format> Each mode may only contain plugins from one Format, eg., I<html>.
+=item2 By the plugin naming rules, a I<plugin> may not be named C<_mode_format>.
+=item2 Every other key in a mode hash must be a plugin name contained
+in the Mode's plugins-required configuration.
+
+=item2 There may be zero plugin keys
+
+=item2 If a plugin in the plugins-required configuration list does not have an entry
+at this level, then it has not been mapped to a sub-directory of the C<released-directory>.
+
+=item2 A plugin key that exists must point to a Hash, which must at least contain:
+=item3 mapped => the name of the released plugin
+=item2 The plugin hash may also point to one or more of:
+=item3 name => the name of the alternate released plugin
+=item4 the default name (if the key is absent) is the plugin-required's name
+=item4 if a different name is given, a released plugin is mapped to the required directory in the
+mode sub-directory
+
+=item3 major => the major number preceeded by 'v'
+=item4 the default value (if the key is absent) is the greatest released major value
+=item4 A major value is the maximum major value of the full version permitted, thus freezing at that version
+=item3 auth => the auth value
+=item4 the default value (if the key is absent) is 'collection'
+=item2 If there is no distributed plugin for a specified C<auth | major | name >, then an error is thrown.
+
+Some examples:
+=begin item
+The Raku-Collection-Raku-Documentation, Website mode, requires the plugin C<Camelia>. The plugin exists
+as a HTML format. It has version 1.0.0, and an auth 'collection'. It is distributed as
+C<html/camelia_v1_auth_collection>. Suppose a version with a new API is created. Then
+two versions of the plugin will be distributed, including the new one
+C<html/camelia_v2_auth_collection>.
+
+If the key for camelia in the hash for mode Website only contains an empty C<version> key,
+then the defaults will be implied and
+a link (or copy) will be made between the released directory
+C<html/camelia_v2_auth_collection> and C<Website/plugins/camelia>
+=end item
+=begin item
+If plugins.rakuon contains the following:
+C<Website => %( :FORMAT<html>, :camelia( %( :major(1), ) ) >
+then the link will be between C<html/camelia_v1_auth_collection> and C<Website/plugins/camelia>
+=end item
+=begin item
+Suppose there is another valid C<auth> string B<raku-dev> and there is a distributed plugin
+I<html/camelia_v2_auth_raku-dev>, and suppose C<plugins.rakuon> contains the following:
+C<Website => %( :FORMAT<html>, :camelia( %( :auth<raku-dev>, ) ) > then the link will be made
+between C<html/camelia_v2_auth_raku-dev> and C<Website/plugins/camelia>
+=end item
+=begin item
+Suppose a different icon is developed called C<new-camelia> by C<auth> B<raku-dev>, then
+C<plugins.rakuon> may contain the following:
+C<Website => %( :FORMAT<html>, camelia( %( :name<new-camelia>, :auth<raku-dev>, ) ) > then
+a link (copy) is made between C<html/new-camelia_v2_auth_raku-dev> and C<Website/plugins/camelia>
+=end item
+=item2 Note how the auth must be given for a renaming if there is not a C<collection> version
+of the plugin
+
+=head2 Released plugins directory
+
+When Collection is installed, a directory called (by default) C<$*HOME/.local/share/Collection> is created
+(on a Linux system this will be the same as C< ~/.local/share/Collection>).
+
+If the Environment variable C<PluginPath> is set to a valid path name upon installation,
+then that will be used instead. But when C<refresh-collection-plugins> is first
+used, then the non-default name must be supplied.
+
+The directory is initialised to point at the C<https://github.com/finanalyst/collection-plugins>
+repo and the C<manifest.rakuon> file is downloaded.
+
+If another release directory location is desired, then
+=item it can be specified when
+C<refresh-collection-plugins> is first run for each collection, in which case
+the file C<plugin.rakuon> is given the value for the C<:collection-plugin-root>.
+
+=item a custom Raku program for refreshing Collection files can be written,
+eg., the github repo is to be located in C<~/.my_own_collection>
+=begin code
+use v6.d;
+use Collection::RefreshPlugins;
+sub MAIN(|c) {
+    $Collection::RefreshPlugins::release-dir = "$*HOME/.my_own_collection";
+    refresh( |c );
+}
+=end code
+
+=head2 Refresh process
+
+The intent is for the released plugins to be held in a single directory (called the
+I<released plugins> directory), and for the references in a Collection-Mode
+C<plugins> directory to be links (OS dependent) to the I<released plugins> directory.
+
+The I<released plugins> directory is a Github repository, so doing a C<git pull>
+will pull in the most recent versions of the plugins. Consequently, each Collection-Mode
+plugin reference will automatically be updated.
+
+A C<git pull> is therefore one form of a refresh. (TODO if an OS does not have
+directory links, then this form of refresh will need to be enhanced with a
+copy operation).
+
+Refresh needs to deal with other situations
+=item A new plugin name is added to the Collection-Mode's C<plugins-required> list.
+=item2 A link needs to be added to the Collections-Mode's C<plugins> directory.
+=item A new entry exists for the plugin name in the C<plugins.rakuon>
+=item2 An entry changes the release name associated with the Collection-Mode plugin.
+=item3 If the desired released plugin does not exist, then an Exception is thrown. Default
+behaviour might lead to an infinite loop.
+
+=item A released plugin major version has increased since the last refresh.
+=item2 The default is for a Collection-Mode plugin initially to be linked to the most
+recent version of the plugin
+
+=item2 Several behaviours are possible:
+=item3 The default I<update-behaviour> is given in the C<_metadata_> hash of C<plugins.rakuon>
+=item3 I<force> Leave the existing links in place, issue a warning,
+update to latest only when forced. Include suggestion to change plugins.rakuon file
+to suppress warnings.
+
+=item3 I<auto> (default) Automatically update to the latest version, issuing a message
+
+=head2 CLI Plugin Management System
+
+Collection contains the utility C<collection-refresh-plugins> as a
+ (PMS). It is called as follows:
+
+    collection-refresh-plugins [-collection=<path>] [-collections='path1 path2 path3']
+
+C<-collection> is the path to a Collection directory. By default it is the Current Working Directory.
+
+C<-collections> is a space delimited list of paths to Collections
+
+When a Collection directory contains a file C<plugins.rakuon>, then the utility will inspect the release directory,
+updates it, and maps (copy) the most recent plugins according this file. See below for more detail about
+the specification of C<plugins.rakuon>.
+
+When a Collection does not contain a file <plugins.rakuon>, it generates one from the C<plugin-required>
+key of each of the C<config.raku> files in each Mode. During this process, the user is prompted
+for the directory name (relative to the current working directory) of released plugin directory.
 
 =head1 Problems and TODO items
 
@@ -793,11 +1043,6 @@ the process of restoring state information is B<significantly> longer
 than re-rendering all the cached files. Consequently, the option C<no-preserve-state> prevents
 the archiving of processed state. (TODO understanding and optimising the de-archiving process.)
 
-=head2 Plugin development
-
-The aim is to have plugins developed and maintained separately. This may require some change to the Collection
-API.
-
 =head2 Dump file formatting
 
 The aim is to use C<PrettyDump> instead of <.raku> to transform information into text. However, <PrettyDump> does
@@ -805,7 +1050,7 @@ not handle C<Bags> properly.
 
 =head1 Post-cache methods
 
-Post-cache is a role added to a C<Pod::From::Load> object so that Setup plugins can act on Cache'd content
+Post-cache is a role added to a C<Pod::From::Load> object so that Setup plugin callables can act on Cache'd content
 by adding pod files to the Cache (perhaps pre-processing primary source files) that will be rendered,
 masking primary pod files so that they are not rendered, or aliasing primary pod files.
 
@@ -865,7 +1110,7 @@ the Exception will also be thrown.
 =head1 Asset-cache methods
 
 Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the
-plugin-data interface of C<ProcessedPod>, so it is available to all plugins after the setup milestone,
+plugin-data interface of C<ProcessedPod>, so it is available to all plugin callables after the setup milestone,
 for example in the plugin callable:
 
     sub render-plugin( $pp ) {

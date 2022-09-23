@@ -8,7 +8,7 @@ use ProcessedPod;
 use Collection;
 constant TMP = 'xt/test-dir';
 constant MODE = 'test-mode';
-constant PLUGS = "{ MODE }/some-plugs";
+constant PLUGS = "{ MODE }/plugins";
 constant CONFS = "{ MODE }/configs";
 constant TEMPLATES = "{ MODE }/templates";
 constant ASSETS = 'assets';
@@ -20,7 +20,7 @@ my $rv;
 bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
 unless TMP.IO.d and "{ TMP }/{ MODE }".IO.d;
 mktree TMP ~ '/' ~ TEMPLATES;
-'resources/min-templates-for-tests.raku'.IO.copy:
+'xt/min-templates-for-tests.raku'.IO.copy:
         TMP ~ '/' ~ TEMPLATES ~ '/mintemp.raku';
 mktree TMP ~ '/' ~ TEMPLATES;
 

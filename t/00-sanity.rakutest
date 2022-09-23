@@ -1,5 +1,6 @@
 use Test;
-
+plan 2;
 use-ok 'Collection';
+use-ok 'Collection::RefreshPlugins';
 
 done-testing;

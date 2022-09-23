@@ -29,7 +29,7 @@ mktree MODE ~ '/m-sources';
 
 my @pls = <setup1 setup_rend rend2 reporter compiler completer unused gather-css asset-mover image-mover>;
 mktree MODE ~ '/configs';
-mktree(MODE ~ "/some-plugs/$_") for @pls;
+mktree(MODE ~ "/plugins/$_") for @pls;
 (MODE ~ '/configs/01-basic.raku').IO.spurt(qq:to/CONF/);
     %(
         :mode-cache<m-cache>,
@@ -44,7 +44,6 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
         :!full-render,
         :!without-report,
         :!without-processing,
-        :plugins<some-plugs>,
         :report-path<reports>,
         :templates<templates>,
     );
@@ -77,7 +76,7 @@ mktree(MODE ~ "/some-plugs/$_") for @pls;
     CONF
 
 for @pls {
-    (MODE ~ "/some-plugs/$_/config.raku").IO.spurt(qq:to/CONF/);
+    (MODE ~ "/plugins/$_/config.raku").IO.spurt(qq:to/CONF/);
         %(
             { given $_ {
                 when 'setup1' { "setup => \'proc.raku\' " }
@@ -117,7 +116,7 @@ This is a N<Footnote> for prosperity.
 
 my $p = 0;
 for <setup1 setup_rend> {
-    (MODE ~ "/some-plugs/$_/proc.raku").IO.spurt(qq:to/CONF/);
+    (MODE ~ "/plugins/$_/proc.raku").IO.spurt(qq:to/CONF/);
         sub ( \$cache, \$coll, \$full, \$s-root, \$m-root, \%options ) \{
                 \$cache.add( \"\$s-root/extra_{ $p }_{ $_ }\", [{ $=pod[$p++].raku }] );
         \}

@@ -1,0 +1,79 @@
+use v6.d;
+use Test;
+use Collection::RefreshPlugins;
+use Collection::Entities;
+use Test::Run :runs_ok;
+use Test::Deeply::Relaxed;
+use File::Directory::Tree;
+
+plan 9;
+
+my $dir = 'xt/trial-test';
+my $mode = "$dir/Website";
+my $pub-dir = 'xt/released-plugins';
+for ($dir, $pub-dir) {
+    rmtree $_ if .IO ~~ :e;
+    mktree $_;
+}
+#make a bad plugins.rakuon
+"$dir/plugins.rakuon".IO.spurt(q:to/CONF/);
+    <one two three] #invalid config
+    CONF
+#write a good config.raku
+"$dir/config.raku".IO.spurt(q:to/CONF/);
+    %(
+        :cache<doc-cache>, # location relative to collection root of cached Pod
+        :sources<raku-docs/doc>, # location of sources
+        :source-obtain(),#<git https://github.com/Raku/doc.git raku-docs/>,
+        :source-refresh(),
+        :!no-status, # show progress
+        :mode<Website>, # the default mode, which must exist
+        :extensions< rakudoc pod pod6 p6 pm pm6 >,
+    )
+    CONF
+my @args = <<raku -I. bin/collection-refresh-plugins -test>>;
+@args.append: "-collection=$dir";
+runs_ok(
+    :@args,
+    :exitcode(1),
+    :err(/ 'plugins.rakuon｣ did not evaluate correctly' /),
+    'Bad plugins-conf'
+);
+"$dir/plugins.rakuon".IO.unlink;
+$release-dir = $pub-dir;
+throws-like {
+    Collection::RefreshPlugins::create-plugin-conf(:collection($dir), :test) },
+    Collection::RefreshPlugins::NoReleasedDir,
+    message => / 'not a valid Collection Released' /,
+    'traps lack of manifest.rakuon in release directory';
+"$pub-dir/manifest.rakuon".IO.spurt(q:to/MANIFEST/);
+    %( :dummy() );
+    MANIFEST
+throws-like {
+    Collection::RefreshPlugins::create-plugin-conf(:collection($dir), :test) },
+    Collection::RefreshPlugins::NoModes,
+    message => / 'no Mode directories' .+ $dir /,
+    'traps no modes';
+mktree $mode;
+"$mode/config.raku".IO.spurt(q:to/CONF/);
+    %(
+        :plugin-format<html>,
+        plugins-required => %(
+            :setup<raku-doc-setup>,
+            :completion<cro-app>,
+        ),
+    )
+    CONF
+lives-ok {
+    Collection::RefreshPlugins::create-plugin-conf(:collection($dir), :test)
+    },
+    'creates minimal plugin file';
+ok "$dir/plugins.rakuon".IO ~~ :e & :f, 'file written';
+my %conf;
+lives-ok { %conf = EVALFILE "$dir/plugins.rakuon" },
+    'gets %conf';
+is +%conf.keys, 2, 'two keys in conf';
+is %conf<_metadata_><collection-plugin-root>, $pub-dir, 'got root right';
+is %conf<Website><_mode_format>, 'html', 'minimal mode format';
+
+done-testing;
