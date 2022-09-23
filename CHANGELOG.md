@@ -308,9 +308,11 @@
 
 *  include check for default released dir before asking for new one in Refresh
 
+*  fixed the anomalous exit after git cloning
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-09-23T08:37:09Z
+Rendered from CHANGELOG at 2022-09-23T09:26:54Z

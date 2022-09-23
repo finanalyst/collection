@@ -176,22 +176,24 @@ sub update-cache(:$no-status, :$recompile, :$no-refresh,
     #removing the cache forces a recompilation
 
     if !$doc-source.IO.d and @obtain {
-        my $proc = Proc::Async.new(@obtain.list);
-        my $proc-rv;
-        $proc.stdout.tap(-> $d {});
-        $proc.stderr.tap(-> $v { $proc-rv = $v });
-        await $proc.start;
-        exit note $proc-rv if $proc-rv
+        my $proc = run(@obtain.list, :err);
+        if $proc.exitcode {
+            exit note $proc.err.slurp(:close)
+        }
+        else {
+            say '<' ~ @obtain.join(' ') ~ '> was successful';
+        }
     }
     # recompile may be needed for existing, unrefreshed sources,
     #  so recompile != !no-refresh
     elsif !$no-refresh and @refresh {
-        my $proc = Proc::Async.new(@refresh.list);
-        my $proc-rv;
-        $proc.stdout.tap(-> $d {});
-        $proc.stderr.tap(-> $v { $proc-rv = $v });
-        await $proc.start;
-        exit note $proc-rv if $proc-rv;
+        my $proc = run(@refresh.list, :err );
+        if $proc.exitcode {
+            exit note $proc.err.slurp(:close)
+        }
+        else {
+            say '<' ~ @refresh.join(' ') ~ '> was successful';
+        }
     }
     print "$doc-source: " unless $no-status;
     Pod::From::Cache.new(

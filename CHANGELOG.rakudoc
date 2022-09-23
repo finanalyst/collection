@@ -193,5 +193,6 @@ each Major version. Updating is done via the plugins.conf file.
 within a collection not to be Modes, use-case, _local_raku_docs as a git repo.
 =item change METADATA key in plugins.rakuon to _metadata_ to take advantage of this
 =item include check for default released dir before asking for new one in Refresh
+=item fixed the anomalous exit after git cloning
 
 =end pod
