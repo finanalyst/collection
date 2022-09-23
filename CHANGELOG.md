@@ -302,9 +302,15 @@
 
 *  tests added
 
+*  define Modes to be named like plugins without '_', thus allowing sub-directories within a collection not to be Modes, use-case, _local_raku_docs as a git repo.
+
+*  change METADATA key in plugins.rakuon to _metadata_ to take advantage of this
+
+*  include check for default released dir before asking for new one in Refresh
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-09-21T20:47:32Z
+Rendered from CHANGELOG at 2022-09-23T08:37:09Z

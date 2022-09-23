@@ -9,7 +9,7 @@ my $dir = 'xt/trial-test';
 my $mode = "$dir/Website";
 my $pub-dir = 'xt/released-plugins';
 
-plan 13;
+plan 14;
 
 rmtree($pub-dir);
 rmtree($dir);
@@ -134,6 +134,14 @@ is %p-conf<auth>, 'someoneelse', 'non-default auth';
 like %p-conf<version>, / ^ '1.' \d+ \. \d+ /, 'auth is non-default, version is latest for auth';
 %p-conf = get-config("$mode/plugins/camelia");
 is %p-conf<name>, 'new-camelia', 'custom alternative plugin for camelia';
+
+# avoid any directory that is not named as a Mode
+mktree "$dir/asset_base"; #not important that there is anything there
+lives-ok {
+        Collection::RefreshPlugins::refresh(:collection($dir), :test)
+    },
+    'ignores asset_base';
+
 # check error conditions
 "$dir/plugins.rakuon".IO.spurt(q:to/PLUGS/);
     %(

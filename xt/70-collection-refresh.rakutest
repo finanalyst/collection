@@ -6,7 +6,7 @@ use Test::Run :runs_ok;
 use Test::Deeply::Relaxed;
 use File::Directory::Tree;
 
-plan *;
+plan 9;
 
 my $dir = 'xt/trial-test';
 my $mode = "$dir/Website";

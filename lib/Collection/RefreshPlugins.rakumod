@@ -81,13 +81,15 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export
                     Auth error? No released plugin ｢$n-plug｣_v?_auth_｢$n-auth｣ for ｢$plug｣ in ｢$mode｣
                         If a 'name' key is set in 'plugins.rakuon', has the 'auth' key been set too?
                     WARN
+
                 my $n-v = %plugins{$mode}{$n-plug}<major>
                     // %released{$format}{$n-plug}{$n-auth}<latest>;
-                MapFail.new(:note(qq:to/WARN/)).throw unless ($n-v ~~ any( %released{$format}{$n-plug}{$n-auth}<vers>.list));
+                MapFail.new(:note(qq:to/WARN/)).throw unless ($n-v ~~ any(%released{$format}{$n-plug}{$n-auth}<vers>.list));
                     Major part error? No released plugin ｢{ $n-plug }_v{ $n-v }_auth_{ $n-auth }｣ corresponding to ｢$plug｣ in ｢$mode｣
                     WARN
 
-                next if ?(%plugins{$mode}{$plug}<mapped>) and %plugins{$mode}{$plug}<mapped> eq "{ $n-plug }_v{ $n-v }_auth_$n-auth";
+                next if ?(%plugins{$mode}{$plug}<mapped>)
+                    and (%plugins{$mode}{$plug}<mapped> eq "{ $n-plug }_v{ $n-v }_auth_$n-auth");
                 # Here is where code would be needed for notifying about an update
                 %plugins{$mode}{$plug}<mapped> = "{ $n-plug }_v{ $n-v }_auth_$n-auth"
             }
@@ -142,13 +144,23 @@ our sub analyse-manifest(--> Associative) {
 
 our sub create-plugin-conf(:$collection, :$test --> Associative) {
     my %plugins;
-    unless $test {
-        my $resp = prompt "Is the released plugins ｢$release-dir｣ correct (Enter / New release directory)";
-        $release-dir = $resp if $resp;
-    }
-    NoReleasedDir.new(:$release-dir).throw
+    # test for existence of default released dir
     unless ($release-dir.IO ~~ :d)
-        and ("$release-dir/manifest.rakuon".IO ~~ :e & :f);
+        and ("$release-dir/manifest.rakuon".IO ~~ :e & :f) {
+        # no released dir found, so ask for a customised one, unless testing
+        if $test {
+            NoReleasedDir.new(:$release-dir).throw
+        }
+        else {
+            until ($release-dir.IO ~~ :d) and ("$release-dir/manifest.rakuon".IO ~~ :e & :f) {
+                $release-dir = prompt(qq:to/PROMPT/);
+                    ｢$release-dir｣ is not a Collection released plugin directory.
+                    Enter Custom release directory, or Enter to end program.
+                    PROMPT
+                NoReleasedDir.new(:release-dir('None given')).throw unless $release-dir;
+            }
+        }
+    }
     %plugins = %(
         :_metadata_(%(
             :collection-plugin-root($release-dir),
@@ -157,7 +169,7 @@ our sub create-plugin-conf(:$collection, :$test --> Associative) {
 
         )),
     );
-    my @modes = $collection.IO.dir.grep({ .d && .basename ~~ / <plugin-name> / });
+    my @modes = $collection.IO.dir.grep({ .d && .basename ~~ / ^ <plugin-name> $ / });
     NoModes.new(:$collection).throw unless +@modes;
     for @modes -> $mode {
         my %config = get-config(~$mode, :required('plugin-format',));
