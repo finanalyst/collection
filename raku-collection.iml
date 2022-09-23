@@ -403,15 +403,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="RakuConfig" type="perl6">
-        <CLASSES />
-        <JAVADOC />
-        <SOURCES>
-          <root url="raku://1166011395:RakuConfig!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library name="PrettyDump" type="perl6">
         <CLASSES />
         <JAVADOC />
@@ -462,6 +453,15 @@
         <JAVADOC />
         <SOURCES>
           <root url="raku://1166011395:NativeHelpers::Blob!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="RakuConfig:ver&lt;0.7.2+&gt;" type="perl6">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="raku://1166011395:RakuConfig:ver&lt;0.7.2+&gt;!/" />
         </SOURCES>
       </library>
     </orderEntry>
