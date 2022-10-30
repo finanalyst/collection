@@ -38,6 +38,7 @@
 [2022-08-11 v0.8.3](#2022-08-11-v083)  
 [2022-08-22 v0.9.0](#2022-08-22-v090)  
 [2022-09-07 v0.9.1](#2022-09-07-v091)  
+[2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -280,8 +281,6 @@
 *  changed config for test suite so that no-preserve-state is True
 
 # 2022-09-07 v0.9.1
-
-
 *  distinguish between 'plugin' and 'callable' at a milestone for that plugin.
 
 *  remove references to Cleanup milestone, which was never used.
@@ -310,9 +309,14 @@
 
 *  fixed the anomalous exit after git cloning
 
+# 2022-10-30 v 0.10.0
+
+
+*  review to ensure compliance with Render::Pod v 4
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-09-23T09:26:54Z
+Rendered from CHANGELOG at 2022-10-30T09:39:16Z

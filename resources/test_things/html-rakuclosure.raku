@@ -1,22 +1,30 @@
-use v6.*;
-use ProcessedPod;
+use v6;
 %(
-# the following are extra for HTML files and are needed by the render (class) method
-# in the source-wrap template.
-    'escaped' => sub ( $s ) {
+# these templates are fixed for testing so that the distribution can update templates
+# without causing template specific tests to fail.
+    '_templater' => 'RakuClosureTemplater',
+    'escaped' => sub ($s) {
         if $s and $s ne ''
         { $s.trans(qw｢ <    >    &     " ｣ => qw｢ &lt; &gt; &amp; &quot; ｣) }
         else { '' }
     },
     'raw' => sub ( %prm, %tml ) { (%prm<contents> // '') },
-    'camelia-img' => sub ( %prm, %tml ) { '<camelia />' },
-    'css-text' => sub ( %prm, %tml ) { '<style>debug</style>' },
-    'css' => sub ( %prm, %tml ) { '' },
-    'favicon' => sub ( %prm, %tml ) { '<meta>NoIcon</meta>' },
+    'camelia-img' => sub ( %prm, %tml ) { '<img id="Camelia_bug" src="Camelia.svg">' },
+    'favicon' => sub ( %prm, %tml ) {
+        "\n<link" ~ ' href="favicon.ico" rel="icon" type="image/x-icon"' ~ "/>\n"
+    },
+    'css' => sub ( %prm, %tml ) { "\n" ~ '<link rel="stylesheet" href="rakudoc-styling.css">' },
+    'head' => sub ( %prm, %tml ) { '' },
     'block-code' => sub ( %prm, %tml ) {
-        '<pre class="pod-block-code">'
-                ~ (%prm<contents> // '')
+        if %prm<highlighted>:exists {
+            # a highlighter will add its own classes to the <pre> container
+            %prm<highlighted>
+        }
+        else {
+            '<pre class="pod-block-code">'
+                ~ %prm<contents>
                 ~ '</pre>'
+        }
     },
     'comment' => sub ( %prm, %tml ) { '<!-- ' ~ (%prm<contents> // '') ~ ' -->' },
     'declarator' => sub ( %prm, %tml ) {
@@ -33,21 +41,46 @@ use ProcessedPod;
                 ~ '</dd>'
     },
     'dlist-end' => sub ( %prm, %tml ) { "\n</dl>" },
-    'format-b' => gen-closure-template('strong'),
-    'format-c' => gen-closure-template('code'),
-    'format-i' => gen-closure-template('em'),
-    'format-k' => gen-closure-template('kbd'),
-    'format-r' => gen-closure-template('var'),
-    'format-t' => gen-closure-template('samp'),
-    'format-u' => gen-closure-template('u'),
-    'para' => gen-closure-template('p'),
+    'format-b' => sub ( %prm, %tml --> Str ) {
+        '<strong>' ~ (%prm<contents> // '') ~ '</strong>'
+    },
+    'format-c' => sub ( %prm, %tml --> Str ) {
+        '<code>' ~ (%prm<contents> // '') ~ '</code>'
+    },
+    'format-i' => sub ( %prm, %tml --> Str ) {
+        '<em>' ~ (%prm<contents> // '') ~ '</em>'
+    },
+    'format-k' => sub ( %prm, %tml --> Str ) {
+        '<kbd>' ~ (%prm<contents> // '') ~ '</kbd>'
+    },
+    'format-r' => sub ( %prm, %tml --> Str ) {
+        '<var>' ~ (%prm<contents> // '') ~ '</var>'
+    },
+    'format-t' => sub ( %prm, %tml --> Str ) {
+        '<samp>' ~ (%prm<contents> // '') ~ '</samp>'
+    },
+    'format-u' => sub ( %prm, %tml --> Str ) {
+        '<u>' ~ (%prm<contents> // '') ~ '</u>'
+    },
+    'para' => sub ( %prm, %tml --> Str ) {
+        '<p>' ~ (%prm<contents> // '') ~ '</p>'
+    },
     'format-l' => sub ( %prm, %tml ) {
+        # local: <link-label> -> <target>.html#<place> | <target>.html
+        # internal: <link-label> -> #<place>
+        # external: <link-label> -> <target>
+        my $trg = %prm<target>;
+        if %prm<local> {
+            $trg ~= '.html';
+            $trg ~= '#' ~ %prm<place> if %prm<place>
+        }
+        elsif %prm<internal> {
+            $trg = '#' ~ %prm<place>
+        }
         '<a href="'
-                ~ (%prm<internal> ?? '#' !! '')
-                ~ %prm<target>
-                ~ (%prm<local> ?? '.html'!! '')
+                ~ $trg
                 ~ '">'
-                ~ (%prm<contents> // '')
+                ~ (%prm<link-label> // '')
                 ~ '</a>'
     },
     'format-n' => sub ( %prm, %tml ) {
@@ -64,7 +97,7 @@ use ProcessedPod;
     },
     'format-x' => sub ( %prm, %tml ) {
         '<a name="' ~ (%prm<target> // '') ~ '"></a>'
-                ~ ( ( %prm<text>.defined and %prm<text> ne '' ) ?? '<span class="glossary-entry">' ~ %prm<text> ~ '</span>' !! '')
+        ~ ( ( %prm<text>.defined and %prm<text> ne '' ) ?? '<span class="glossary-entry">' ~ %prm<text> ~ '</span>' !! '')
     },
     'heading' => sub ( %prm, %tml ) {
         '<h' ~ (%prm<level> // '1')
@@ -89,7 +122,7 @@ use ProcessedPod;
                 ~ %prm<items>.join
                 ~ "</ul>\n"
     },
-    'named' => sub ( %prm, %tml ) {
+    'unknown-name' => sub ( %prm, %tml ) {
         "<section>\n<h"
                 ~ (%prm<level> // '1') ~ ' id="'
                 ~ %tml<escaped>(%prm<target>) ~ '"><a href="#'
@@ -117,7 +150,7 @@ use ProcessedPod;
                 ~ ( ( %prm<headers>.defined and %prm<headers> ne '' ) ??
         ("\t<thead>\n"
                 ~ [~] %prm<headers>.map({ "\t\t<tr><th>" ~ .<cells>.join('</th><th>') ~ "</th></tr>\n"})
-                        ~ "\t</thead>"
+                ~ "\t</thead>"
         ) !! '')
                 ~ "\t<tbody>\n"
                 ~ ( ( %prm<rows>.defined and %prm<rows> ne '' ) ??
@@ -135,9 +168,9 @@ use ProcessedPod;
     'title' => sub ( %prm, %tml) {
         if %prm<title>:exists and %prm<title> ne '' {
             '<h1 class="title"'
-                    ~ ((%prm<title-target>:exists and %prm<title-target> ne '')
+             ~ ((%prm<title-target>:exists and %prm<title-target> ne '')
                     ?? ' id="' ~ %tml<escaped>(%prm<title-target>) !! '' ) ~ '">'
-                    ~ %prm<title> ~ '</h1>'
+             ~ %prm<title> ~ '</h1>'
         }
         else { '' }
     },
@@ -159,7 +192,7 @@ use ProcessedPod;
                 ~ (( (%prm<toc>.defined and %prm<toc>.keys) or (%prm<glossary>.defined and %prm<glossary>.keys) ) ?? '</nav>' !! '')
                 ~ %tml<top-of-page>(%prm, %tml)
                 ~ %tml<subtitle>(%prm, %tml)
-                ~ '<div class="pod-body' ~ (( %prm<toc>.defined and %prm<toc> ne '' ) ?? '' !! ' no-toc') ~ '">'
+                ~ '<div class="pod-body' ~ (( %prm<toc>.defined and %prm<toc>.keys ) ?? '' !! ' no-toc') ~ '">'
                 ~ (%prm<body> // '')
                 ~ "\t\t</div>\n"
                 ~ (%prm<footnotes> // '')
@@ -169,16 +202,16 @@ use ProcessedPod;
     },
     'footnotes' => sub ( %prm, %tml ) {
         with %prm<notes> {
-            if .elems {
-            "<div id=\"_Footnotes\" class=\"footnotes\">\n<ul>"
-                    ~ [~] .map({ '<li id="' ~ %tml<escaped>($_<fnTarget>) ~ '">'
-                    ~ ('<span class="footnote-number">' ~ ( $_<fnNumber> // '' ) ~ '</span>')
-                    ~ ($_<text> // '')
-                    ~ '<a class="footnote" href="#'
-                    ~ %tml<escaped>($_<retTarget>)
-                    ~ "\"> « Back »</a></li>\n"
-            })
-                    ~ "\n</ul>\n</div>\n"
+            if %prm<notes>.elems {
+                "<div id=\"_Footnotes\" class=\"footnotes\">\n<ul>"
+                        ~ [~] .map({ '<li id="' ~ %tml<escaped>($_<fnTarget>) ~ '">'
+                        ~ ('<span class="footnote-number">' ~ ($_<fnNumber> // '') ~ '</span>')
+                        ~ ($_<text> // '')
+                        ~ '<a class="footnote" href="#'
+                        ~ %tml<escaped>($_<retTarget>)
+                        ~ "\"> « Back »</a></li>\n"
+                })
+                        ~ "\n</ul>\n</div>\n"
             }
             else { '' }
         }
@@ -200,7 +233,7 @@ use ProcessedPod;
                                     ~ ($_<place>.defined ?? $_<place> !! '')
                                     ~ "</a></div>\n"
                         })
-                    })
+                })
                     ~ "</div>\n"
         }
         else { '' }
@@ -234,12 +267,10 @@ use ProcessedPod;
         "\<head>\n"
                 ~ '<title>' ~ %tml<escaped>(%prm<title>) ~ "\</title>\n"
                 ~ '<meta charset="UTF-8" />' ~ "\n"
-                ~ %tml<favicon>({},{})
+                ~ %tml<favicon>({}, {})
                 ~ (%prm<metadata> // '')
-                ~ ( %tml<css>({},{}) ne ''
-                ?? ('<link rel="stylesheet" href="' ~ %tml<css>({},{}) ~ '">')
-                !! %tml<css-text>({},{})
-                    )
+                ~ %tml<css>( {}, {} )
+                ~ %tml<head>( {}, {} )
                 ~ "\</head>\n"
     },
     'header' => sub ( %prm,%tml) {
@@ -248,13 +279,16 @@ use ProcessedPod;
     'footer' => sub ( %prm, %tml ) {
         '<footer><div>Rendered from <span class="path">'
                 ~ ( ( %prm<path>.defined && %prm<path> ne '')
-                ??
-                %tml<escaped>(%prm<path>)
-                !!
-                %tml<escaped>(%prm<name>) )
+                    ??
+                    %tml<escaped>(%prm<path>)
+                    !!
+                    %tml<escaped>(%prm<name>) )
+                ~ '</span></div>'
                 ~ '<div>at <span class="time">'
                 ~ (( %prm<renderedtime>.defined && %prm<path> ne '') ?? %tml<escaped>(%prm<renderedtime>) !! 'a moment before time began!?')
                 ~ '</span></div>'
                 ~ '</footer>'
     },
-)
+);
+
+

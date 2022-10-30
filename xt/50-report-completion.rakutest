@@ -36,8 +36,8 @@ chdir TMP;
         for %processed.kv -> $fn, $podf {
             next unless $podf.links and +$podf.links.keys;
             @report.append: "$fn contains links";
-            for $podf.links.kv -> $entry, (:$target, :$location, :$link) {
-                @report.append: "\t$link points to $location target with $target"
+            for $podf.links.kv -> $entry, (:$target, :$place, :$link-label, :$type) {
+                @report.append: "\t$link-label of type $type points to $place in target $target"
             }
         }
         my @plugs = "Plugin report", ;

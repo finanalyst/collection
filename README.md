@@ -92,13 +92,17 @@ The content files are processed in several stages separated by milestones. At ea
 `collect` should be called with a [Mode](Mode.md). A **Mode** is the name of a set of configuration files, templates, and plugins that control the way the source files are processed and rendered. The main configuration file must contain a key called `mode`, which defines the default mode that `collect` uses if called with no explicit mode, so if `collect` is called without a **Mode**, the default will be used.
 
 # Modes
-A Mode is
+A Mode:
 
-*  the name of the process by which a _Collection_ is rendered and presented. At present, only `Website` is implemented, but it is planned to have Modes for `epub` and `pdf` formats. The presentation may be serving HTML files locally, or the creation of a single epub file for publishing.
+*  is the name of the process by which a _Collection_ is rendered and presented. At present, only `Website` is implemented, but it is planned to have Modes for `epub` and `pdf` formats. The presentation may be serving HTML files locally, or the creation of a single epub file for publishing.
 
-*  the name of a sub-directory under the Collection directory. A Mode sub-directory must contain:
+*  is the name of a sub-directory under the Collection directory.
 
-	*  a sub-directory `configs`, not a `config.raku` file.
+*  may not be named with any '_' in it. This allows for sub-directories in a Collection folder that are not modes, eg., a Raku documentation repository
+
+*  A Mode sub-directory must contain:
+
+	*  a sub-directory `configs`, and/or a `config.raku` file.
 
 # Milestones
 The `collect` sub can be called once the collection directory contains a `config.raku`, which in turn contains the location of a directory of rakudoc source files, which must contain recursively at least one source.
@@ -780,7 +784,7 @@ In order to implement this flexibility, the following are specified:
 ## Mapping released plugins to mode directories
 The file `plugins.rakuon` contains a hash with the following keys:
 
-*  `METADATA`. Contains a hash with data for the `refresh` functionality.
+*  `_metadata_`. Contains a hash with data for the `refresh` functionality.
 
 	*  `collection-plugin-root` This contains the name of a directory reachable from the Collection root directory with the released plugins are downloaded.
 
@@ -792,7 +796,9 @@ The file `plugins.rakuon` contains a hash with the following keys:
 
 		*  **Note** The update behaviour is not initially implemented.
 
-*  Every other toplevel key is interpreted as a Mode. This means a mode cannot be named `METADATA`. The Mode key will point to a hash with the keys:
+*  Every other toplevel key that meets the plugin naming convenstion is interpreted as a Mode. This means a mode cannot be named `_metadata_`.
+
+*  The Mode key will point to a hash with the keys:
 
 	*  `_mode_format` Each mode may only contain plugins from one Format, eg., _html_.
 
@@ -895,7 +901,7 @@ Refresh needs to deal with other situations
 
 	*  Several behaviours are possible:
 
-		*  The default _update-behaviour_ is given in the `METADATA` hash of `plugins.rakuon`
+		*  The default _update-behaviour_ is given in the `_metadata_` hash of `plugins.rakuon`
 
 		*  _force_ Leave the existing links in place, issue a warning, update to latest only when forced. Include suggestion to change plugins.rakuon file to suppress warnings.
 
@@ -1023,4 +1029,4 @@ If a plugin provides an asset (eg., image, jquery script), it needs to provide a
 
 
 ----
-Rendered from README at 2022-09-21T20:47:24Z
+Rendered from README at 2022-10-30T09:39:34Z

@@ -20,7 +20,7 @@ my $rv;
 bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
 unless TMP.IO.d and "{ TMP }/{ MODE }".IO.d;
 mktree TMP ~ '/' ~ TEMPLATES;
-'xt/min-templates-for-tests.raku'.IO.copy:
+'resources/test_things/html-rakuclosure.raku'.IO.copy:
         TMP ~ '/' ~ TEMPLATES ~ '/mintemp.raku';
 mktree TMP ~ '/' ~ TEMPLATES;
 
