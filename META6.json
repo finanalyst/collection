@@ -22,7 +22,9 @@
     "Collection::Exceptions": "lib/Collection/Exceptions.rakumod",
     "Collection::RefreshPlugins": "lib/Collection/RefreshPlugins.rakumod"
   },
-  "resources": [],
+  "resources": [
+    "test_things/html-rakuclosure.raku"
+  ],
   "support": {
     "bugtracker": "https://github.com/finanalyst/collection/issues",
     "email": "richard@hainsworth.wales",
