@@ -39,6 +39,7 @@
 [2022-08-22 v0.9.0](#2022-08-22-v090)  
 [2022-09-07 v0.9.1](#2022-09-07-v091)  
 [2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
+[2022-13-06 v0.10.1](#2022-13-06-v0101)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -310,13 +311,22 @@
 *  fixed the anomalous exit after git cloning
 
 # 2022-10-30 v 0.10.0
-
-
 *  review to ensure compliance with Render::Pod v 4
+
+# 2022-13-06 v0.10.1
+
+
+*  change to error report
+
+*  minor change to xt/75*
+
+*  improve error handling in Mode
+
+*  make RefreshPlugin observe :no-refresh config option
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-10-30T09:39:16Z
+Rendered from CHANGELOG at 2022-11-13T09:02:18Z

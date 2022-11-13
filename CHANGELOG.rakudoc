@@ -198,4 +198,10 @@ within a collection not to be Modes, use-case, _local_raku_docs as a git repo.
 =head1 2022-10-30 v 0.10.0
 =item review to ensure compliance with Render::Pod v 4
 
+=head1 2022-13-06 v0.10.1
+=item change to error report
+=item minor change to xt/75*
+=item improve error handling in Mode
+=item make RefreshPlugin observe :no-refresh config option
+
 =end pod

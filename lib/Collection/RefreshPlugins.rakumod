@@ -45,6 +45,8 @@ multi sub refresh(Str:D :$collections!, Bool :$test = False) is export {
 }
 multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export {
     state Bool $git-pull = True;
+    my %config = get-config(:path("$collection/config.raku"));
+    return if (%config<no-refresh>:exists and %config<no-refresh>); # observe no-refresh configuration
     my %plugins;
     try {
         %plugins = get-config(:path("$collection/plugins.rakuon"));
@@ -101,7 +103,7 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export
             }
             mktree("$collection/$mode/plugins") unless "$collection/$mode/plugins/".IO ~~ :e & :d;
             my $p-ref = "$collection/$mode/plugins/$plug";
-            say "Mapping ｢$plug｣ to ｢{ %plugins{$mode}{$plug}<mapped> }｣" unless $test;
+            say "Aliasing ｢$plug｣ to ｢{ %plugins{$mode}{$plug}<mapped> }｣" unless $test;
             $p-ref.IO.unlink if $p-ref.IO ~~ :e;
             "$release-dir/plugins/{ $format }/{ %plugins{$mode}{$plug}<mapped> }".IO
                 .symlink($p-ref);
@@ -173,7 +175,13 @@ our sub create-plugin-conf(:$collection, :$test --> Associative) {
     NoModes.new(:$collection).throw unless +@modes;
     for @modes -> $mode {
         my %config = get-config(~$mode, :required('plugin-format',));
-        %plugins{$mode.basename}<_mode_format> = %config<plugin-format>
+        try %plugins{$mode.basename}<_mode_format> = %config<plugin-format>;
+        CATCH {
+            default {
+                exit ( note "Error detected processing ｢$mode｣ Mode\n"
+                    ~ .message )
+            }
+        }
     }
     write-plugin-conf(%plugins, :$collection);
     %plugins

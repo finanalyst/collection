@@ -1,6 +1,8 @@
 use Test;
-plan 2;
+plan 4;
 use-ok 'Collection';
+use-ok 'Collection::Entities';
+use-ok 'Collection::Exceptions';
 use-ok 'Collection::RefreshPlugins';
 
 done-testing;
