@@ -204,4 +204,14 @@ within a collection not to be Modes, use-case, _local_raku_docs as a git repo.
 =item improve error handling in Mode
 =item make RefreshPlugin observe :no-refresh config option
 
+=head1 2022-13-06 v 0.11.0
+=item allow for plugin-specific config data to be contained in Mode configs, by generalising completion-options
+=item change all plugin requirements to need %plugin-options
+=item rename completion-options to plugin-options in Completion milestone
+=item change the README to reflect this
+=item fix all tests to comply with new plugin requirements
+=item add a test to check this
+=item allow for :no-refresh to be passed from CLI to sub refresh
+=item make :no-refresh & without-processing & recompile to be mandatory Level-one options
+
 =end pod

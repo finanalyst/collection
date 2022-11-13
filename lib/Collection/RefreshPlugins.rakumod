@@ -32,21 +32,21 @@ class MapFail is Exception {
 
 our proto sub refresh(|) {*}
 
-multi sub refresh(Str:D :$collections!, Bool :$test = False) is export {
+multi sub refresh(Str:D :$collections!, Bool :$test = False, |c ) is export {
     for $collections.split(/\s+ | \,/) {
         if .IO.d {
             say "processing Collection at ｢$_｣" unless $test;
-            refresh(:collection($_), :$test)
+            refresh(:collection($_), :$test, |c )
         }
         else {
             note "｢$_｣ is not a directory"
         }
     }
 }
-multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False) is export {
+multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False, :$no-refresh = False) is export {
     state Bool $git-pull = True;
     my %config = get-config(:path("$collection/config.raku"));
-    return if (%config<no-refresh>:exists and %config<no-refresh>); # observe no-refresh configuration
+    return if $no-refresh or (%config<no-refresh>:exists and %config<no-refresh>); # observe no-refresh configuration
     my %plugins;
     try {
         %plugins = get-config(:path("$collection/plugins.rakuon"));

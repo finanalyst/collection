@@ -40,6 +40,7 @@
 [2022-09-07 v0.9.1](#2022-09-07-v091)  
 [2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
 [2022-13-06 v0.10.1](#2022-13-06-v0101)  
+[2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -314,8 +315,6 @@
 *  review to ensure compliance with Render::Pod v 4
 
 # 2022-13-06 v0.10.1
-
-
 *  change to error report
 
 *  minor change to xt/75*
@@ -324,9 +323,28 @@
 
 *  make RefreshPlugin observe :no-refresh config option
 
+# 2022-13-06 v 0.11.0
+
+
+*  allow for plugin-specific config data to be contained in Mode configs, by generalising completion-options
+
+*  change all plugin requirements to need %plugin-options
+
+*  rename completion-options to plugin-options in Completion milestone
+
+*  change the README to reflect this
+
+*  fix all tests to comply with new plugin requirements
+
+*  add a test to check this
+
+*  allow for :no-refresh to be passed from CLI to sub refresh
+
+*  make :no-refresh & without-processing & recompile to be mandatory Level-one options
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-11-13T09:02:18Z
+Rendered from CHANGELOG at 2022-11-13T22:43:04Z

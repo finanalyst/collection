@@ -405,8 +405,14 @@ behaviour as for Configuration files.
 
 =head1 Configuration
 
-There are two levels of configuration. The top-level resides in C<config.raku> in the root directory of the
+There are three levels of configuration:
+=item The top-level configuration resides in C<config.raku> in the root directory of the
 Collection. The C<collect> sub will fail without this file.
+
+=item The Mode configuration typically resides in the C<configs> directory, in several
+files (the names are not important).
+
+=item Each plugin has its own config, in the C<config.raku> file of its directory.
 
 =head2 Top level configuration
 
@@ -421,10 +427,17 @@ C<config.raku> B<must> contain the following keys:
 =item the B<sources> directory, relative to the root of the collection and must contain at least one content file
 =item2 C<Collection-Raku-Documentation> default: 'raku-docs'
 =item B<mode> is the default mode for the collection, and must be a sub-directory, which must exist and contain
-a C<configs> sub-directory (note the plural ending).
-=item2 C<Collection-Raku-Documentation> default: 'Website'
+a C<configs> sub-directory (note the plural ending). See Mode level configuration below.
 
-The following are optional keys, together with the defaults 
+=item2 C<Collection-Raku-Documentation> default: 'Website'
+=item B<without-processing> as described in Milestones
+=item2 default: False
+=item B<no-refresh> as described in Milestones
+=item2 default: False
+=item B<recompile> as described in Milestones
+=item2 default: False
+
+The following are optional keys, together with the defaults
 =item the allowed B<extensions> for content files. These are provided to the C<Pod::From::Cache> object.
 =item2 default: < rakudoc pod pod6 p6 pm pm6 >
 =item no-status This option controls whether a progress bar is provided in the terminal
@@ -442,16 +455,16 @@ No key assumes the sources never change.
 =item2 default: ()
 =item B<no-status> as described in Milestones
 =item2 default: False
-=item B<without-processing> as described in Milestones
+=item B<without-report> as described in Milestones
 =item2 default: False
-=item B<no-refresh> as described in Milestones
+=item B<full-render> as described in Milestones
 =item2 default: False
-=item B<recompile> as described in Milestones
-=item2 default: False
+=item B<asset-basename> as described in L<Asset-cache methods>
+=item2 C<Collection-Raku-Documentation> default: 'asset_base'
 
-=head2 Second-level configuration
+=head2 Mode-level configuration
 
-The second-level configuration resides in one or more B<files> that are under the B<configs/> sub-directory of the
+The mode-level configuration resides in one or more B<files> that are under the B<configs/> sub-directory of the
 C<mode> directory. This arrangement is used to allow for configuration to be separated into different named
 files for ease of management.
 
@@ -485,20 +498,56 @@ Published plugins are stored for a particular format.
 =item2 B<cleanup> plugins if cleanup is needed.
 =item B<landing-place> is the name of the file that comes first during the completion stage. For example,
 in a Website, the landing file is usually called C<index.html>
-=item B<output-ext> is the extension for the output files
 
-All optional control flags are False by default. They are:
+=item B<output-ext> is the extension for the output files
+=item B<plugin-options> is mandatory, see L<Plugin level configuration> for more information
+
+All optional control flags are False by default. For the Mode configuration they are:
 =item no-status
-=item recompile
-=item no-refresh
 =item full-render
 =item without-completion
 =item without-report
-=item without-processing
 =item no-preserved-state
 =item debug-when
 =item verbose-when
 =item no-code-escape
+
+=head2 Plugin level configuration
+
+Each plugin has its own configuration (more information in the sections on Plugins).
+In addition to the mandatory keys, a plugin may have its own configuration data.
+The configuration data in the plugin directory will be over-written each time a plugin
+is updated.
+
+In order to provide for preservation of configuration data at the Mode level,
+the key C<plugin-options> (typically kept in a separate config file) is used.
+The value of C<plugin-options> is a Hash whose keys are the names of plugins. Each
+plugin-name key has a value that is a Hash of the keys required by the plugin.
+
+For example, the C<Collection-Raku-Documentation> plugin C<cro-app> has
+the configuration options C<:port> and C<:host>. The default C<Collection-Raku-Documentation>
+configuration contains the snippet:
+
+        plugin-options => %(
+            cro-app => %(
+                :port<30000>,
+                :host<localhost>,
+            ),
+        ),
+
+in a file under the Mode's C<configs/> directory. These values will over-ride
+the plugin's default config values.
+
+It is the responsibility of the plugin to detect the configuration key. This means
+that if a new plugin is intended to be used in place of an pre-existing one
+(see L<Refresh process>), then the developer needs to check the configuration key
+with the replaced name.
+
+C<plugin-options> is a mandatory option in the Mode configuration. It may be set to Empty, viz.,
+
+    plugin-options()
+
+in which case, all plugins will use their default options.
 
 =head1 Control flags
 
@@ -640,31 +689,55 @@ The plugin types are as follows.
 Config hash must contain B<setup> which is the name of a Raku
 program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
-    sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %options ) { ... }
+    sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %plugin-options, %options ) { ... }
 
-=defn $source-cache
+=begin item
+B<$source-cache>
+
 A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
+New files can be added to the cache object inside the sub using the C<.add> method, see L<Sources>.
 
-=defn $mode-cache
+=end item
+=begin item
+B<$mode-cache>
+
 Like the above for the mode content files
 
-=defn $full-render
+=end item
+=begin item
+B<$full-render>
+
 If True, then the sub should process the cache objects with the .sources method on the cache objects,
 otherwise with the .list-files method on the cache objects (the .list-files method only
 provides the files that have changed).
 
-=defn $source-root
+=end item
+=begin item
+B<$source-root>
+
 This path must be prepended to any sources added (see below) to the cache, otherwise they will not be added to the
 destination file.
 
-=defn $mode-root
+=end item
+=begin item
+B<$mode-root>
+
 Likewise for the mode sources.
 
-=defn %options
+=end item
+=begin item
+B<%plugin-options>
+
+Has the values of plugin options that over-ride a plugin's own defaults. See L<Plugin level configuration>
+for more information.
+
+=end item
+=begin item
+B<%options>
+
 Has the values of 'collection-info' and 'no-status' flags.
 
-New files can be added to the cache object inside the sub using the C<.add> method, see L<Sources>.
-
+=end item
 =head3 Render
 
 The Collection plugin-manager calls the C<ProcessedPod.add-plugin> method with the config keys and
@@ -675,11 +748,12 @@ method of the C<ProcessedPod> object. See C<ProcessedPod> documentation.
 
 If the C<render> key is a Str, then it is the filename of a Raku callable of the form
 
-    sub ( $pr, %options --> Array ) {...}
+    sub ( $pr, %plugin-options, %options --> Array ) {...}
 
 where
 
 =item B<$pr> is a <ProcessedPod> object,
+=item B<%plugin-options> is the same as for Setup,
 =item B<%options> is the same as for Setup, and
 =item the callable B<returns> a list of triples, with the form (to, from-plug, file)
 =item2 B<to> is the destination under the C<%config<destination> > directory where the asset will be
@@ -715,7 +789,7 @@ are rendered.
 
 The C<compilation> key must point to a Raku program that delivers a sub object
 
-    sub ( $pr, %processed, %options) { ... }
+    sub ( $pr, %processed, %plugin-options, %options) { ... }
 
 =defn $pr
 is the ProcessedPod object rendering the content files.
@@ -724,6 +798,9 @@ is the ProcessedPod object rendering the content files.
 is a hash whose keys are source file names with a hash values containing
 TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
+=defn %plugin-options
+as for setup
+
 =defn %options
 as for setup
 
@@ -731,7 +808,7 @@ as for setup
 
 The C<transfer> key points to a Raku file that evaluates to a
 
-    sub ($pr, %processed, %options --> Array ) {...}
+    sub ($pr, %processed, %plugin-options, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -749,7 +826,7 @@ as for the render plugin
 
 The C<report> key points to a Raku file that evaluates to a
 
-    sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
+    sub (%processed, @plugins-used, $pr, %plugin-options, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -760,6 +837,9 @@ value is a hash of the plugins used and their config parameters.
 
 =defn $pr
 as in Compilation
+
+=defn %plugin-options
+as for setup
 
 =defn %options
 as for Setup
@@ -774,7 +854,7 @@ The C<collect> sub will write the file to the correct directory.
 
 The C<completion> key points to a Raku file that evaluates to a
 
-    sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}
+    sub ($destination, $landing-place, $output-ext, %plugin-options, %options) {...}
 
 =begin item
 B<$destination>
@@ -790,14 +870,10 @@ destination directory.
 
 =end item
 =begin item
-B<%completion-options> (actually specified as %config<completion-options>)
+B<%plugin-options>
 
-is the set of options that the completion plugin will require from the Mode-level configuration. For example,
-the very simple C<cro-run> plugin requires the path to the static html files, the hostname, and the port on which the files
-are served.
-
+As for Setup
 =end item
-
 =begin item
 B<%options>
 
@@ -1012,8 +1088,8 @@ to suppress warnings.
 
 =head2 CLI Plugin Management System
 
-Collection contains the utility C<collection-refresh-plugins> as a
- (PMS). It is called as follows:
+Collection contains the utility C<collection-refresh-plugins> as
+a (PMS). It is called as follows:
 
     collection-refresh-plugins [-collection=<path>] [-collections='path1 path2 path3']
 
@@ -1132,6 +1208,8 @@ If a plugin provides an asset (eg., image, jquery script), it needs to provide a
 that returns the triple so that Collect moves the asset from the plugin directory to the output
 directory where it can be served. This needs to be done separately if a CSS contains a url for
 local image.
+
+The basename for the assets is set in the Top level configuration in the option C<asset-basename>
 
 C<$image-manager> is of type Asset-cache, which has the following methods:
 

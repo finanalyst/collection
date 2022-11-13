@@ -229,9 +229,11 @@ multi sub collect(Str:D $mode,
     my $rv;
     my Bool $ret-before;
     my Bool $ret-after;
-    my %config = get-config( :required< sources cache >);
+    my %config = get-config( :required< sources cache without-processing no-refresh recompile>);
     $no-status = (%config<no-status> // False) without $no-status;
-    $without-processing = ( %config<without-processing> // False ) without $without-processing;
+    $without-processing = %config<without-processing> without $without-processing;
+    $no-refresh = %config<no-refresh> without $no-refresh;
+    $recompile = %config<recompile> without $recompile;
 
     # make sure $without-processing can proceed
     if $without-processing {
@@ -266,7 +268,7 @@ multi sub collect(Str:D $mode,
         X::Collection::NoMode.new(:$mode).throw
         unless "$*CWD/$mode".IO.d and $mode ~~ / ^ [\w | '-' | '_']+ $ /;
         %config ,= get-config( :path("$mode/configs"),
-                :required<mode-cache mode-sources plugins-required destination completion-options>);
+                :required<mode-cache mode-sources plugins-required destination plugin-options>);
         # include mode level control flags
         $without-completion = ( %config<without-completion> // False ) without $without-completion;
         $without-report = ( %config<without-report> // False ) without $without-report;
@@ -316,7 +318,7 @@ multi sub collect(Str:D $mode,
         #     T        F        F
 
         $rv = milestone('Setup',
-            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>),
+            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>, %config<plugin-options>),
             :@dump-at, :$collection-info, :@plugins-used, :%config, :$mode,
             :call-plugins( !$ret-after )
         );
@@ -351,7 +353,7 @@ multi sub collect(Str:D $mode,
                     $ret-after = ?($after ~~ /:i Setup /);
                     $ret-before = ?($before ~~ /:i Render /);
                     $rv = milestone('Render',
-                            :with($pr),
+                            :with($pr, %config<plugin-options>),
                             :@dump-at,
                             :%config,
                             :$mode,
@@ -372,7 +374,7 @@ multi sub collect(Str:D $mode,
                     $ret-after = ?($after ~~ /:i Render /);
                     $ret-before = ?($before ~~ /:i Compilation /);
                     $rv = milestone('Compilation',
-                        :with($pr, %processed),
+                        :with($pr, %processed, %config<plugin-options>),
                         :@dump-at,
                         :%config,
                         :$mode,
@@ -452,7 +454,7 @@ multi sub collect(Str:D $mode,
             }
             $ret-after = ?($after ~~ /:i Compilation /);
             $ret-before = ?($before ~~ /:i Transfer /);
-            $rv = milestone('Transfer', :with($pr, %processed), :@dump-at,
+            $rv = milestone('Transfer', :with($pr, %processed, %config<plugin-options>), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after )
             );
             return $rv if ($ret-after or $ret-before);
@@ -465,7 +467,7 @@ multi sub collect(Str:D $mode,
                 unless $no-preserve-state;
             $ret-after = ?($after ~~ /:i Transfer /);
             $ret-before = ?($before ~~ /:i Report /);
-            $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
+            $rv = milestone('Report', :with(%processed, @plugins-used, $pr, %config<plugin-options>), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after and !$without-report));
             return $rv if ($ret-after or $ret-before);
             # ==== Transfer / Report Milestone ===================================
@@ -475,7 +477,7 @@ multi sub collect(Str:D $mode,
     $ret-before = ?($before ~~ /:i Completion /);
     $rv = milestone('Completion',
             :with("$mode/{ %config<destination> }".IO.absolute,
-                  %config<landing-place>, %config<output-ext>, %config<completion-options>),
+                  %config<landing-place>, %config<output-ext>, %config<plugin-options>),
             :$mode, :@dump-at, :%config, :$collection-info, :$no-status,
             :@plugins-used, :call-plugins( !$ret-after and !$without-completion));
     return $rv if ($ret-after or $ret-before);
@@ -575,7 +577,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completio
     }
     @valids
 }
-multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ ProcessedPod,
+multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
                          :%config, :$mode,
                          :$collection-info,
                          :$no-status
@@ -598,7 +600,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
             # so a plugin should not write directly
             my @asset-files;
             try {
-                @asset-files = indir($path, { &closure.($with, %options) });
+                @asset-files = indir($path, { &closure.(|$with, %options) });
             }
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
@@ -617,7 +619,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                     $from = "$path/$file";
                 }
                 else {
-                    my $config = $with.get-data($other-plug);
+                    my $config = $with[0].get-data($other-plug);
                     # returns Nil if no data
                     unless $config {
                         note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
@@ -636,7 +638,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with where *~~ Proces
                 $from.IO.copy($to-path);
             }
         }
-        $with.add-plugin($plug,
+        $with[0].add-plugin($plug,
                 :$path,
                 :template-raku(%plugin-conf<template-raku>:delete),
                 :custom-raku(%plugin-conf<custom-raku>:delete),

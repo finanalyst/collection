@@ -36,6 +36,9 @@ throws-like { collect(:after<setup>, :no-preserve-state) },
         :source-refresh(),
         :mode<{ MODE }>,
         :extensions<rakudoc pod6 pm6 pl6 >,
+        :no-refresh,
+        :!recompile,
+        :!without-processing,
         :asset-basename<assets>,
         :asset-paths( %( # type of asset is key, then metadata for that type
             image => %(

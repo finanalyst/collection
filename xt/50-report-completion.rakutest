@@ -12,7 +12,7 @@ constant OUTPUT = "{MODE}/html";
 constant REPORT = "{MODE}/reports";
 constant ASSETS = "{TMP}/assets";
 
-plan 8;
+plan 9;
 my $rv;
 
 bail-out "{TMP} and {TMP}/{ MODE } and {TMP}/{ PLUGS } must exist. Have source tests been run?"
@@ -30,7 +30,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %options --> Array ) {
+    sub (%processed, @plugins-used, $pp, %plugin-options, %options --> Array ) {
         ## format is %.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {
@@ -66,9 +66,10 @@ chdir TMP;
     CONF
 (PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
     use Test;
-    sub ($destination, $landing, $ext, %c-options, %options) {
+    sub ($destination, $landing, $ext, %plugin-options, %options) {
         ok $destination.IO.d, 'destination is a directory';
         ok "$destination/$landing\.$ext".IO.f, 'landing is a file';
+        is %plugin-options<completer><host>, 'localhost', 'got plugin option';
     }
     CODE
 $rv = collect(MODE, :no-status,
@@ -102,7 +103,7 @@ collect(MODE, :no-status,
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %options, --> Array ) {
+    sub (%processed, @plugins-used, $pp, %plugin-options, %options, --> Array ) {
         #only side effects
         []
         }

@@ -30,7 +30,8 @@
 [Templates](#templates)  
 [Configuration](#configuration)  
 [Top level configuration](#top-level-configuration)  
-[Second-level configuration](#second-level-configuration)  
+[Mode-level configuration](#mode-level-configuration)  
+[Plugin level configuration](#plugin-level-configuration)  
 [Control flags](#control-flags)  
 [Plugin management](#plugin-management)  
 [Disabling a plugin](#disabling-a-plugin)  
@@ -351,7 +352,13 @@ The **templates**, which may be any format (currently RakuClosure or Mustache) a
 	*  If there are multiple files in the directory, they will all be evaluated in alphanumeric order. Note that existing keys will be over-written if they exist in later templates. This is **not** the same behaviour as for Configuration files.
 
 # Configuration
-There are two levels of configuration. The top-level resides in `config.raku` in the root directory of the Collection. The `collect` sub will fail without this file.
+There are three levels of configuration:
+
+*  The top-level configuration resides in `config.raku` in the root directory of the Collection. The `collect` sub will fail without this file.
+
+*  The Mode configuration typically resides in the `configs` directory, in several files (the names are not important).
+
+*  Each plugin has its own config, in the `config.raku` file of its directory.
 
 ## Top level configuration
 In the descriptions below, simple illustrative names are given to files with configuration, templates, callables. These files are generally **Raku** programs, which are compiled and run. They will almost certainly contain errors during development and the **Rakudo** compiler will provide information based on the filename. So it is good practice to name the files that make them easier to locate, such as prefixing them with the plugin name.
@@ -366,11 +373,23 @@ In the descriptions below, simple illustrative names are given to files with con
 
 	*  `Collection-Raku-Documentation` default: 'raku-docs'
 
-*  **mode** is the default mode for the collection, and must be a sub-directory, which must exist and contain a `configs` sub-directory (note the plural ending).
+*  **mode** is the default mode for the collection, and must be a sub-directory, which must exist and contain a `configs` sub-directory (note the plural ending). See Mode level configuration below.
 
 	*  `Collection-Raku-Documentation` default: 'Website'
 
-The following are optional keys, together with the defaults 
+*  **without-processing** as described in Milestones
+
+	*  default: False
+
+*  **no-refresh** as described in Milestones
+
+	*  default: False
+
+*  **recompile** as described in Milestones
+
+	*  default: False
+
+The following are optional keys, together with the defaults
 
 *  the allowed **extensions** for content files. These are provided to the `Pod::From::Cache` object.
 
@@ -396,20 +415,20 @@ The following are optional keys, together with the defaults
 
 	*  default: False
 
-*  **without-processing** as described in Milestones
+*  **without-report** as described in Milestones
 
 	*  default: False
 
-*  **no-refresh** as described in Milestones
+*  **full-render** as described in Milestones
 
 	*  default: False
 
-*  **recompile** as described in Milestones
+*  **asset-basename** as described in [Asset-cache methods](Asset-cache methods.md)
 
-	*  default: False
+	*  `Collection-Raku-Documentation` default: 'asset_base'
 
-## Second-level configuration
-The second-level configuration resides in one or more **files** that are under the **configs/** sub-directory of the `mode` directory. This arrangement is used to allow for configuration to be separated into different named files for ease of management.
+## Mode-level configuration
+The mode-level configuration resides in one or more **files** that are under the **configs/** sub-directory of the `mode` directory. This arrangement is used to allow for configuration to be separated into different named files for ease of management.
 
 The following rules apply:
 
@@ -455,21 +474,17 @@ All the following keys are mandatory. Where a key refers to a directory (path), 
 
 *  **output-ext** is the extension for the output files
 
-All optional control flags are False by default. They are:
+*  **plugin-options** is mandatory, see [Plugin level configuration](Plugin level configuration.md) for more information
+
+All optional control flags are False by default. For the Mode configuration they are:
 
 *  no-status
-
-*  recompile
-
-*  no-refresh
 
 *  full-render
 
 *  without-completion
 
 *  without-report
-
-*  without-processing
 
 *  no-preserved-state
 
@@ -478,6 +493,32 @@ All optional control flags are False by default. They are:
 *  verbose-when
 
 *  no-code-escape
+
+## Plugin level configuration
+Each plugin has its own configuration (more information in the sections on Plugins). In addition to the mandatory keys, a plugin may have its own configuration data. The configuration data in the plugin directory will be over-written each time a plugin is updated.
+
+In order to provide for preservation of configuration data at the Mode level, the key `plugin-options` (typically kept in a separate config file) is used. The value of `plugin-options` is a Hash whose keys are the names of plugins. Each plugin-name key has a value that is a Hash of the keys required by the plugin.
+
+For example, the `Collection-Raku-Documentation` plugin `cro-app` has the configuration options `:port` and `:host`. The default `Collection-Raku-Documentation` configuration contains the snippet:
+
+```
+plugin-options => %(
+    cro-app => %(
+        :port<30000>,
+        :host<localhost>,
+    ),
+),
+```
+in a file under the Mode's `configs/` directory. These values will over-ride the plugin's default config values.
+
+It is the responsibility of the plugin to detect the configuration key. This means that if a new plugin is intended to be used in place of an pre-existing one (see [Refresh process](Refresh process.md)), then the developer needs to check the configuration key with the replaced name.
+
+`plugin-options` is a mandatory option in the Mode configuration. It may be set to Empty, viz.,
+
+```
+plugin-options()
+```
+in which case, all plugins will use their default options.
 
 # Control flags
 The control flags are also covered in [Milestones](Milestones.md). Control flags by default are False.
@@ -577,27 +618,35 @@ The plugin types are as follows.
 Config hash must contain **setup** which is the name of a Raku program (a callable) that evaluates to a sub that takes a list of five items, eg.,
 
 ```
-sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %options ) { ... }
+sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %plugin-options, %options ) { ... }
 ```
-> **$source-cache**  
-A C<Pod::From::Cache+PostCache> object containing the pod of the sources files
+*  **$source-cache**
 
-> **$mode-cache**  
+A `Pod::From::Cache+PostCache` object containing the pod of the sources files New files can be added to the cache object inside the sub using the `.add` method, see [Sources](Sources.md).
+
+*  **$mode-cache**
+
 Like the above for the mode content files
 
-> **$full-render**  
+*  **$full-render**
+
 If True, then the sub should process the cache objects with the .sources method on the cache objects, otherwise with the .list-files method on the cache objects (the .list-files method only provides the files that have changed).
 
-> **$source-root**  
+*  **$source-root**
+
 This path must be prepended to any sources added (see below) to the cache, otherwise they will not be added to the destination file.
 
-> **$mode-root**  
+*  **$mode-root**
+
 Likewise for the mode sources.
 
-> **%options**  
-Has the values of 'collection-info' and 'no-status' flags.
+*  **%plugin-options**
 
-New files can be added to the cache object inside the sub using the `.add` method, see [Sources](Sources.md).
+Has the values of plugin options that over-ride a plugin's own defaults. See [Plugin level configuration](Plugin level configuration.md) for more information.
+
+*  **%options**
+
+Has the values of 'collection-info' and 'no-status' flags.
 
 ### Render
 The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
@@ -607,11 +656,13 @@ If the `render` key is True, no callable is provided, and the plugin name will b
 If the `render` key is a Str, then it is the filename of a Raku callable of the form
 
 ```
-sub ( $pr, %options --> Array ) {...}
+sub ( $pr, %plugin-options, %options --> Array ) {...}
 ```
 where
 
 *  **$pr** is a <ProcessedPod> object,
+
+*  **%plugin-options** is the same as for Setup,
 
 *  **%options** is the same as for Setup, and
 
@@ -643,13 +694,16 @@ Note that the structure files are rendered after the `compilation` stage, BUT th
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
-sub ( $pr, %processed, %options) { ... }
+sub ( $pr, %processed, %plugin-options, %options) { ... }
 ```
 > **$pr**  
 is the ProcessedPod object rendering the content files.
 
 > **%processed**  
 is a hash whose keys are source file names with a hash values containing TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
+
+> **%plugin-options**  
+as for setup
 
 > **%options**  
 as for setup
@@ -658,7 +712,7 @@ as for setup
 The `transfer` key points to a Raku file that evaluates to a
 
 ```
-sub ($pr, %processed, %options --> Array ) {...}
+sub ($pr, %processed, %plugin-options, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -676,7 +730,7 @@ as for the render plugin
 The `report` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
+sub (%processed, @plugins-used, $pr, %plugin-options, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -686,6 +740,9 @@ is an array of Pairs whose key is the milestone and value is a hash of the plugi
 
 > **$pr**  
 as in Compilation
+
+> **%plugin-options**  
+as for setup
 
 > **%options**  
 as for Setup
@@ -698,7 +755,7 @@ The `collect` sub will write the file to the correct directory.
 The `completion` key points to a Raku file that evaluates to a
 
 ```
-sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}
+sub ($destination, $landing-place, $output-ext, %plugin-options, %options) {...}
 ```
 *  **$destination**
 
@@ -708,9 +765,9 @@ is the name of the output path from the mode directory (defined in the mode conf
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
 
-*  **%completion-options** (actually specified as %config<completion-options>)
+*  **%plugin-options**
 
-is the set of options that the completion plugin will require from the Mode-level configuration. For example, the very simple `cro-run` plugin requires the path to the static html files, the hostname, and the port on which the files are served.
+As for Setup
 
 *  **%options**
 
@@ -984,6 +1041,8 @@ By creating a name-space in the plugin data section and assigning it the value o
 
 If a plugin provides an asset (eg., image, jquery script), it needs to provide a `render` callable that returns the triple so that Collect moves the asset from the plugin directory to the output directory where it can be served. This needs to be done separately if a CSS contains a url for local image.
 
+The basename for the assets is set in the Top level configuration in the option `asset-basename`
+
 `$image-manager` is of type Asset-cache, which has the following methods:
 
 ```
@@ -1029,4 +1088,4 @@ If a plugin provides an asset (eg., image, jquery script), it needs to provide a
 
 
 ----
-Rendered from README at 2022-10-30T09:39:34Z
+Rendered from README at 2022-11-13T22:42:45Z

@@ -68,10 +68,12 @@ mktree(MODE ~ "/plugins/$_") for @pls;
         :destination<html>,
         :landing-place<index>,
         :output-ext<html>,
-        completion-options => %(
-            :port<30000>,
-            :host<localhost>,
-        )
+        plugin-options => %(
+            completer => %(
+                :port<30000>,
+                :host<localhost>,
+            ),
+        ),
     );
     CONF
 
@@ -117,7 +119,7 @@ This is a N<Footnote> for prosperity.
 my $p = 0;
 for <setup1 setup_rend> {
     (MODE ~ "/plugins/$_/proc.raku").IO.spurt(qq:to/CONF/);
-        sub ( \$cache, \$coll, \$full, \$s-root, \$m-root, \%options ) \{
+        sub ( \$cache, \$coll, \$full, \$s-root, \$m-root, \%plugin-options, \%options ) \{
                 \$cache.add( \"\$s-root/extra_{ $p }_{ $_ }\", [{ $=pod[$p++].raku }] );
         \}
         CONF
@@ -130,7 +132,7 @@ is $rv[1][0]<Mode>[0]<message>, 'No plugins defined', 'Mode plugin message corre
 $rv = collect(MODE, :no-status, :before<setup>, :no-preserve-state, :recompile);
 #recompile to ensure that the cache is emptied
 is $rv.elems, 2, 'collect should return 2 elems';
-is $rv[0].elems, 5, 'collect should return 5 elems at setup';
+is $rv[0].elems, 6, 'collect should return the 6 called parameters at setup';
 isa-ok $rv[0][0], Pod::From::Cache, 'first of list';
 isa-ok $rv[0][1], Pod::From::Cache, 'second of list';
 

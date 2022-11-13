@@ -6,7 +6,7 @@ use Test::Run :runs_ok;
 use Test::Deeply::Relaxed;
 use File::Directory::Tree;
 
-plan 10;
+plan 11;
 
 my $dir = 'xt/trial-test';
 my $mode = "$dir/Website";
@@ -35,12 +35,7 @@ runs_ok(
     :exitcode(0),
     'No refresh so errors not caught'
 );
-
-#make a bad plugins.rakuon
-"$dir/plugins.rakuon".IO.spurt(q:to/CONF/);
-    <one two three] #invalid config
-    CONF
-#write a good config.raku
+#rewrite config.raku without no-refresh
 "$dir/config.raku".IO.spurt(q:to/CONF/);
     %(
         :cache<doc-cache>, # location relative to collection root of cached Pod
@@ -51,6 +46,17 @@ runs_ok(
         :mode<Website>, # the default mode, which must exist
         :extensions< rakudoc pod pod6 p6 pm pm6 >,
     )
+    CONF
+@args.push: '-no-refresh';
+runs_ok(
+    :@args,
+    :exitcode(0),
+    'No refresh in command line, so errors not caught'
+);
+@args.pop; # remove the no-refresh
+#make a bad plugins.rakuon
+"$dir/plugins.rakuon".IO.spurt(q:to/CONF/);
+    <one two three] #invalid config
     CONF
 runs_ok(
     :@args,
