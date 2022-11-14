@@ -38,7 +38,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/rend2/image-manager.raku' ).IO.spurt(q:to/CONF/);
-    sub ( $pp, %plugin-options, %options -->Array ) {
+    sub ( $pp, %options -->Array ) {
         my $config = $pp.get-data('image-manager');
         $pp.add-data('image', $config);
         $pp.add-data('video-clip', $config);
@@ -74,7 +74,7 @@ mktree "{PLUGS}/asset-mover/extra/";
     )
     CONF
 (PLUGS ~ '/asset-mover/image-mover.raku' ).IO.spurt(q:to/CONF/);
-        sub ($processedpod, %plugin-options, %options ) {
+        sub ($processedpod, %options ) {
         [ ('assets/images/css-fake-image.png', 'myself', 'extra/css-fake-image.png'), ]
     }
     CONF
@@ -114,7 +114,7 @@ mktree "{PLUGS}/asset-mover/extra/";
     )
     CONF
 (PLUGS ~ '/image-mover/move-images.raku').IO.spurt(q:to/CONF/);
-    sub ($pr, %processed, %plugin-options, %options --> Array) {
+    sub ($pr, %processed, %options --> Array) {
         # find correctly named files in the directory
         my @files = dir(test => / ^ 'image-mover' .+ $ /)>>.Str;
         @files.map( { [ "assets/images/$_", 'myself', $_ ]  } ).Array;

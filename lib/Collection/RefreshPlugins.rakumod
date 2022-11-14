@@ -43,7 +43,7 @@ multi sub refresh(Str:D :$collections!, Bool :$test = False, |c ) is export {
         }
     }
 }
-multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False, :$no-refresh = False) is export {
+multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False, :$no-refresh = False, *% ) is export {
     state Bool $git-pull = True;
     my %config = get-config(:path("$collection/config.raku"));
     return if $no-refresh or (%config<no-refresh>:exists and %config<no-refresh>); # observe no-refresh configuration

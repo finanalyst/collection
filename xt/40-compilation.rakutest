@@ -22,18 +22,6 @@ chdir TMP;
 bail-out "{ TEMPLATES } must exit. Have the render tests been run?"
     unless TEMPLATES.IO.d;
 
-#rewrite the config for compiler plugin
-(PLUGS ~ '/compiler/config.raku').IO.spurt(q:to/CONF/);
-    %(
-        :compilation<frontmatter.raku>
-    )
-    CONF
-
-#fake compilation
-(PLUGS ~ '/compiler/frontmatter.raku').IO.spurt(q:to/CONF/);
-    sub ($pr, %processed, %plugin-options, %options) { } # do nothing, this is a placeholder
-    CONF
-
 # test single file run
 # output directory at this point should be empty, so make sure
 empty-directory HTML;
@@ -50,13 +38,8 @@ output-like {
     'outputs info about file-c';
 
 #rewrite the config for compiler plugin
-(PLUGS ~ '/compiler/config.raku').IO.spurt( q:to/CONF/);
-    %(
-        :compilation<frontmatter.raku>
-    )
-    CONF
 (PLUGS ~ '/compiler/frontmatter.raku').IO.spurt( q:to/CODE/);
-    sub ($pr, %processed, %plugin-options, %options) {
+    sub ($pr, %processed, %options) {
         for <toc footnotes glossary meta> -> $component {
             #%data contains keys for each source and sub-keys for each page component
             # what is required is to make the structure pointed to by raw-component available

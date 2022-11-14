@@ -353,7 +353,7 @@ multi sub collect(Str:D $mode,
                     $ret-after = ?($after ~~ /:i Setup /);
                     $ret-before = ?($before ~~ /:i Render /);
                     $rv = milestone('Render',
-                            :with($pr, %config<plugin-options>),
+                            :with($pr),
                             :@dump-at,
                             :%config,
                             :$mode,
@@ -374,7 +374,7 @@ multi sub collect(Str:D $mode,
                     $ret-after = ?($after ~~ /:i Render /);
                     $ret-before = ?($before ~~ /:i Compilation /);
                     $rv = milestone('Compilation',
-                        :with($pr, %processed, %config<plugin-options>),
+                        :with($pr, %processed),
                         :@dump-at,
                         :%config,
                         :$mode,
@@ -454,7 +454,7 @@ multi sub collect(Str:D $mode,
             }
             $ret-after = ?($after ~~ /:i Compilation /);
             $ret-before = ?($before ~~ /:i Transfer /);
-            $rv = milestone('Transfer', :with($pr, %processed, %config<plugin-options>), :@dump-at,
+            $rv = milestone('Transfer', :with($pr, %processed), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after )
             );
             return $rv if ($ret-after or $ret-before);
@@ -467,7 +467,7 @@ multi sub collect(Str:D $mode,
                 unless $no-preserve-state;
             $ret-after = ?($after ~~ /:i Transfer /);
             $ret-before = ?($before ~~ /:i Report /);
-            $rv = milestone('Report', :with(%processed, @plugins-used, $pr, %config<plugin-options>), :@dump-at,
+            $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
                 :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after and !$without-report));
             return $rv if ($ret-after or $ret-before);
             # ==== Transfer / Report Milestone ===================================
@@ -535,7 +535,7 @@ sub save-processed-state($mode, %processed, %symbols, :$no-status) {
     say "Saving state took { now - $timer } secs" unless $no-status;
 }
 sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
-    return [] unless %config<plugins-required>{$mile}:exists;
+    return [] without %config<plugins-required>{$mile};
     my @valid-confs;
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
@@ -600,7 +600,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
             # so a plugin should not write directly
             my @asset-files;
             try {
-                @asset-files = indir($path, { &closure.(|$with, %options) });
+                @asset-files = indir($path, { &closure.($with, %options) });
             }
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
@@ -619,7 +619,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
                     $from = "$path/$file";
                 }
                 else {
-                    my $config = $with[0].get-data($other-plug);
+                    my $config = $with.get-data($other-plug);
                     # returns Nil if no data
                     unless $config {
                         note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
@@ -638,7 +638,11 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
                 $from.IO.copy($to-path);
             }
         }
-        $with[0].add-plugin($plug,
+        # check to see if the plugin has Mode level options
+        if $plug (elem) %config<plugin-options>.keys {
+            %plugin-conf ,= %config<plugin-options>{ $plug }.Hash
+        }
+        $with.add-plugin($plug,
                 :$path,
                 :template-raku(%plugin-conf<template-raku>:delete),
                 :custom-raku(%plugin-conf<custom-raku>:delete),

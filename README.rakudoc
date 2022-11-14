@@ -538,16 +538,24 @@ configuration contains the snippet:
 in a file under the Mode's C<configs/> directory. These values will over-ride
 the plugin's default config values.
 
-It is the responsibility of the plugin to detect the configuration key. This means
+The plugin should therefore take configuration data from the ProcessedPod instance
+and not from the config file it is distributed with. This means
 that if a new plugin is intended to be used in place of an pre-existing one
-(see L<Refresh process>), then the developer needs to check the configuration key
-with the replaced name.
+(see L<Refresh process>), then the developer needs to check the configuration information
+from the namespace of the replaced name.
+
+The Setup and Completion plugins are passed C<plugin-options> directly because the ProcessedPod
+instance is out of scope.
 
 C<plugin-options> is a mandatory option in the Mode configuration. It may be set to Empty, viz.,
 
     plugin-options()
 
 in which case, all plugins will use their default options.
+
+The ProcessPod instance is only modified by C<Render> plugins,
+so if there is plugin configuration data that is needed by another Milestone callable, the plugin should call
+a blank callable, with empty block and templates.
 
 =head1 Control flags
 
@@ -741,19 +749,20 @@ Has the values of 'collection-info' and 'no-status' flags.
 =head3 Render
 
 The Collection plugin-manager calls the C<ProcessedPod.add-plugin> method with the config keys and
-the path modified to the plugin's subdirectory.
+the path modified to the plugin's subdirectory. The ProcessPod instance is only modified by C<Render> plugins,
+so if there is plugin configuration data that is needed by another Milestone callable, the plugin should call
+a blank callable, with empty block and templates.
 
 If the C<render> key is True, no callable is provided, and the plugin name will be added via the B<.add-plugin>
 method of the C<ProcessedPod> object. See C<ProcessedPod> documentation.
 
 If the C<render> key is a Str, then it is the filename of a Raku callable of the form
 
-    sub ( $pr, %plugin-options, %options --> Array ) {...}
+    sub ( $pr, %options --> Array ) {...}
 
 where
 
 =item B<$pr> is a <ProcessedPod> object,
-=item B<%plugin-options> is the same as for Setup,
 =item B<%options> is the same as for Setup, and
 =item the callable B<returns> a list of triples, with the form (to, from-plug, file)
 =item2 B<to> is the destination under the C<%config<destination> > directory where the asset will be
@@ -789,7 +798,7 @@ are rendered.
 
 The C<compilation> key must point to a Raku program that delivers a sub object
 
-    sub ( $pr, %processed, %plugin-options, %options) { ... }
+    sub ( $pr, %processed, %options) { ... }
 
 =defn $pr
 is the ProcessedPod object rendering the content files.
@@ -798,9 +807,6 @@ is the ProcessedPod object rendering the content files.
 is a hash whose keys are source file names with a hash values containing
 TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
 
-=defn %plugin-options
-as for setup
-
 =defn %options
 as for setup
 
@@ -808,7 +814,7 @@ as for setup
 
 The C<transfer> key points to a Raku file that evaluates to a
 
-    sub ($pr, %processed, %plugin-options, %options --> Array ) {...}
+    sub ($pr, %processed, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -826,7 +832,7 @@ as for the render plugin
 
 The C<report> key points to a Raku file that evaluates to a
 
-    sub (%processed, @plugins-used, $pr, %plugin-options, %options --> Array ) {...}
+    sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
 
 =defn %processed
 as in Compilation
@@ -837,9 +843,6 @@ value is a hash of the plugins used and their config parameters.
 
 =defn $pr
 as in Compilation
-
-=defn %plugin-options
-as for setup
 
 =defn %options
 as for Setup
@@ -867,6 +870,12 @@ B<$landing-place>
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the
 destination directory.
+
+=end item
+=begin item
+B<$output-ext>
+
+is the output extension.
 
 =end item
 =begin item

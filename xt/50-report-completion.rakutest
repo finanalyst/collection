@@ -30,7 +30,7 @@ chdir TMP;
     )
     CONF
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %plugin-options, %options --> Array ) {
+    sub (%processed, @plugins-used, $pp, %options --> Array ) {
         ## format is %.links{$entry}<target location>
         my @report = 'Link report', ;
         for %processed.kv -> $fn, $podf {
@@ -103,7 +103,7 @@ collect(MODE, :no-status,
 
 # now try a reporter with a Nil return
 (PLUGS ~ '/reporter/link-test.raku').IO.spurt( q:to/CODE/);
-    sub (%processed, @plugins-used, $pp, %plugin-options, %options, --> Array ) {
+    sub (%processed, @plugins-used, $pp, %options, --> Array ) {
         #only side effects
         []
         }

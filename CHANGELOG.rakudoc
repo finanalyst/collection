@@ -214,4 +214,16 @@ within a collection not to be Modes, use-case, _local_raku_docs as a git repo.
 =item allow for :no-refresh to be passed from CLI to sub refresh
 =item make :no-refresh & without-processing & recompile to be mandatory Level-one options
 
+=head1 2022-11-14 v0.11.1
+=item change implementation of passing options to plugins.
+=item2 instead of passing a Hash to plugin callables, the data from the plugin's config is already
+stored in the data section, and so is available from the instance of ProcessedPod that is passed
+to each plugin (except for Completion plugins).
+
+=item2 when a plugin is added to the ProcessedPod instance, the Mode config data is checked and
+overides the plugin config keys, when needed.
+
+=item change README & tests
+=item add test to see whether a Mode configured plugin option is picked up
+
 =end pod

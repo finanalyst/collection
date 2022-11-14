@@ -14,7 +14,7 @@ constant TEMPLATES = "{ MODE }/templates";
 constant ASSETS = 'assets';
 constant HTML = "{ MODE }/html";
 
-plan 10;
+plan 11;
 my $rv;
 
 bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
@@ -51,6 +51,8 @@ mktree "{ ASSETS }/images";
         :template-raku<rend2_templates.raku>,
         :custom-raku<blocks.raku>,
         :css<mystyling.css>,
+        :2option,
+        :compilation<rend2_compilation.raku>,
         )
         CONF
 
@@ -96,11 +98,21 @@ mktree "{ ASSETS }/images";
 (PLUGS ~ '/rend2/mystyling.css').IO.spurt(q:to/CONF/);
         .design { font-size: large; }
         CONF
+(PLUGS ~ '/rend2/rend2_compilation.raku').IO.spurt(q:to/CONF/);
+        sub ( $pp, %processed, %options ) {
+            use Test;
+            is $pp.get-data('rend2')<option>, 5, 'option value from Mode config'
+        }
+        CONF
+#fake compilation
+(PLUGS ~ '/compiler/frontmatter.raku').IO.spurt(q:to/CONF/);
+    sub ($pr, %processed, %options) { } # do nothing, this is a placeholder
+    CONF
 
 #create a plugin that looks for css files, creates a local css file, passes it back
 # where it is written to output
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %plugin-options, %options ) {
+        sub ( $pp, %options ) {
                 my $css = '';
                 for $pp.plugin-datakeys {
                         my $data = $pp.get-data($_);
@@ -114,7 +126,7 @@ mktree "{ ASSETS }/images";
         CONF
 
 (PLUGS ~ '/gather-css/cleanup.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %processed, %plugin-options, %options ) {
+        sub ( $pp, %processed, %options ) {
             'local.css'.IO.unlink;
             [] # empty array of triples
         }
@@ -138,7 +150,7 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is registered
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %plugin-options, %options ) {
+        sub ( $pp, %options ) {
                 ( <assets/css/mystyling.css rend2 mystyling.css >, )
         }
         CONF
@@ -148,7 +160,7 @@ ok (HTML ~ '/assets/css/mystyling.css').IO.f, 'file exists';
 
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is not registered
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %plugin-options, %options ) {
+        sub ( $pp, %options ) {
                 ( <assets/css/mystyling.css unused mystyling.css >, )
         }
         CONF
@@ -164,10 +176,9 @@ stderr-like { $rv = collect(MODE, :no-status, :no-preserve-state, :before<render
        /, 'transferring from unregistered plugin is ignored with warning';
 
 nok (HTML ~ '/assets/css/nostyling.css').IO.f, 'file was not transferred';
-
 # reset gather-css as it is used later
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %plugin-options, %options ) {
+        sub ( $pp, %options ) {
                 my $css = '';
                 for $pp.plugin-datakeys {
                         my $data = $pp.get-data($_);
@@ -177,6 +188,12 @@ nok (HTML ~ '/assets/css/nostyling.css').IO.f, 'file was not transferred';
                 }
                 'local.css'.IO.spurt($css);
                 ( <assets/css/local.css myself local.css >, )
+        }
+        CONF
+# The call to collect after compilation should trigger a test inside a compilation sub
+$rv = collect(MODE, :no-status, :no-preserve-state, :after<compilation>, :full-render);
+(PLUGS ~ '/rend2/rend2_compilation.raku').IO.spurt(q:to/CONF/);
+        sub ( $pp, %processed, %options ) { # dummy sub for remaining tests
         }
         CONF
 

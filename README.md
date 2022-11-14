@@ -511,7 +511,9 @@ plugin-options => %(
 ```
 in a file under the Mode's `configs/` directory. These values will over-ride the plugin's default config values.
 
-It is the responsibility of the plugin to detect the configuration key. This means that if a new plugin is intended to be used in place of an pre-existing one (see [Refresh process](Refresh process.md)), then the developer needs to check the configuration key with the replaced name.
+The plugin should therefore take configuration data from the ProcessedPod instance and not from the config file it is distributed with. This means that if a new plugin is intended to be used in place of an pre-existing one (see [Refresh process](Refresh process.md)), then the developer needs to check the configuration information from the namespace of the replaced name.
+
+The Setup and Completion plugins are passed `plugin-options` directly because the ProcessedPod instance is out of scope.
 
 `plugin-options` is a mandatory option in the Mode configuration. It may be set to Empty, viz.,
 
@@ -519,6 +521,8 @@ It is the responsibility of the plugin to detect the configuration key. This mea
 plugin-options()
 ```
 in which case, all plugins will use their default options.
+
+The ProcessPod instance is only modified by `Render` plugins, so if there is plugin configuration data that is needed by another Milestone callable, the plugin should call a blank callable, with empty block and templates.
 
 # Control flags
 The control flags are also covered in [Milestones](Milestones.md). Control flags by default are False.
@@ -649,20 +653,18 @@ Has the values of plugin options that over-ride a plugin's own defaults. See [Pl
 Has the values of 'collection-info' and 'no-status' flags.
 
 ### Render
-The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory.
+The Collection plugin-manager calls the `ProcessedPod.add-plugin` method with the config keys and the path modified to the plugin's subdirectory. The ProcessPod instance is only modified by `Render` plugins, so if there is plugin configuration data that is needed by another Milestone callable, the plugin should call a blank callable, with empty block and templates.
 
 If the `render` key is True, no callable is provided, and the plugin name will be added via the **.add-plugin** method of the `ProcessedPod` object. See `ProcessedPod` documentation.
 
 If the `render` key is a Str, then it is the filename of a Raku callable of the form
 
 ```
-sub ( $pr, %plugin-options, %options --> Array ) {...}
+sub ( $pr, %options --> Array ) {...}
 ```
 where
 
 *  **$pr** is a <ProcessedPod> object,
-
-*  **%plugin-options** is the same as for Setup,
 
 *  **%options** is the same as for Setup, and
 
@@ -694,16 +696,13 @@ Note that the structure files are rendered after the `compilation` stage, BUT th
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
-sub ( $pr, %processed, %plugin-options, %options) { ... }
+sub ( $pr, %processed, %options) { ... }
 ```
 > **$pr**  
 is the ProcessedPod object rendering the content files.
 
 > **%processed**  
 is a hash whose keys are source file names with a hash values containing TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by B<ProcessedPod>.
-
-> **%plugin-options**  
-as for setup
 
 > **%options**  
 as for setup
@@ -712,7 +711,7 @@ as for setup
 The `transfer` key points to a Raku file that evaluates to a
 
 ```
-sub ($pr, %processed, %plugin-options, %options --> Array ) {...}
+sub ($pr, %processed, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -730,7 +729,7 @@ as for the render plugin
 The `report` key points to a Raku file that evaluates to a
 
 ```
-sub (%processed, @plugins-used, $pr, %plugin-options, %options --> Array ) {...}
+sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
 ```
 > **%processed**  
 as in Compilation
@@ -740,9 +739,6 @@ is an array of Pairs whose key is the milestone and value is a hash of the plugi
 
 > **$pr**  
 as in Compilation
-
-> **%plugin-options**  
-as for setup
 
 > **%options**  
 as for Setup
@@ -764,6 +760,10 @@ is the name of the output path from the mode directory (defined in the mode conf
 *  **$landing-place**
 
 is the first file to be processed since, eg., for a website, order is not sufficient. name is relative to the destination directory.
+
+*  **$output-ext**
+
+is the output extension.
 
 *  **%plugin-options**
 
@@ -1088,4 +1088,4 @@ The basename for the assets is set in the Top level configuration in the option 
 
 
 ----
-Rendered from README at 2022-11-13T22:42:45Z
+Rendered from README at 2022-11-14T22:36:39Z

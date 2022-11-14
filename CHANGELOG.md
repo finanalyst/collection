@@ -41,6 +41,7 @@
 [2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
 [2022-13-06 v0.10.1](#2022-13-06-v0101)  
 [2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
+[2022-11-14 v0.11.1](#2022-11-14-v0111)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -324,8 +325,6 @@
 *  make RefreshPlugin observe :no-refresh config option
 
 # 2022-13-06 v 0.11.0
-
-
 *  allow for plugin-specific config data to be contained in Mode configs, by generalising completion-options
 
 *  change all plugin requirements to need %plugin-options
@@ -342,9 +341,22 @@
 
 *  make :no-refresh & without-processing & recompile to be mandatory Level-one options
 
+# 2022-11-14 v0.11.1
+
+
+*  change implementation of passing options to plugins.
+
+	*  instead of passing a Hash to plugin callables, the data from the plugin's config is already stored in the data section, and so is available from the instance of ProcessedPod that is passed to each plugin (except for Completion plugins).
+
+	*  when a plugin is added to the ProcessedPod instance, the Mode config data is checked and overides the plugin config keys, when needed.
+
+*  change README & tests
+
+*  add test to see whether a Mode configured plugin option is picked up
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-11-13T22:43:04Z
+Rendered from CHANGELOG at 2022-11-14T22:36:58Z

@@ -54,7 +54,7 @@ mktree(MODE ~ "/plugins/$_") for @pls;
         plugins-required => %(
             :setup(<setup1 setup_rend>),
             :render(<setup_rend rend2 reporter gather-css asset-mover image-mover>),
-            :compilation(<compiler>,),
+            :compilation(<compiler rend2>),
             :transfer(<image-mover gather-css>),
             :report(<reporter>,),
             :completion(<completer>,),
@@ -62,7 +62,7 @@ mktree(MODE ~ "/plugins/$_") for @pls;
     );
     CONF
 
-(MODE ~ '/configs/03-completion-options.raku').IO.spurt(qq:to/CONF/);
+(MODE ~ '/configs/03-plugin-options.raku').IO.spurt(qq:to/CONF/);
     %(
         :!without-completion,
         :destination<html>,
@@ -73,6 +73,7 @@ mktree(MODE ~ "/plugins/$_") for @pls;
                 :port<30000>,
                 :host<localhost>,
             ),
+            rend2 => %( :5option, ),
         ),
     );
     CONF
@@ -84,7 +85,7 @@ for @pls {
                 when 'setup1' { "setup => \'proc.raku\' " }
                 when 'setup_rend' { "render => True, setup => \'proc.raku\' " }
                 when 'reporter' { "report => True" }
-                when 'compiler' { "compilation => True" }
+                when 'compiler' { ':compilation<frontmatter.raku>' }
                 when 'completer' { "completion => True " }
                 when 'gather-css' { "render => False" }
                 when 'asset-mover' { "render => False" }
