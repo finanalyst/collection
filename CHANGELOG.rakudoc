@@ -226,4 +226,8 @@ overides the plugin config keys, when needed.
 =item change README & tests
 =item add test to see whether a Mode configured plugin option is picked up
 
+=head1 2022-11-15 v0.11.2
+=item move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
+=item add test to ensure Mode config transferred to a render plugin
+
 =end pod

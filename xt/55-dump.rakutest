@@ -19,11 +19,10 @@ bail-out "{TMP} and {TMP}/{ REPORT } must exist. Have report-completion tests be
 unless TMP.IO.d and "{TMP}/{ REPORT }".IO.d;
 
 chdir TMP;
-(PLUGS ~ '/completer/config.raku').IO.spurt( q:to/CONF/);
-    %(
-
-    )
-    CONF
+(PLUGS ~ '/completer/run-app.raku').IO.spurt( q:to/CODE/);
+    sub ($destination, $landing, $ext, %plugin-options, %options) {
+    }
+    CODE
 lives-ok {
     collect(:no-status, :full-render, :no-preserve-state, :dump-at(<source setup render compilation transfer report completion>)) ;
 }, 'collect continues, but dumps';

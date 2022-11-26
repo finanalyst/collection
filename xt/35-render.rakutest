@@ -14,7 +14,7 @@ constant TEMPLATES = "{ MODE }/templates";
 constant ASSETS = 'assets';
 constant HTML = "{ MODE }/html";
 
-plan 11;
+plan 12;
 my $rv;
 
 bail-out "{ TMP } and { TMP }/{ MODE } must exist. Have source tests been run?"
@@ -35,6 +35,18 @@ mktree ASSETS;
 mktree "{ ASSETS }/videos";
 mktree "{ ASSETS }/images";
 
+(MODE ~ '/configs/02-plugin.raku').IO.spurt(qq:to/CONF/);
+    %(
+        plugins-required => %(
+            :setup(<setup1 setup_rend>),
+            :render(<setup_rend rend2 gather-css asset-mover image-mover>),
+            :compilation(<compiler rend2>),
+            :transfer(<image-mover gather-css>),
+            :report(<reporter>,),
+            :completion(<completer>,),
+        ),
+    );
+    CONF
 # rewrite the config and plugin test files for render plugins
 (PLUGS ~ '/setup_rend/config.raku').IO.spurt(q:to/CONF/);
         %(
@@ -47,7 +59,7 @@ mktree "{ ASSETS }/images";
 
 (PLUGS ~ '/rend2/config.raku').IO.spurt(q:to/CONF/);
         %(     
-        :render,
+        :render<rend2_render.raku>,
         :template-raku<rend2_templates.raku>,
         :custom-raku<blocks.raku>,
         :css<mystyling.css>,
@@ -101,7 +113,14 @@ mktree "{ ASSETS }/images";
 (PLUGS ~ '/rend2/rend2_compilation.raku').IO.spurt(q:to/CONF/);
         sub ( $pp, %processed, %options ) {
             use Test;
-            is $pp.get-data('rend2')<option>, 5, 'option value from Mode config'
+            is $pp.get-data('rend2')<option>, 5, 'option value from Mode config in compilation'
+        }
+        CONF
+(PLUGS ~ '/rend2/rend2_render.raku').IO.spurt(q:to/CONF/);
+        sub ( $pp, %options ) {
+            use Test;
+            is $pp.get-data('rend2')<option>, 5, 'option value from Mode config in render';
+            [] # empty array of triples
         }
         CONF
 #fake compilation
@@ -135,6 +154,7 @@ $rv = collect(MODE, :no-status, :after<setup>, :no-preserve-state, :recompile);
 is $rv[1][2]<Render>[0]<message>, 'Plugin calls cancelled', 'no plugins when stopped by an after';
 
 $rv = collect(MODE, :no-status, :no-preserve-state, :before<render>, :recompile, :full-render);
+# The call to collect after render should trigger a test inside the rend2 render sub
 isa-ok $rv[0][0], ProcessedPod, 'got the correct object';
 is-deeply-relaxed $rv[0][0].custom.Set,
         <figure diagram sorted-table design>.Set,
@@ -148,6 +168,11 @@ like (HTML ~ '/assets/css/local.css').IO.slurp,
         '.design { font-size: large;'
         /, 'css from other plugin has be copied';
 
+(PLUGS ~ '/rend2/rend2_render.raku').IO.spurt(q:to/CONF/);
+        sub ( $pp, %options ) {# dummy sub for remaining tests
+            [] # empty array of triples
+        }
+        CONF
 #create a plugin that signals a copy of a file from another plugin to the asset - plugin is registered
 (PLUGS ~ '/gather-css/css-collect.raku').IO.spurt(q:to/CONF/);
         sub ( $pp, %options ) {
@@ -192,9 +217,16 @@ nok (HTML ~ '/assets/css/nostyling.css').IO.f, 'file was not transferred';
         CONF
 # The call to collect after compilation should trigger a test inside a compilation sub
 $rv = collect(MODE, :no-status, :no-preserve-state, :after<compilation>, :full-render);
-(PLUGS ~ '/rend2/rend2_compilation.raku').IO.spurt(q:to/CONF/);
-        sub ( $pp, %processed, %options ) { # dummy sub for remaining tests
-        }
-        CONF
-
+(MODE ~ '/configs/02-plugin.raku').IO.spurt(qq:to/CONF/);
+    %(
+        plugins-required => %(
+            :setup(<setup1 setup_rend>),
+            :render(<setup_rend rend2 gather-css asset-mover image-mover>),
+            :compilation(<compiler>,),
+            :transfer(<image-mover gather-css>),
+            :report(<reporter>,),
+            :completion(<completer>,),
+        ),
+    );
+    CONF
 done-testing;

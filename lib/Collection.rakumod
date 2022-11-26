@@ -539,16 +539,26 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     my @valid-confs;
     # order of plug-ins is important
     for %config<plugins-required>{$mile}.list -> $plug {
-        say "Plugin ｢$plug｣ is listed for milestone ｢$mile｣ " if $collection-info;
+        my $resp  = "Plugin ｢$plug｣ is listed for milestone ｢$mile｣";
         unless "$mode/plugins/$plug".IO.d {
-            note "Plugin ｢$plug｣ does not exist but is listed for milestone ｢$mile｣. Ignored.";
+            note "$resp, but does not exist. Ignored.";
             next
         }
         my $path = "$mode/plugins/$plug/config.raku";
-        next unless $path.IO ~~ :e & :f;
+        unless $path.IO ~~ :e & :f {
+            note "$resp, but does not have a config file. Ignored.";
+            next
+        }
         my %plugin-conf = get-config(:$path);
-        next unless %plugin-conf{$mile}:exists and %plugin-conf{$mile}.defined;
-        say "Plugin ｢$plug｣ is valid with keys ｢{ %plugin-conf.keys.join(',') }｣" if $collection-info;
+        without %plugin-conf{$mile} {
+            note "$resp, but has no config key for milestone. Ignored.";
+            next
+        }
+        say "$resp and has keys ｢{ %plugin-conf.keys.join(',') }｣" if $collection-info;
+        # check to see if the plugin has Mode level options
+        if $plug (elem) %config<plugin-options>.keys {
+            %plugin-conf ,= %config<plugin-options>{ $plug }.Hash
+        }
         @valid-confs.push: $plug => %plugin-conf;
     }
     @valid-confs
@@ -586,6 +596,8 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
     my %options = %( :$collection-info, :$no-status);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/plugins/$plug".IO.absolute;
+        # ensure plugin callables get config data possibly modified by Mode config
+        $with.add-data($plug, %plugin-conf);
         # Since the configuration matches what the add-plugin method expects as named parameters
         if %plugin-conf<render> ~~ Str {
             # as opposed to being a Boolean value, then its a program
@@ -638,16 +650,13 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
                 $from.IO.copy($to-path);
             }
         }
-        # check to see if the plugin has Mode level options
-        if $plug (elem) %config<plugin-options>.keys {
-            %plugin-conf ,= %config<plugin-options>{ $plug }.Hash
-        }
         $with.add-plugin($plug,
-                :$path,
-                :template-raku(%plugin-conf<template-raku>:delete),
-                :custom-raku(%plugin-conf<custom-raku>:delete),
-                :config(%plugin-conf)
-                );
+            :$path,
+            :template-raku(%plugin-conf<template-raku>:delete),
+            :custom-raku(%plugin-conf<custom-raku>:delete),
+            :config(%plugin-conf),
+            :!protect-name
+        );
     }
     @valids
 }

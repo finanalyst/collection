@@ -42,6 +42,7 @@
 [2022-13-06 v0.10.1](#2022-13-06-v0101)  
 [2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
 [2022-11-14 v0.11.1](#2022-11-14-v0111)  
+[2022-11-15 v0.11.2](#2022-11-15-v0112)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -342,8 +343,6 @@
 *  make :no-refresh & without-processing & recompile to be mandatory Level-one options
 
 # 2022-11-14 v0.11.1
-
-
 *  change implementation of passing options to plugins.
 
 	*  instead of passing a Hash to plugin callables, the data from the plugin's config is already stored in the data section, and so is available from the instance of ProcessedPod that is passed to each plugin (except for Completion plugins).
@@ -354,9 +353,16 @@
 
 *  add test to see whether a Mode configured plugin option is picked up
 
+# 2022-11-15 v0.11.2
+
+
+*  move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
+
+*  add test to ensure Mode config transferred to a render plugin
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-11-14T22:36:58Z
+Rendered from CHANGELOG at 2022-11-15T15:30:02Z

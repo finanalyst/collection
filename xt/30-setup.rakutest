@@ -53,8 +53,8 @@ mktree(MODE ~ "/plugins/$_") for @pls;
     %(
         plugins-required => %(
             :setup(<setup1 setup_rend>),
-            :render(<setup_rend rend2 reporter gather-css asset-mover image-mover>),
-            :compilation(<compiler rend2>),
+            :render(<setup_rend rend2 gather-css asset-mover image-mover>),
+            :compilation(<compiler>,),
             :transfer(<image-mover gather-css>),
             :report(<reporter>,),
             :completion(<completer>,),
@@ -82,15 +82,15 @@ for @pls {
     (MODE ~ "/plugins/$_/config.raku").IO.spurt(qq:to/CONF/);
         %(
             { given $_ {
-                when 'setup1' { "setup => \'proc.raku\' " }
-                when 'setup_rend' { "render => True, setup => \'proc.raku\' " }
-                when 'reporter' { "report => True" }
+                when 'setup1' { ':setup<proc.raku>' }
+                when 'setup_rend' { ':render, :setup<proc.raku>' }
+                when 'reporter' { ":report" }
                 when 'compiler' { ':compilation<frontmatter.raku>' }
-                when 'completer' { "completion => True " }
-                when 'gather-css' { "render => False" }
-                when 'asset-mover' { "render => False" }
-                when 'image-mover' { "render => False" }
-                default { "report => True, css => 'some-styling.css', " }
+                when 'completer' { ':completion' }
+                when 'gather-css' { ':render' }
+                when 'asset-mover' { ':render' }
+                when 'image-mover' { ':render' }
+                default { ':report, :css<some-styling.css>, ' }
             } },
         );
         CONF
