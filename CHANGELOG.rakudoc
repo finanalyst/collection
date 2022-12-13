@@ -230,4 +230,8 @@ overides the plugin config keys, when needed.
 =item move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
 =item add test to ensure Mode config transferred to a render plugin
 
+=head1 2022-12-13 v0.12.0
+=item fix templates in tests to match Raku::Pod::Render v 4.2
+=item allow for asset transfers from compilation callables if the return value is an array of triples.
+
 =end pod

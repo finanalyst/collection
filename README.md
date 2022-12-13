@@ -696,7 +696,7 @@ Note that the structure files are rendered after the `compilation` stage, BUT th
 The `compilation` key must point to a Raku program that delivers a sub object
 
 ```
-sub ( $pr, %processed, %options) { ... }
+sub ( $pr, %processed, %options ) { ... }
 ```
 > **$pr**  
 is the ProcessedPod object rendering the content files.
@@ -706,6 +706,8 @@ is a hash whose keys are source file names with a hash values containing TOC, Gl
 
 > **%options**  
 as for setup
+
+If the return value of the callable is an Array of triplets (as for a Render callable), then assets are transferred from the plugin directory. Any other type of return value is ignored.
 
 ### Transfer
 The `transfer` key points to a Raku file that evaluates to a
@@ -723,7 +725,7 @@ as in Compilation
 as for Setup
 
 > **return object**  
-as for the render plugin
+as for the compilation plugin
 
 ## Report
 The `report` key points to a Raku file that evaluates to a
@@ -1088,4 +1090,4 @@ The basename for the assets is set in the Top level configuration in the option 
 
 
 ----
-Rendered from README at 2022-11-14T22:36:39Z
+Rendered from README at 2022-12-13T15:36:27Z

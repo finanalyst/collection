@@ -43,6 +43,7 @@
 [2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
 [2022-11-14 v0.11.1](#2022-11-14-v0111)  
 [2022-11-15 v0.11.2](#2022-11-15-v0112)  
+[2022-12-13 v0.12.0](#2022-12-13-v0120)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -354,15 +355,20 @@
 *  add test to see whether a Mode configured plugin option is picked up
 
 # 2022-11-15 v0.11.2
-
-
 *  move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
 
 *  add test to ensure Mode config transferred to a render plugin
+
+# 2022-12-13 v0.12.0
+
+
+*  fix templates in tests to match Raku::Pod::Render v 4.2
+
+*  allow for asset transfers from compilation callables if the return value is an array of triples.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-11-15T15:30:02Z
+Rendered from CHANGELOG at 2022-12-13T15:36:09Z

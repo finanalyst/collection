@@ -798,7 +798,7 @@ are rendered.
 
 The C<compilation> key must point to a Raku program that delivers a sub object
 
-    sub ( $pr, %processed, %options) { ... }
+    sub ( $pr, %processed, %options ) { ... }
 
 =defn $pr
 is the ProcessedPod object rendering the content files.
@@ -809,6 +809,9 @@ TOC, Glossary, Links, Metadata, Footnotes, Templates-used structures produced by
 
 =defn %options
 as for setup
+
+If the return value of the callable is an Array of triplets (as for a Render callable), then
+assets are transferred from the plugin directory. Any other type of return value is ignored.
 
 =head3 Transfer
 
@@ -826,7 +829,7 @@ as in Compilation
 as for Setup
 
 =defn return object
-as for the render plugin
+as for the compilation plugin
 
 =head2 Report
 

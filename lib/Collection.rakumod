@@ -564,7 +564,7 @@ sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     @valid-confs
 }
 
-multi sub manage-plugins(Str:D $mile where *~~ any(< setup compilation completion >),
+multi sub manage-plugins(Str:D $mile where *~~ any(< setup completion >),
                          :$with,
                          :%config, :$mode,
                          :$collection-info,
@@ -617,38 +617,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
             if $! {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
             }
-            for @asset-files -> ($to, $other-plug, $file) {
-                # copy the files returned - the use case for this is css and script files to be
-                # served with html files. The sub-directory paths are needed local to the output files
-                # they will be named in the templates provided by the plugins
-                # the simplest case is when a plugin asks for a plugin from its own
-                # directory. But there is also the case of moving files from other
-                # directories. How to do this securely? We can allow transfers from a plugin directory
-                # so the plugin-data space will contain a path for each registered plugin.
-                # consequently, we have a three element copy
-                my $from;
-                if $other-plug eq MYSELF {
-                    $from = "$path/$file";
-                }
-                else {
-                    my $config = $with.get-data($other-plug);
-                    # returns Nil if no data
-                    unless $config {
-                        note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
-                                ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
-                        next
-                    }
-                    $from = $config<path> ~ '/' ~ $file
-                }
-                my $to-path = "$mode/%config<destination>/$to".IO;
-                mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
-                unless $from.IO ~~ :e & :f {
-                    note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
-                            ~ "｢$from｣ is not a valid file. Skipping.";
-                    next
-                }
-                $from.IO.copy($to-path);
-            }
+            move-files(@asset-files, $mode, $mile, $plug, $path, %config<destination>, $with)
         }
         $with.add-plugin($plug,
             :$path,
@@ -694,7 +663,8 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
     }
     @valids
 }
-multi sub manage-plugins(Str:D $mile where *eq 'transfer', :$with,
+multi sub manage-plugins(Str:D $mile where *~~ any(< transfer compilation >),
+         :$with,
          :%config, :$mode,
          :$collection-info,
          :$no-status
@@ -712,47 +682,51 @@ multi sub manage-plugins(Str:D $mile where *eq 'transfer', :$with,
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
         }
         # so a plugin should not write directly
-        my @asset-files;
+        my $rv;
         try {
-            @asset-files = indir($path, { &closure.(|$with, %options) });
+            $rv = indir($path, { &closure.(|$with, %options) });
         }
         if $! {
             note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n" ~ $!.message ~ "\n" ~ $!.backtrace
         }
-        for @asset-files -> ($to, $other-plug, $file) {
-            # copy the files returned - the use case for this is css and script files to be
-            # served with html files. The sub-directory paths are needed local to the output files
-            # they will be named in the templates provided by the plugins
-            # the simplest case is when a plugin asks for a plugin from its own
-            # directory. But there is also the case of moving files from other
-            # directories. How to do this securely? We can allow transfers from a plugin directory
-            # so the plugin-data space will contain a path for each registered plugin.
-            # consequently, we have a three element copy
-            my $from;
-            if $other-plug eq MYSELF {
-                $from = "$path/$file";
-            }
-            else {
-                my $config = $with.get-data($other-plug);
-                # returns Nil if no data
-                unless $config {
-                    note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
-                        ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
-                    next
-                    }
-                $from = $config<path> ~ '/' ~ $file
-            }
-            my $to-path = "$mode/%config<destination>/$to".IO;
-            mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
-            unless $from.IO ~~ :e & :f {
-                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
-                    ~ "｢$from｣ is not a valid file. Skipping.";
-                next
-                }
-            $from.IO.copy($to-path);
-        }
+        move-files($rv, $mode, $mile, $plug, $path, %config<destination>, $with[0])
+            if $rv ~~ Positional and $rv[0] ~~ Positional and $rv[0].elems == 3
     }
     @valids
+}
+sub move-files( @asset-files, $mode, $mile, $plug, $path, $destination, $pp ) {
+    for @asset-files -> ($to, $other-plug, $file) {
+        # copy the files returned - the use case for this is css and script files to be
+        # served with html files. The sub-directory paths are needed local to the output files
+        # they will be named in the templates provided by the plugins
+        # the simplest case is when a plugin asks for a plugin from its own
+        # directory. But there is also the case of moving files from other
+        # directories. How to do this securely? We can allow transfers from a plugin directory
+        # so the plugin-data space will contain a path for each registered plugin.
+        # consequently, we have a three element copy
+        my $from;
+        if $other-plug eq MYSELF {
+            $from = "$path/$file";
+        }
+        else {
+            my $config = $pp.get-data($other-plug);
+            # returns Nil if no data
+            unless $config {
+                note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                    ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
+                next
+                }
+            $from = $config<path> ~ '/' ~ $file
+        }
+        my $to-path = "$mode/$destination/$to".IO;
+        mkdir($to-path.dirname) unless $to-path.dirname.IO.d;
+        unless $from.IO ~~ :e & :f {
+            note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
+                ~ "｢$from｣ is not a valid file. Skipping.";
+            next
+            }
+        $from.IO.copy($to-path);
+    }
 }
 
 #| uses Terminal::Spinners to create a progress bar, with a starting value, that is decreased by 1 after an iteration.
