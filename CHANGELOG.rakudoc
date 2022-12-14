@@ -234,4 +234,7 @@ overides the plugin config keys, when needed.
 =item fix templates in tests to match Raku::Pod::Render v 4.2
 =item allow for asset transfers from compilation callables if the return value is an array of triples.
 
+=head1 2022-12-14 v0.12.1
+=item make counter nicer with times over 1min.
+
 =end pod

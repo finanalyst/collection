@@ -365,7 +365,7 @@ multi sub collect(Str:D $mode,
                     # ======== Setup / Render milestone =============================
                     @files = $full-render ?? $cache.sources.list !! $cache.list-changed-files.list;
                     @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
-                    counter(:start(+@files), :header('Rendering content files'))
+                    counter(:items(@files), :header('Rendering content files'))
                     unless $no-status or !+@files;
 
                 }
@@ -396,7 +396,7 @@ multi sub collect(Str:D $mode,
                         @files = $mode-cache.list-changed-files.list
                     }
                     @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
-                    counter(:start(+@files), :header("Rendering $mode content files"))
+                    counter(:items(+@files), :header("Rendering $mode content files"))
                     unless $no-status or !+@files;
                 }
                 # sort files so that longer come later, meaning sub-directories appear after parents
@@ -729,29 +729,39 @@ sub move-files( @asset-files, $mode, $mile, $plug, $path, $destination, $pp ) {
     }
 }
 
-#| uses Terminal::Spinners to create a progress bar, with a starting value, that is decreased by 1 after an iteration.
-sub counter(:$start, :$dec, :$header) {
+#| uses Terminal::Spinners to create a progress bar, with items, showing next item with :dec
+multi sub counter( Int :$start ) { counter(:items( 1 .. $start )) }
+multi sub counter( :@items, :$dec = False, :$header) {
+    constant BEG = "\e[0G";
     state $hash-bar = Bar.new(:type<bar>);
     state $inc;
     state $done;
     state $timer;
-    state $final;
     state $title = 'Caching files ';
-    $title = $header with $header;
-    if $start {
-        # also fails if $start = 0
-        $inc = 1 / $start * 100;
+    state $item = -1;
+    state @s-items;
+    $title = $_.Str with $header;
+    @s-items = @items if +@items;
+    if $dec and not +@items {
+        $done += $inc;
+    }
+    else {
+        $inc = 1 / @s-items.elems * 100;
         $done = 0;
         $timer = now;
-        $final = $start;
         say $title;
-        $hash-bar.show: 0
     }
-    if $dec {
-        $done += $inc;
-        $hash-bar.show: $done;
-        say "$title took { now - $timer } secs" unless --$final;
+    $hash-bar.show: $done;
+    if ++$item >= +@s-items {
+        my $d = (now - $timer).Int;
+        my @t = $d div 3600 , ;
+        @t[1] = ($d - @t[0] * 3600) div 60;
+        @t[2] = $d - @t[0] * 3600 - @t[1] * 60;
+        my $ts = @t[0] > 0 ?? sprintf("%dh:%dm:%ds", @t) !! sprintf("%dm:%ds",@t[1,2]) ;
+        say "\n$title took $ts";
+        return
     }
+    print 'item: ' ~ @s-items[$item] ~ ' ' x 20 ~ BEG;
 }
 
 sub milestone($mile, :$with, :@dump-at = (), :$collection-info, :$no-status,
