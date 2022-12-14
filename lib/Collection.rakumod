@@ -396,7 +396,7 @@ multi sub collect(Str:D $mode,
                         @files = $mode-cache.list-changed-files.list
                     }
                     @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
-                    counter(:items(+@files), :header("Rendering $mode content files"))
+                    counter(:items(@files), :header("Rendering $mode content files"))
                     unless $no-status or !+@files;
                 }
                 # sort files so that longer come later, meaning sub-directories appear after parents

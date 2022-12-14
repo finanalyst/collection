@@ -370,9 +370,11 @@
 
 *  make counter nicer with times over 1min.
 
+*  fix call to counter in rendering section
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-14T14:27:31Z
+Rendered from CHANGELOG at 2022-12-14T21:43:51Z
