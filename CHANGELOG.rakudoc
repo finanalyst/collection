@@ -238,4 +238,7 @@ overides the plugin config keys, when needed.
 =item make counter nicer with times over 1min.
 =item fix call to counter in rendering section
 
+=head1 2022-12-17 v0.12.2
+=item more work on counter
+
 =end pod

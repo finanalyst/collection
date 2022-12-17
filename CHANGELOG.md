@@ -45,6 +45,7 @@
 [2022-11-15 v0.11.2](#2022-11-15-v0112)  
 [2022-12-13 v0.12.0](#2022-12-13-v0120)  
 [2022-12-14 v0.12.1](#2022-12-14-v0121)  
+[2022-12-17 v0.12.2](#2022-12-17-v0122)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -366,15 +367,18 @@
 *  allow for asset transfers from compilation callables if the return value is an array of triples.
 
 # 2022-12-14 v0.12.1
-
-
 *  make counter nicer with times over 1min.
 
 *  fix call to counter in rendering section
+
+# 2022-12-17 v0.12.2
+
+
+*  more work on counter
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-14T21:43:51Z
+Rendered from CHANGELOG at 2022-12-17T22:17:31Z
