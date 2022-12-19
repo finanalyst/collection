@@ -244,4 +244,7 @@ overides the plugin config keys, when needed.
 =head1 2022-12-17 v0.12.3
 =item extend overwrite in counter
 
+=head1 2022-122-19 v0.12.4
+=item fix thinko
+
 =end pod

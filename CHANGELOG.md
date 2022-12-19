@@ -47,6 +47,7 @@
 [2022-12-14 v0.12.1](#2022-12-14-v0121)  
 [2022-12-17 v0.12.2](#2022-12-17-v0122)  
 [2022-12-17 v0.12.3](#2022-12-17-v0123)  
+[2022-122-19 v0.12.4](#2022-122-19-v0124)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -376,13 +377,16 @@
 *  more work on counter
 
 # 2022-12-17 v0.12.3
-
-
 *  extend overwrite in counter
+
+# 2022-122-19 v0.12.4
+
+
+*  fix thinko
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-19T17:47:15Z
+Rendered from CHANGELOG at 2022-12-19T17:50:58Z
