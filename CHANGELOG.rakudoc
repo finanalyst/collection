@@ -241,4 +241,7 @@ overides the plugin config keys, when needed.
 =head1 2022-12-17 v0.12.2
 =item more work on counter
 
+=head1 2022-12-17 v0.12.3
+=item extend overwrite in counter
+
 =end pod

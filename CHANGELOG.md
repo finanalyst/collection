@@ -46,6 +46,7 @@
 [2022-12-13 v0.12.0](#2022-12-13-v0120)  
 [2022-12-14 v0.12.1](#2022-12-14-v0121)  
 [2022-12-17 v0.12.2](#2022-12-17-v0122)  
+[2022-12-17 v0.12.3](#2022-12-17-v0123)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -372,13 +373,16 @@
 *  fix call to counter in rendering section
 
 # 2022-12-17 v0.12.2
-
-
 *  more work on counter
+
+# 2022-12-17 v0.12.3
+
+
+*  extend overwrite in counter
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-17T22:17:31Z
+Rendered from CHANGELOG at 2022-12-19T17:47:15Z

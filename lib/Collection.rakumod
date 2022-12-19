@@ -732,7 +732,8 @@ sub move-files( @asset-files, $mode, $mile, $plug, $path, $destination, $pp ) {
 #| uses Terminal::Spinners to create a progress bar, with items, showing next item with :dec
 multi sub counter( Int :$start, |c ) { counter(:items( 'item: ' <<~>> (1 .. $start) ), |c) }
 multi sub counter( :@items, :$dec = False, :$header) {
-    constant BEG = "\e[0G";
+    constant BEG = "\e[0G";"\e[2K";
+    constant RET = "\e[0G";
     state $hash-bar = Bar.new(:type<bar>);
     state $inc;
     state $done;
@@ -762,7 +763,7 @@ multi sub counter( :@items, :$dec = False, :$header) {
         say "\nCompleted in $ts";
         return
     }
-    print @s-items[$item] ~ (' ' x 40) ~ BEG;
+    print BEG ~ @s-items[$item] ~ RET;
 }
 
 sub milestone($mile, :$with, :@dump-at = (), :$collection-info, :$no-status,
