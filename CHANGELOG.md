@@ -388,15 +388,19 @@
 *  another try at getting counter right
 
 # 2022-12-20 v0.13.0
-
-
 *  spin counter off into its own Module, to make it possible for plugins to use it
 
 *  allow 'with-only' to be in Collection config file.
+
+head1 2022-12-22 v0.13.1
+
+
+
+*  correct regex for @withs
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-22T15:48:02Z
+Rendered from CHANGELOG at 2022-12-22T18:10:11Z

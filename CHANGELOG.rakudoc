@@ -254,4 +254,7 @@ overides the plugin config keys, when needed.
 =item spin counter off into its own Module, to make it possible for plugins to use it
 =item allow 'with-only' to be in Collection config file.
 
+head1 2022-12-22 v0.13.1
+=item correct regex for @withs
+
 =end pod

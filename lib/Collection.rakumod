@@ -352,6 +352,7 @@ multi sub collect(Str:D $mode,
             $image-manager.asset-slurp(%config<asset-paths>);
             $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir(%config<asset-out-path>)));
             my @files;
+            my @withs = $with-only.comb( / \S+ /);
             for <sources mode> -> $stage {
                 if $stage eq 'sources' {
                     $ret-after = ?($after ~~ /:i Setup /);
@@ -368,10 +369,9 @@ multi sub collect(Str:D $mode,
                     return $rv if ($ret-after or $ret-before);
                     # ======== Setup / Render milestone =============================
                     @files = $full-render ?? $cache.sources.list !! $cache.list-changed-files.list;
-                    @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
+                    @files .= grep({ $_ ~~ / @withs / }) if +@withs;
                     counter(:items(@files), :header('Rendering content files'))
                     unless $no-status or !+@files;
-
                 }
                 else {
                     # $stage eq mode
@@ -399,7 +399,7 @@ multi sub collect(Str:D $mode,
                         # then mode-changes must be true
                         @files = $mode-cache.list-changed-files.list
                     }
-                    @files .= grep({ $_ ~~ / $with-only / }) if $with-only;
+                    @files .= grep({ $_ ~~ / @withs / }) if +@withs;
                     counter(:items(@files), :header("Rendering $mode content files"))
                     unless $no-status or !+@files;
                 }
