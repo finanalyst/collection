@@ -244,7 +244,14 @@ overides the plugin config keys, when needed.
 =head1 2022-12-17 v0.12.3
 =item extend overwrite in counter
 
-=head1 2022-122-19 v0.12.4
+=head1 2022-12-19 v0.12.4
 =item fix thinko
+
+=head1 2022-12-19 v0.12.5
+=item another try at getting counter right
+
+=head1 2022-12-20 v0.13.0
+=item spin counter off into its own Module, to make it possible for plugins to use it
+=item allow 'with-only' to be in Collection config file.
 
 =end pod

@@ -228,10 +228,16 @@ At this milestone `render` plugins are supplied to the `ProcessedPod` object. Ne
 
 The source files (by default only those that have been changed) are rendered. 
 
-The stage is controlled by the same options as _Setup_.
+The stage is controlled by the same options as _Setup_ and
+
+*  with-only - affects which Documents are rendered, see Configuration for more
+
+*  ignore - prevents docs from being Cached, see Configuration for more
 
 ## Compilation Milestone
 (Skipped if the `:without-processing` flag is True)
+
+During the stage after this milestone, the structure documents are rendered. They can have Pod-blocks which use data included by templates and plugins during the render stage. They can also add to data, which means that the order in which a plugin is called may be important.
 
 At this milestone plugin callables are provided to add compiled data to the `ProcessedPod` object, so that the sources in the mode's directory can function.
 
@@ -240,6 +246,12 @@ During the **Render** stage, the `%processed` hash is constructed whose keys are
 The `compilation` plugin callables could, eg, collect page component data (eg., Table of Contents, Glossaries, Footnotes), and write them into the `ProcessedPod` object separately so there is a TOC, Glossary, etc structure whose keys are filenames.
 
 The return value of `collect` at the inspection point is a list of `ProcessedPod`, `%process`, with the `ProcessedPod` already changed by the `compilation` plugin callables.
+
+The stage is controlled by the same options as _Setup_ and
+
+*  with-only - same as include but for structure documents
+
+*  ignore-mode - as for ignore above
 
 ## Transfer Milestone
 (Skipped if the `:without-processing` flag is True)
@@ -407,7 +419,7 @@ The following are optional keys, together with the defaults
 
 	*  default: ()
 
-*  **ignore** is a list of files in the **sources** directory that are not cached.
+*  **ignore** is a list of files in the **sources** directory that are not cached. This is a Collection level configuration. The option **include-only** is Mode level configuration, see below.
 
 	*  default: ()
 
@@ -1090,4 +1102,4 @@ The basename for the assets is set in the Top level configuration in the option 
 
 
 ----
-Rendered from README at 2022-12-13T15:36:27Z
+Rendered from README at 2022-12-22T15:48:21Z

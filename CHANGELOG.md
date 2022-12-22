@@ -47,7 +47,9 @@
 [2022-12-14 v0.12.1](#2022-12-14-v0121)  
 [2022-12-17 v0.12.2](#2022-12-17-v0122)  
 [2022-12-17 v0.12.3](#2022-12-17-v0123)  
-[2022-122-19 v0.12.4](#2022-122-19-v0124)  
+[2022-12-19 v0.12.4](#2022-12-19-v0124)  
+[2022-12-19 v0.12.5](#2022-12-19-v0125)  
+[2022-12-20 v0.13.0](#2022-12-20-v0130)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -379,14 +381,22 @@
 # 2022-12-17 v0.12.3
 *  extend overwrite in counter
 
-# 2022-122-19 v0.12.4
-
-
+# 2022-12-19 v0.12.4
 *  fix thinko
+
+# 2022-12-19 v0.12.5
+*  another try at getting counter right
+
+# 2022-12-20 v0.13.0
+
+
+*  spin counter off into its own Module, to make it possible for plugins to use it
+
+*  allow 'with-only' to be in Collection config file.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-19T17:50:58Z
+Rendered from CHANGELOG at 2022-12-22T15:48:02Z

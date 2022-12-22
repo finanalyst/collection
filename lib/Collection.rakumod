@@ -5,6 +5,7 @@ use Pod::From::Cache;
 use ProcessedPod;
 use File::Directory::Tree;
 use Collection::Exceptions;
+use Collection::Progress;
 
 unit module Collection;
 
@@ -221,8 +222,10 @@ multi sub collect(Str:D $mode,
                   Str :$before = '',
                   Str :$after = 'all',
                   :@dump-at = (),
-                  Str :$debug-when = '', Str :$verbose-when = '', Str :$with-only = ''
-                  ) {
+                  Str :$debug-when = '', Str :$verbose-when = '',
+                  Str :$with-only is copy = '',
+              )
+        {
     my $cache;
     my $mode-cache;
     my @plugins-used;
@@ -234,6 +237,7 @@ multi sub collect(Str:D $mode,
     $without-processing = %config<without-processing> without $without-processing;
     $no-refresh = %config<no-refresh> without $no-refresh;
     $recompile = %config<recompile> without $recompile;
+    $with-only = %config<with-only> if ($with-only eq '' and %config<with-only>:defined);
 
     # make sure $without-processing can proceed
     if $without-processing {
@@ -727,43 +731,6 @@ sub move-files( @asset-files, $mode, $mile, $plug, $path, $destination, $pp ) {
             }
         $from.IO.copy($to-path);
     }
-}
-
-#| uses Terminal::Spinners to create a progress bar, with items, showing next item with :dec
-multi sub counter( Int :$start, |c ) { counter(:items( 'item: ' <<~>> (1 .. $start) ), |c) }
-multi sub counter( :@items, :$dec = False, :$header) {
-    constant BEG = "\e[2K";
-    constant RET = "\e[0G";
-    state $hash-bar = Bar.new(:type<bar>);
-    state $inc;
-    state $done;
-    state $timer;
-    state $title = 'Caching files ';
-    state $item = -1;
-    state @s-items;
-    $title = $_.Str with $header;
-    @s-items = @items if +@items;
-    if $dec and not +@items {
-        $done += $inc;
-    }
-    else {
-        $inc = 1 / @s-items.elems * 100;
-        $done = 0;
-        $timer = now;
-        $item = -1;
-        say $title;
-    }
-    $hash-bar.show: $done;
-    if ++$item >= +@s-items {
-        my $d = (now - $timer).Int;
-        my @t = $d div 3600 , ;
-        @t[1] = ($d - @t[0] * 3600) div 60;
-        @t[2] = $d - @t[0] * 3600 - @t[1] * 60;
-        my $ts = @t[0] > 0 ?? sprintf("%dh:%dm:%ds", @t) !! sprintf("%dm:%ds",@t[1,2]) ;
-        say "\nCompleted in $ts";
-        return
-    }
-    print BEG ~ @s-items[$item] ~ RET;
 }
 
 sub milestone($mile, :$with, :@dump-at = (), :$collection-info, :$no-status,
