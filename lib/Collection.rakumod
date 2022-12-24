@@ -237,8 +237,9 @@ multi sub collect(Str:D $mode,
     $without-processing = %config<without-processing> without $without-processing;
     $no-refresh = %config<no-refresh> without $no-refresh;
     $recompile = %config<recompile> without $recompile;
-    $with-only = %config<with-only> if ($with-only eq '' and %config<with-only>:defined);
-
+    unless $with-only {
+        $with-only = $_ with %config<with-only>
+    }
     # make sure $without-processing can proceed
     if $without-processing {
         my %t-config =get-config( :path("$mode/configs" ));
