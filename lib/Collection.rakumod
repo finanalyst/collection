@@ -242,7 +242,7 @@ multi sub collect(Str:D $mode,
     }
     # make sure $without-processing can proceed
     if $without-processing {
-        my %t-config =get-config( :path("$mode/configs" ));
+        my %t-config = get-config( :path("$mode/configs" ));
         if "$*CWD/$mode/{ %t-config<destination> }".IO ~~ :e & :d {
             %config ,= %t-config;
         }
@@ -718,7 +718,8 @@ sub move-files( @asset-files, $mode, $mile, $plug, $path, $destination, $pp ) {
             # returns Nil if no data
             unless $config {
                 note "ERROR caught in ｢$plug｣ at milestone ｢$mile｣:\n"
-                    ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance";
+                    ~ "｢$other-plug｣ is not registered as a plugin in ProcessedPod instance"
+                    ~ "\nProcessedPod data keys are: " ~ $pp.plugin-datakeys.join(', ');
                 next
                 }
             $from = $config<path> ~ '/' ~ $file
