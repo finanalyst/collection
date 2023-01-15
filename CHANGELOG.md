@@ -50,6 +50,9 @@
 [2022-12-19 v0.12.4](#2022-12-19-v0124)  
 [2022-12-19 v0.12.5](#2022-12-19-v0125)  
 [2022-12-20 v0.13.0](#2022-12-20-v0130)  
+[2022-12-22 v0.13.1](#2022-12-22-v0131)  
+[2023-01-08 v0.13.2](#2023-01-08-v0132)  
+[2023-01-08 v0.13.3](#2023-01-08-v0133)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -392,15 +395,20 @@
 
 *  allow 'with-only' to be in Collection config file.
 
-head1 2022-12-22 v0.13.1
-
-
-
+# 2022-12-22 v0.13.1
 *  correct regex for @withs
+
+# 2023-01-08 v0.13.2
+*  improve debugging info
+
+# 2023-01-08 v0.13.3
+
+
+*  crop long items in progress to last 45 chars
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2022-12-22T18:10:11Z
+Rendered from CHANGELOG at 2023-01-15T09:24:25Z

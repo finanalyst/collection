@@ -260,4 +260,7 @@ overides the plugin config keys, when needed.
 =head1 2023-01-08 v0.13.2
 =item improve debugging info
 
+=head1 2023-01-08 v0.13.3
+=item crop long items in progress to last 45 chars
+
 =end pod
