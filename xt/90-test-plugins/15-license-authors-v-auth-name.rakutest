@@ -1,0 +1,18 @@
+use v6.d;
+use Test;
+use Collection::TestPlugin;
+plan 10;
+
+$Collection::TestPlugin::TESTING = True;
+ok Collection::TestPlugin::check-license( %(:license<MIT>, ) ), 'verifies a license';
+nok Collection::TestPlugin::check-license( %(:authors<finanalyst coke>, :version<1.2.3>,) ), 'traps no license';
+ok Collection::TestPlugin::check-authors( %(:authors<finanalyst coke>,)), 'authors test';
+nok Collection::TestPlugin::check-authors( %(:version<1.2.3>,:license<MIT>,)), 'traps no authors test';
+ok Collection::TestPlugin::check-version( %( :version<1.2.3>,) ), 'version test';
+nok Collection::TestPlugin::check-version( %( :license<MIT>, :authors<finanalyst coke>,) ), 'traps no version test';
+ok Collection::TestPlugin::check-auth( %( :auth<zef:finanalyst>,) ), 'auth field looks fine';
+nok Collection::TestPlugin::check-auth( %( :license<MIT>, :authors<finanalyst coke>,) ), 'traps no auth field looks fine';
+ok Collection::TestPlugin::check-name( %( :name<my-plugin>,) ), 'auth field looks fine';
+nok Collection::TestPlugin::check-name( %( :license<MIT>, :authors<finanalyst coke>,) ), 'traps no auth field looks fine';
+
+done-testing;

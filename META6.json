@@ -1,7 +1,7 @@
 {
   "name": "Collection",
   "description": "Collects a collection of content files in Rakudoc (aka POD6) files and creates output based on configuration files",
-  "version": "0.13.3",
+  "version": "0.14.0",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
@@ -21,7 +21,8 @@
     "Collection::Entities": "lib/Collection/Entities.rakumod",
     "Collection::Exceptions": "lib/Collection/Exceptions.rakumod",
     "Collection::Progress": "lib/Collection/Progress.rakumod",
-    "Collection::RefreshPlugins": "lib/Collection/RefreshPlugins.rakumod"
+    "Collection::RefreshPlugins": "lib/Collection/RefreshPlugins.rakumod",
+    "Collection::TestPlugin": "lib/Collection/TestPlugin.rakumod"
   },
   "resources": [
     "test_things/html-rakuclosure.raku"

@@ -1,0 +1,19 @@
+use v6.d;
+use Test;
+use Collection::TestPlugin;
+
+plan 4;
+
+constant DIR = 'xt/plugin-test-dir';
+
+bail-out "{ DIR } must exist. Have check-file tests been run?"
+    unless DIR.IO ~~ :e & :d;
+$Collection::TestPlugin::TESTING = True;
+chdir DIR;
+
+ok Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc>,) ), 'other keys, if they exist, should point to a filename';
+nok Collection::TestPlugin::check-otherkey( %( :css(),) ), 'other keys, traps not pointing to a filename';
+ok Collection::TestPlugin::check-otherkey( %( :css(), :information<css>) ), 'allow empty key if in information list';
+ok Collection::TestPlugin::check-otherkey( %( :css("not a filename here"), :information<css>) ), 'dont check Str val of key if in information list';
+
+done-testing;

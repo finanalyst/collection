@@ -36,6 +36,8 @@ multi sub counter( :@items, :$dec = False, :$header) is export {
         say $beg ~ "$bar\nCompleted in $ts";
         return
     }
-    print $beg ~ $bar ~ @s-items[$item].substr(*-45,*) ~ $ret;
+    my $len = @s-items[$item].chars;
+    my $name = $len > 45 ?? @s-items[$item].substr(*-45,*) !! @s-items[$item];
+    print $beg ~ $bar ~ $name ~ $ret;
 }
 

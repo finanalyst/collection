@@ -263,4 +263,7 @@ overides the plugin config keys, when needed.
 =head1 2023-01-08 v0.13.3
 =item crop long items in progress to last 45 chars
 
+=head1 2023-01-22 v0.14.0
+=item move TestPlugin from raku-collection-plugin-development to collection
+
 =end pod

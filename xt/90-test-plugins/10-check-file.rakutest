@@ -1,0 +1,26 @@
+use v6.d;
+use Test;
+use Collection::TestPlugin;
+use File::Directory::Tree;
+
+plan 3;
+
+constant DIR = 'xt/plugin-test-dir';
+
+if DIR.IO ~~ :e & :d {
+    empty-directory DIR
+}
+else {
+    mktree DIR
+}
+
+chdir DIR;
+$Collection::TestPlugin::TESTING = True;
+
+is Collection::TestPlugin::check-file('README.rakudoc'), False, 'no such file is trapped';
+
+'README.rakudoc'.IO.spurt: "This is a file";
+
+is Collection::TestPlugin::check-file('README.rakudoc'), True, 'file exists';
+nok Collection::TestPlugin::check-file(''), 'empty file name is False';
+done-testing;

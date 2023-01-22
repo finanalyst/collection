@@ -1,0 +1,58 @@
+use v6.d;
+use Test;
+use Collection::TestPlugin;
+
+plan 15;
+
+constant DIR = 'xt/plugin-test-dir';
+
+bail-out "{ DIR } must exist. Have check-file tests been run?"
+    unless DIR.IO ~~ :e & :d;
+$Collection::TestPlugin::TESTING = True;
+chdir DIR;
+nok Collection::TestPlugin::check-milestone( %( :version<v1.1.2>, :auth<finanalyst> )), 'traps lack of milestone callables';
+nok Collection::TestPlugin::check-milestone( %( :render, ) ), 'render cannot be called without custom or templates';
+ok Collection::TestPlugin::check-milestone( %( :render, :custom-raku<custom.raku>, :template-raku<template.raku> ) ), 'render with custom and template works';
+# sub ( $pr, %options --> Array ) {...}
+'render-callable.raku'.IO.spurt: "use v6.d; sub \( \$pr, \%options --> Array ) \{ say 'this is a dummy callable'; [] }";
+ok Collection::TestPlugin::check-milestone( %( :render<render-callable.raku>, :custom-raku<custom.raku>, :template-raku<template.raku> ), :relaxed ), 'render with filename must give a callable';
+ok Collection::TestPlugin::check-milestone( %( :compilation<render-callable.raku>,), :relaxed ), 'collection with filename must give a callable';
+nok Collection::TestPlugin::check-milestone( %( :compilation(),), :relaxed ), 'non-render milestone must have a callable';
+
+ok Collection::TestPlugin::check-milestone( %( :render<render-callable.raku>, :custom-raku<custom.raku>, :template-raku<template.raku> ), ), 'render callable tests';
+# sub ( $source-cache, $mode-cache, Bool $full-render, $source-root, $mode-root, %options ) { ... }
+'setup-callable.raku'.IO.spurt: "use v6.d; sub \( \$source-cache, \$mode-cache, Bool \$full-render, \$source-root, \$mode-root, \%options ) \{ say 'this is a dummy callable' }";
+ok Collection::TestPlugin::check-milestone( %( :setup<setup-callable.raku>,), ), 'standard setup callable tests';
+# sub ( $pr, %processed, %options) { ... }
+'compilation-callable.raku'.IO.spurt: "use v6.d; sub \( \$pr, \%processed, \%options ) \{ say 'this is a dummy callable' }";
+ok Collection::TestPlugin::check-milestone( %( :compilation<compilation-callable.raku>,), ), 'standard compilation callable tests';
+# sub ($pr, %processed, %options --> Array ) {...}
+#transfer
+'transfer-callable.raku'.IO.spurt: "use v6.d; sub \( \$pr, \%processed, \%options --> Array ) \{ say 'this is a dummy callable' ; [] }";
+ok Collection::TestPlugin::check-milestone( %( :transfer<transfer-callable.raku>,), ), 'standard transfer callable tests';
+# sub (%processed, @plugins-used, $pr, %options --> Array ) {...}
+#report
+'report-callable.raku'.IO.spurt: "use v6.d; sub \( \%processed, \@plugins-used, \$pr, \%options --> Array ) \{ say 'this is a dummy callable'; [] }";
+ok Collection::TestPlugin::check-milestone( %( :report<report-callable.raku>,), ), 'standard report callable tests';
+# sub ($destination, $landing-place, $output-ext, %completion-options, %options) {...}
+#completion
+'completion-callable.raku'.IO.spurt: "use v6.d; sub \( \$destination, \$landing-place, \$output-ext, \%completion-options, \%options ) \{ say 'this is a dummy callable' }";
+ok Collection::TestPlugin::check-milestone( %( :completion<completion-callable.raku>,), ), 'standard completion callable tests';
+
+'render-callable.raku'.IO.spurt: "use v6.d; sub \( \$pr, \%options --> Array ) \{ xsay 'this is a dummy callable'; [] }";
+nok Collection::TestPlugin::check-milestone( %( :render<render-callable.raku>, :custom-raku<custom.raku>, :template-raku<template.raku> ), :relaxed ), 'traps a compile error in callable';
+'render-callable.raku'.IO.spurt: "%( xsay => 'this is a hash' )";
+nok Collection::TestPlugin::check-milestone( %( :render<render-callable.raku>, :custom-raku<custom.raku>, :template-raku<template.raku> ), :relaxed ), 'traps a non-callable in callable file';
+'completion-callable.raku'.IO.spurt: "use v6.d; sub \( \$dest, \$land, \$output-ext, \%completion-options, \%options ) \{ say 'this is a dummy callable' }";
+nok Collection::TestPlugin::check-milestone( %( :completion<completion-callable.raku>,), ), 'non-standard completion callable tests';
+
+done-testing;
+
+
+
+
+
+
+
+
+

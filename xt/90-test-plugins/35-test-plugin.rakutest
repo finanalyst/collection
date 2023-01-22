@@ -1,0 +1,21 @@
+use v6.d;
+use Collection::TestPlugin;
+constant DIR = 'xt/plugin-test-dir';
+
+(exit note "{ DIR } must exist. Have check-file tests been run?")
+    unless DIR.IO ~~ :e & :d;
+chdir DIR;
+
+'config.raku'.IO.spurt(q:to/CONFIG/);
+    %(
+        :setup<setup-callable.raku>,
+        :version<1.0.0>,
+        :auth<finanalyst>,
+        :authors<finanalyst coke>,
+        :license("MIT"),
+        :name<setup-test>
+    )
+    CONFIG
+
+test-plugin();
+
