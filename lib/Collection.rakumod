@@ -8,15 +8,16 @@ use Collection::Exceptions;
 use Collection::Progress;
 
 unit module Collection;
-
-proto sub collect(|c) is export {
-    X::Collection::BadOption.new(:passed(|c.keys.grep(*~~ Str))).throw
-    unless all(|c.keys.grep(*~~ Str))
-            eq
-            any(<no-status no-preserve-state no-refresh recompile full-render
+our @good-opts = <no-status no-preserve-state no-refresh recompile full-render
                 without-processing without-report without-completion
                 before after collection-info template-debug
-                dump-at debug-when verbose-when with-only>);
+                dump-at debug-when verbose-when with-only help more-help >;
+
+proto sub collect(|c) is export {
+    X::Collection::BadOption.new(:passed(|c.keys.grep(*~~ Str)), :@good-opts ).throw
+    unless all(|c.keys.grep(*~~ Str))
+            eq
+            any( @good-opts );
     {*}
 }
 
@@ -204,10 +205,36 @@ sub update-cache(:$no-status, :$recompile, :$no-refresh,
             :@extensions,
             :progress($no-status ?? Nil !! &counter)) but Post-cache
 }
-
-multi sub collect(:$no-status = False, |c) {
+multi sub collect( :help($)! ) {
+    say 'Possible options are: ' ~ @good-opts.join(', ');
+    say 'Try --more-help for meaning of each option';
+}
+multi sub collect( :more-help($)! ) {
+    say q:to/USEAGE/;
+        Collection::collect can be called without any parameters, meaning the mode is taken from config.raku,
+        or with one parameter, which is then the name of the mode (see below),
+        or with / without a parameter and options (options are False by default, or set in a config file):
+        Str:D $mode, # how the documents are parsed, should be a sub-directory where 'collect' is run
+        :$no-status is copy, # if true, then only errors will shown
+        :$without-processing is copy, # if the output has been rendered, then go immediately to the completion stage
+        :$no-refresh is copy, # do not pull in documents from a repository
+        :$recompile is copy, # recompile all documents into cache (takes a long time)
+        :$full-render is copy, # renders all documents in cache
+        :$without-report is copy, # skip the report stage
+        :$without-completion is copy, # skip the completion stage
+        :$collection-info is copy, # print information about collection stages and milestones
+        :$no-preserve-state is copy, # do not save intermediary data in an Archive
+        Str :$before = '', # stop processing and return process state after running milestone plugins but before stage
+        Str :$after = 'all', # stop after a milestone and before running next milestone plugins
+        :@dump-at = (), # dump information in text files at the named milestones
+        Str :$debug-when = '', Str :$verbose-when = '', # switch on the debug/verbose flag to Raku-Pod-Render
+        Str :$with-only is copy = '', # only process files whose names match elements in space-delimited list
+        Bool :$template-debug # provide information about plugins that add / modify the templates
+    USEAGE
+}
+multi sub collect( :$no-status = False, |c ) {
     my $mode = get-config( :required('mode',))<mode>;
-    collect($mode, :$no-status, |c)
+    collect($mode, :$no-status, |c )
 }
 multi sub collect(Str:D $mode,
                   :$no-status is copy,

@@ -11,7 +11,7 @@ unless TMP.IO.d;
 
 chdir TMP;
 
-plan 7;
+plan 9;
 my $rv;
 
 # add a mode directory, with its config files, and plugins directory and some setup plugins
@@ -129,6 +129,10 @@ for <setup1 setup_rend> {
 
 $rv = collect(MODE, :no-status, :after<mode>, :no-preserve-state, :recompile);
 is $rv[1][0]<Mode>[0]<message>, 'No plugins defined', 'Mode plugin message correct';
+
+lives-ok { $rv = collect(:no-status, :after<mode>, :no-preserve-state, :recompile) },
+    'collect works without a mode, taking it from config';
+is $rv[1][0]<Mode>[0]<message>, 'No plugins defined', 'Same message as above';
 
 $rv = collect(MODE, :no-status, :before<setup>, :no-preserve-state, :recompile);
 #recompile to ensure that the cache is emptied

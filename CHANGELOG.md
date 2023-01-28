@@ -53,6 +53,9 @@
 [2022-12-22 v0.13.1](#2022-12-22-v0131)  
 [2023-01-08 v0.13.2](#2023-01-08-v0132)  
 [2023-01-08 v0.13.3](#2023-01-08-v0133)  
+[2023-01-22 v0.14.0](#2023-01-22-v0140)  
+[2023-01-22 v0.14.1](#2023-01-22-v0141)  
+[2023-01-28 v0.14.2](#2023-01-28-v0142)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -402,13 +405,26 @@
 *  improve debugging info
 
 # 2023-01-08 v0.13.3
-
-
 *  crop long items in progress to last 45 chars
+
+# 2023-01-22 v0.14.0
+*  move TestPlugin from raku-collection-plugin-development to collection
+
+# 2023-01-22 v0.14.1
+*  add $template-debug option
+
+# 2023-01-28 v0.14.2
+
+
+*  help and more-help options added
+
+*  collect should now work without parameters
+
+	*  refresh requires a collection mode to be specified
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-01-15T09:24:25Z
+Rendered from CHANGELOG at 2023-01-28T18:53:28Z

@@ -1,0 +1,15 @@
+use v6.d;
+use Test;
+use Test::Output;
+use Collection;
+
+plan 2;
+
+stdout-like { collect( :help ) },
+    / 'Possible options are: no-status, no-preserve-state, no-refresh' /,
+    '--help produces options';
+stdout-like { collect( :more-help ) },
+    / 'Collection::collect can be called without any parameters,' /,
+    '--more-help gives more info';
+
+done-testing;

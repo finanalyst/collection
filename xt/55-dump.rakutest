@@ -1,6 +1,5 @@
 use Test;
 use Test::Deeply::Relaxed;
-use Test::Output;
 use File::Directory::Tree;
 
 use Collection;
