@@ -15,7 +15,7 @@ proto sub collect(|c) is export {
             eq
             any(<no-status no-preserve-state no-refresh recompile full-render
                 without-processing without-report without-completion
-                before after collection-info
+                before after collection-info template-debug
                 dump-at debug-when verbose-when with-only>);
     {*}
 }
@@ -224,6 +224,7 @@ multi sub collect(Str:D $mode,
                   :@dump-at = (),
                   Str :$debug-when = '', Str :$verbose-when = '',
                   Str :$with-only is copy = '',
+                  Bool :$template-debug
               )
         {
     my $cache;
@@ -345,6 +346,7 @@ multi sub collect(Str:D $mode,
             exit note "There must be templates in ｢~/{ "$*CWD/$mode/templates".IO.relative($*HOME) }｣:"
             unless +@templates;
             my ProcessedPod $pr .= new;
+            $pr.template-debug = $_ with $template-debug;
             $pr.no-code-escape = %config<no-code-escape> if %config<no-code-escape>:exists;
             $pr.templates(~@templates[0]);
             for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }

@@ -266,4 +266,7 @@ overides the plugin config keys, when needed.
 =head1 2023-01-22 v0.14.0
 =item move TestPlugin from raku-collection-plugin-development to collection
 
+=head1 2023-01-22 v0.14.1
+=item add $template-debug option
+
 =end pod
