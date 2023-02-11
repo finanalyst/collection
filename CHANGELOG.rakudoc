@@ -274,4 +274,7 @@ overides the plugin config keys, when needed.
 =item collect should now work without parameters
 =item2 refresh requires a collection mode to be specified
 
+=head1 2023-02-11 v0.14.3
+=item make all options to collect explicitly Bool, so that CLI coerces eg. C<--no-status> to True not Any
+
 =end pod

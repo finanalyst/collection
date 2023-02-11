@@ -56,6 +56,7 @@
 [2023-01-22 v0.14.0](#2023-01-22-v0140)  
 [2023-01-22 v0.14.1](#2023-01-22-v0141)  
 [2023-01-28 v0.14.2](#2023-01-28-v0142)  
+[2023-02-11 v0.14.3](#2023-02-11-v0143)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -414,17 +415,20 @@
 *  add $template-debug option
 
 # 2023-01-28 v0.14.2
-
-
 *  help and more-help options added
 
 *  collect should now work without parameters
 
 	*  refresh requires a collection mode to be specified
 
+# 2023-02-11 v0.14.3
+
+
+*  make all options to collect explicitly Bool, so that CLI coerces eg. `--no-status` to True not Any
+
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-01-28T18:53:28Z
+Rendered from CHANGELOG at 2023-02-11T10:56:53Z

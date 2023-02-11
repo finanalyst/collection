@@ -215,14 +215,14 @@ multi sub collect( :more-help($)! ) {
         or with one parameter, which is then the name of the mode (see below),
         or with / without a parameter and options (options are False by default, or set in a config file):
         Str:D $mode, # how the documents are parsed, should be a sub-directory where 'collect' is run
-        :$no-status is copy, # if true, then only errors will shown
-        :$without-processing is copy, # if the output has been rendered, then go immediately to the completion stage
-        :$no-refresh is copy, # do not pull in documents from a repository
-        :$recompile is copy, # recompile all documents into cache (takes a long time)
-        :$full-render is copy, # renders all documents in cache
-        :$without-report is copy, # skip the report stage
-        :$without-completion is copy, # skip the completion stage
-        :$collection-info is copy, # print information about collection stages and milestones
+        Bool :$no-status is copy, # if true, then only errors will shown
+        Bool :$without-processing is copy, # if the output has been rendered, then go immediately to the completion stage
+        Bool :$no-refresh is copy, # do not pull in documents from a repository
+        Bool :$recompile is copy, # recompile all documents into cache (takes a long time)
+        Bool :$full-render is copy, # renders all documents in cache
+        Bool :$without-report is copy, # skip the report stage
+        Bool :$without-completion is copy, # skip the completion stage
+        Bool :$collection-info is copy, # print information about collection stages and milestones
         :$no-preserve-state is copy, # do not save intermediary data in an Archive
         Str :$before = '', # stop processing and return process state after running milestone plugins but before stage
         Str :$after = 'all', # stop after a milestone and before running next milestone plugins
@@ -237,15 +237,15 @@ multi sub collect( :$no-status = False, |c ) {
     collect($mode, :$no-status, |c )
 }
 multi sub collect(Str:D $mode,
-                  :$no-status is copy,
-                  :$without-processing is copy,
-                  :$no-refresh is copy,
-                  :$recompile is copy,
-                  :$full-render is copy,
-                  :$without-report is copy,
-                  :$without-completion is copy,
-                  :$collection-info is copy,
-                  :$no-preserve-state is copy,
+                  Bool :$no-status is copy,
+                  Bool :$without-processing is copy,
+                  Bool :$no-refresh is copy,
+                  Bool :$recompile is copy,
+                  Bool :$full-render is copy,
+                  Bool :$without-report is copy,
+                  Bool :$without-completion is copy,
+                  Bool :$collection-info is copy,
+                  Bool :$no-preserve-state is copy,
                   Str :$before = '',
                   Str :$after = 'all',
                   :@dump-at = (),
