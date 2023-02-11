@@ -294,7 +294,7 @@ multi sub collect(Str:D $mode,
         );
         $ret-after = ?($after ~~ /:i Source /);
         $ret-before = ?($before ~~ /:i Mode /); # call-plugins False because there are no plugins valid here
-        $rv = milestone('Mode', :with($cache), :@dump-at, :$collection-info, :@plugins-used, :!call-plugins );
+        $rv = milestone('Mode', :with($cache), :@dump-at, :$collection-info, :$no-status, :@plugins-used, :!call-plugins );
         return $rv if ($ret-after or $ret-before);
         # === Source / Mode milestone ====================================
         # === no plugins because Mode config not available yet.
@@ -352,7 +352,7 @@ multi sub collect(Str:D $mode,
 
         $rv = milestone('Setup',
             :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>, %config<plugin-options>),
-            :@dump-at, :$collection-info, :@plugins-used, :%config, :$mode,
+            :@dump-at, :$collection-info, :$no-status, :@plugins-used, :%config, :$mode,
             :call-plugins( !$ret-after )
         );
         return $rv if ($ret-after or $ret-before);
@@ -393,6 +393,7 @@ multi sub collect(Str:D $mode,
                             :%config,
                             :$mode,
                             :$collection-info,
+                            :$no-status,
                             :@plugins-used,
                             :call-plugins( !$ret-after)
                     );
@@ -413,6 +414,7 @@ multi sub collect(Str:D $mode,
                         :%config,
                         :$mode,
                         :$collection-info,
+                        :$no-status,
                         :@plugins-used,
                         :call-plugins( !$ret-after )
                     );
@@ -489,7 +491,7 @@ multi sub collect(Str:D $mode,
             $ret-after = ?($after ~~ /:i Compilation /);
             $ret-before = ?($before ~~ /:i Transfer /);
             $rv = milestone('Transfer', :with($pr, %processed), :@dump-at,
-                :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after )
+                :%config, :$mode, :$collection-info, :$no-status, :@plugins-used, :call-plugins( !$ret-after )
             );
             return $rv if ($ret-after or $ret-before);
             # ==== Compilation / Transfer Milestone ===================================
@@ -502,7 +504,7 @@ multi sub collect(Str:D $mode,
             $ret-after = ?($after ~~ /:i Transfer /);
             $ret-before = ?($before ~~ /:i Report /);
             $rv = milestone('Report', :with(%processed, @plugins-used, $pr), :@dump-at,
-                :%config, :$mode, :$collection-info, :@plugins-used, :call-plugins( !$ret-after and !$without-report));
+                :%config, :$mode, :$collection-info, :$no-status, :@plugins-used, :call-plugins( !$ret-after and !$without-report));
             return $rv if ($ret-after or $ret-before);
             # ==== Transfer / Report Milestone ===================================
         }
@@ -605,7 +607,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup completion >),
                          :$no-status
                          --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    my %options = %( :$collection-info, :$no-status);
+    my %options = %( :$collection-info, :$no-status );
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         # only run callable and closure within the directory of the plugin
         my $path = "$mode/plugins/$plug".IO.absolute;
