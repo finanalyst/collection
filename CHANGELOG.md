@@ -57,6 +57,8 @@
 [2023-01-22 v0.14.1](#2023-01-22-v0141)  
 [2023-01-28 v0.14.2](#2023-01-28-v0142)  
 [2023-02-11 v0.14.3](#2023-02-11-v0143)  
+[2023-02-11 v0.14.4](#2023-02-11-v0144)  
+[2023-02-19 v0.14.5](#2023-02-19-v0145)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -422,13 +424,19 @@
 	*  refresh requires a collection mode to be specified
 
 # 2023-02-11 v0.14.3
+*  make all options to collect explicitly Bool
+
+# 2023-02-11 v0.14.4
+*  add no-status to all milestones to pass to plugins
+
+# 2023-02-19 v0.14.5
 
 
-*  make all options to collect explicitly Bool, so that CLI coerces eg. `--no-status` to True not Any
+*  make source-root and mode-root parameters to Setup callable absolute references so they can actually be used
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-02-11T10:56:53Z
+Rendered from CHANGELOG at 2023-02-19T11:49:25Z

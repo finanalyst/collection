@@ -280,4 +280,7 @@ overides the plugin config keys, when needed.
 =head1 2023-02-11 v0.14.4
 =item add no-status to all milestones to pass to plugins
 
+=head1 2023-02-19 v0.14.5
+=item make source-root and mode-root parameters to Setup callable absolute references so they can actually be used
+
 =end pod

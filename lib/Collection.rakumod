@@ -351,7 +351,7 @@ multi sub collect(Str:D $mode,
         #     T        F        F
 
         $rv = milestone('Setup',
-            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>, %config<plugin-options>),
+            :with($cache, $mode-cache, $full-render, %config<sources>.IO.absolute, %config<mode-sources>.IO.absolute, %config<plugin-options>),
             :@dump-at, :$collection-info, :$no-status, :@plugins-used, :%config, :$mode,
             :call-plugins( !$ret-after )
         );
