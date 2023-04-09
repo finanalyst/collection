@@ -1,14 +1,14 @@
 {
   "name": "Collection",
   "description": "Collects a collection of content files in Rakudoc (aka POD6) files and creates output based on configuration files",
-  "version": "0.14.5",
+  "version": "0.14.6",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
   ],
   "auth": "zef:finanalyst",
   "depends": [
-    "Raku::Pod::Render:ver<4.4.0>",
+    "Raku::Pod::Render:ver<4.4.0+>",
     "Pod::From::Cache",
     "Terminal::Spinners",
     "RakuConfig:ver<0.7.2+>",

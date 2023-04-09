@@ -351,7 +351,7 @@ multi sub collect(Str:D $mode,
         #     T        F        F
 
         $rv = milestone('Setup',
-            :with($cache, $mode-cache, $full-render, %config<sources>.IO.absolute, %config<mode-sources>.IO.absolute, %config<plugin-options>),
+            :with($cache, $mode-cache, $full-render, %config<sources>, %config<mode-sources>, %config<plugin-options>),
             :@dump-at, :$collection-info, :$no-status, :@plugins-used, :%config, :$mode,
             :call-plugins( !$ret-after )
         );
@@ -485,6 +485,18 @@ multi sub collect(Str:D $mode,
                         .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                         %processed{$short} = .emit-and-renew-processed-state;
                         .debug = .verbose = False;
+                        CATCH {
+                            default {
+                                my $stack = .message.Str;
+                                for .backtrace.reverse {
+                                    next if .file.starts-with('SETTING::');
+                                    next unless .subname;
+                                    $stack ~= "  in block {.subname} at {.file} line {.line}\n";
+                                }
+                                exit note "Error occurred when processing source file ｢$fn｣.\n"
+                                    ~ $stack;
+                            }
+                        }
                     }
                 }
             }

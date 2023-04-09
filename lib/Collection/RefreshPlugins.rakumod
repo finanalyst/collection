@@ -64,8 +64,13 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False, :$no-refr
     $release-dir = %plugins<_metadata_><collection-plugin-root>;
     # git actions disabled when testing and on first run
     if !$test and $git-pull {
-        my $proc = run('git', '-C', $release-dir, 'pull', '-q', :err);
+        # first run a clean as there should be no local changes to realise directory
+        # local changes possible if a plugin does not cleanup properly
+        my $proc = run('git', '-C', $release-dir, 'clean', '-fdq', :err);
         my $err = $proc.err.slurp(:close);
+        GitFail.new(:$err).throw if $err;
+        $proc = run('git', '-C', $release-dir, 'pull', '-q', :err);
+        $err = $proc.err.slurp(:close);
         GitFail.new(:$err).throw if $err;
         $git-pull = False;
     }
