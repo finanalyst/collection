@@ -365,8 +365,9 @@ multi sub collect(Str:D $mode,
         # 3) destination directory did not exist prior to this run
         # 4) PROCESSED-CACHE (& SYMBOL) doesn't exist
         if $source-changes or $collection-changes or $full-render {
-            say "Rendering Collection on { now.Date } at { now.DateTime.hh-mm-ss }"
-                unless $no-status;
+            my $g-date = now.Date;
+            my $g-time = now.DateTime.hh-mm-ss;
+            say "Rendering Collection on $g-date at $g-time UTC" unless $no-status;
             # Prepare the renderer
             # get the template names
             my @templates = "$*CWD/$mode/{ %config<templates> }".IO.dir(test => / '.raku' /).sort;
@@ -378,6 +379,11 @@ multi sub collect(Str:D $mode,
             $pr.templates(~@templates[0]);
             for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
             $pr.add-data('mode-name', $mode);
+            $pr.add-data('generation-data', %(
+                commit-id => $cache.source-last-commit,
+                :$g-date,
+                :$g-time,
+            ));
             my Asset-cache $image-manager .= new(:basename(%config<asset-basename>));
             $image-manager.asset-slurp(%config<asset-paths>);
             $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir(%config<asset-out-path>)));

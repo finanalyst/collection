@@ -287,4 +287,7 @@ overides the plugin config keys, when needed.
 =item revert change in v0.16.5 source-root and mode-root are again relative.
 =item If ProcessedPod fails, report the file that caused the error.
 
+=head1 2023-04-13 v0.15.0
+=item add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
+
 =end pod
