@@ -290,4 +290,7 @@ overides the plugin config keys, when needed.
 =head1 2023-04-13 v0.15.0
 =item add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
 
+=head1 2023-04-13 v0.15.1
+=item chomp lf off commit id
+
 =end pod

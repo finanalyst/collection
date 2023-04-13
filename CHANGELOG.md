@@ -60,6 +60,8 @@
 [2023-02-11 v0.14.4](#2023-02-11-v0144)  
 [2023-02-19 v0.14.5](#2023-02-19-v0145)  
 [2023-04-09 v0.14.6](#2023-04-09-v0146)  
+[2023-04-13 v0.15.0](#2023-04-13-v0150)  
+[2023-04-13 v0.15.1](#2023-04-13-v0151)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -434,15 +436,21 @@
 *  make source-root and mode-root parameters to Setup callable absolute references so they can actually be used
 
 # 2023-04-09 v0.14.6
-
-
 *  revert change in v0.16.5 source-root and mode-root are again relative.
 
 *  If ProcessedPod fails, report the file that caused the error.
+
+# 2023-04-13 v0.15.0
+*  add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
+
+# 2023-04-13 v0.15.1
+
+
+*  chomp lf off commit id
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-04-09T21:14:37Z
+Rendered from CHANGELOG at 2023-04-13T21:36:15Z

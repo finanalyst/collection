@@ -380,7 +380,7 @@ multi sub collect(Str:D $mode,
             for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
             $pr.add-data('mode-name', $mode);
             $pr.add-data('generation-data', %(
-                commit-id => $cache.source-last-commit,
+                commit-id => $cache.source-last-commit.chomp,
                 :$g-date,
                 :$g-time,
             ));
