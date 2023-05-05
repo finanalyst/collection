@@ -64,15 +64,15 @@ use v6;
         '<p>' ~ (%prm<contents> // '') ~ '</p>'
     },
     'format-l' => sub ( %prm, %tml ) {
-        # local: <link-label> -> <target>.html#<place> | <target>.html
-        # internal: <link-label> -> #<place>
-        # external: <link-label> -> <target>
-        my $trg = %prm<target>;
-        if %prm<local> {
+        # type = local: <link-label> -> <target>.html#<place> | <target>.html
+        # type = internal: <link-label> -> #<place>
+        # type = external: <link-label> -> <target>
+        my $trg = %prm<target>; # defaults to external type
+        if %prm<type> eq 'local' {
             $trg ~= '.html';
             $trg ~= '#' ~ %prm<place> if %prm<place>
         }
-        elsif %prm<internal> {
+        elsif %prm<type> eq 'internal' {
             $trg = '#' ~ %prm<place>
         }
         '<a href="'
@@ -122,7 +122,7 @@ use v6;
     },
     'unknown-name' => sub ( %prm, %tml ) {
         with %prm<format-code> {
-            '<span class="RakudocNoFormatCode">'
+            "\n" ~ '<span class="RakudocNoFormatCode">'
             ~ "<span>unknown format-code $_\</span>\&lt;\<span>{ %prm<contents> }\</span>|\<span>{ %prm<meta> }\</span>"
             ~ '&gt;</span>'
         }
@@ -141,9 +141,11 @@ use v6;
                 ~ "\n</fieldset>\</section>\n"
         }
     },
+    'nested' => sub ( %prm, %tml ) { '<div class="pod-nested">' ~ (%prm<contents> // '') ~ '</div>' },
+    'input' => sub ( %prm, %tml ) { '<pre class="pod-input">' ~ (%prm<contents> // '') ~ '</pre>' },
     'output' => sub ( %prm, %tml ) { '<pre class="pod-output">' ~ (%prm<contents> // '') ~ '</pre>' },
     'pod' => sub ( %prm, %tml ) {
-        '<section name="'
+        "\n<section name=\""
                 ~ %tml<escaped>(%prm<name> // '') ~ '">'
                 ~ (%prm<contents> // '')
                 ~ (%prm<tail> // '')
@@ -193,10 +195,10 @@ use v6;
                 ~ "\t<body class=\"pod\">\n"
                 ~ %tml<header>(%prm, %tml)
                 ~ '<div class="pod-content">'
-                ~ ( %prm<toc> ne '' or %prm<glossary> ne '' ?? '<nav>' !! '')
+                ~ ( (%prm<toc> ne '' or %prm<glossary> ne '') ?? '<nav>' !! '')
                 ~ %prm<toc>
                 ~ %prm<glossary>
-                ~ ( %prm<toc> ne '' or %prm<glossary> ne '' ?? '</nav>' !! '')
+                ~ ( (%prm<toc> ne '' or %prm<glossary> ne '') ?? '</nav>' !! '')
                 ~ %tml<top-of-page>(%prm, %tml)
                 ~ %tml<subtitle>(%prm, %tml)
                 ~ '<div class="pod-body' ~ ( %prm<toc> ne '' ?? '' !! ' no-toc') ~ '">'
