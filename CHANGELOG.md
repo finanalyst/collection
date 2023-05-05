@@ -62,6 +62,7 @@
 [2023-04-09 v0.14.6](#2023-04-09-v0146)  
 [2023-04-13 v0.15.0](#2023-04-13-v0150)  
 [2023-04-13 v0.15.1](#2023-04-13-v0151)  
+[2023-05-05 v0.15.2](#2023-05-05-v0152)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -444,13 +445,16 @@
 *  add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
 
 # 2023-04-13 v0.15.1
-
-
 *  chomp lf off commit id
+
+# 2023-05-05 v0.15.2
+
+
+*  add commit bit id for the mode-cache, which gives the commit level for the tooling.
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-04-13T21:36:15Z
+Rendered from CHANGELOG at 2023-05-05T17:54:46Z

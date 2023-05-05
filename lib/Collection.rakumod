@@ -381,6 +381,7 @@ multi sub collect(Str:D $mode,
             $pr.add-data('mode-name', $mode);
             $pr.add-data('generation-data', %(
                 commit-id => $cache.source-last-commit.chomp,
+                mode-commit-id => $mode-cache.source-last-commit.chomp,
                 :$g-date,
                 :$g-time,
             ));
