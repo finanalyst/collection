@@ -381,7 +381,7 @@ multi sub collect(Str:D $mode,
             $pr.add-data('mode-name', $mode);
             $pr.add-data('generation-data', %(
                 commit-id => $cache.source-last-commit.chomp,
-                mode-commit-id => $mode-cache.source-last-commit.chomp,
+                mode-commit-id => $mode-cache.source-last-commit.chomp.subst(/ 'git commit failed' /, 'Not a git repo'),
                 :$g-date,
                 :$g-time,
             ));
