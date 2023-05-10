@@ -63,6 +63,7 @@
 [2023-04-13 v0.15.0](#2023-04-13-v0150)  
 [2023-04-13 v0.15.1](#2023-04-13-v0151)  
 [2023-05-05 v0.15.2](#2023-05-05-v0152)  
+[2023-05-10 v0.15.3](#2023-05-10-v0153)  
 
 ----
 # 2021-01-22 Collection spun out of Raku-Alt-Documentation
@@ -448,13 +449,16 @@
 *  chomp lf off commit id
 
 # 2023-05-05 v0.15.2
-
-
 *  add commit bit id for the mode-cache, which gives the commit level for the tooling.
+
+# 2023-05-10 v0.15.3
+
+
+*  fix tests to match new Pod::From::Cache
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-05-05T17:54:46Z
+Rendered from CHANGELOG at 2023-05-10T20:51:43Z

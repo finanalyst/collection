@@ -296,4 +296,7 @@ overides the plugin config keys, when needed.
 =head1 2023-05-05 v0.15.2
 =item add commit bit id for the mode-cache, which gives the commit level for the tooling.
 
+=head1 2023-05-10 v0.15.3
+=item fix tests to match new Pod::From::Cache
+
 =end pod
