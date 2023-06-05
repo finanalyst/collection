@@ -299,4 +299,7 @@ overides the plugin config keys, when needed.
 =head1 2023-05-10 v0.15.3
 =item fix tests to match new Pod::From::Cache
 
+=head1 2023-06-05 v0.15.4
+=item add commentary to Progress module
+
 =end pod
