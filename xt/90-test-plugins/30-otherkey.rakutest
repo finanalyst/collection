@@ -3,7 +3,7 @@ use Test;
 use Collection::TestPlugin;
 use Test::Output;
 
-plan 6;
+plan 7;
 
 constant DIR = 'xt/plugin-test-dir';
 
@@ -17,9 +17,9 @@ nok Collection::TestPlugin::check-otherkey( %( :css(),) ), 'other keys, traps no
 ok Collection::TestPlugin::check-otherkey( %( :css(), :information<css>) ), 'allow empty key if in information list';
 ok Collection::TestPlugin::check-otherkey( %( :css("not a filename here"), :information<css>) ), 'dont check Str val of key if in information list';
 ok Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc custom.raku>,) ), 'other keys, if a list, should each be a filename';
+ok Collection::TestPlugin::check-otherkey( %( :css( ['pop-search-bar.js',2], ),) ), 'skips a list of array';
 
 $Collection::TestPlugin::TEST_OUT = True;
 output-like { Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc another.js>,) )},
         / 'another.js' /, 'traps wrong file';
-
 done-testing;
