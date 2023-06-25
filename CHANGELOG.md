@@ -3,307 +3,198 @@
 
 
 ## Table of Contents
-[2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
-[2021-01-24 Adding tests](#2021-01-24-adding-tests)  
-[2021-01-27 Redesign](#2021-01-27-redesign)  
-[2021-01-31](#2021-01-31)  
-[2021-02-02](#2021-02-02)  
-[2021-02-3](#2021-02-3)  
-[2021-02-04](#2021-02-04)  
-[2021-02-05](#2021-02-05)  
-[2021-02-06](#2021-02-06)  
-[2021-02-08](#2021-02-08)  
-[2021-02-10 v0.1.9](#2021-02-10-v019)  
-[2021-02-14 v0.1.10](#2021-02-14-v0110)  
+[2023-06-25 v0.15.5](#2023-06-25-v0155)  
+[2023-06-05 v0.15.4](#2023-06-05-v0154)  
+[2023-05-10 v0.15.3](#2023-05-10-v0153)  
+[2023-05-05 v0.15.2](#2023-05-05-v0152)  
+[2023-04-13 v0.15.1](#2023-04-13-v0151)  
+[2023-04-13 v0.15.0](#2023-04-13-v0150)  
+[2023-04-09 v0.14.6](#2023-04-09-v0146)  
+[2023-02-19 v0.14.5](#2023-02-19-v0145)  
+[2023-02-11 v0.14.4](#2023-02-11-v0144)  
+[2023-02-11 v0.14.3](#2023-02-11-v0143)  
+[2023-01-28 v0.14.2](#2023-01-28-v0142)  
+[2023-01-22 v0.14.1](#2023-01-22-v0141)  
+[2023-01-22 v0.14.0](#2023-01-22-v0140)  
+[2023-01-08 v0.13.3](#2023-01-08-v0133)  
+[2023-01-08 v0.13.2](#2023-01-08-v0132)  
+[2022-12-22 v0.13.1](#2022-12-22-v0131)  
+[2022-12-20 v0.13.0](#2022-12-20-v0130)  
+[2022-12-19 v0.12.5](#2022-12-19-v0125)  
+[2022-12-19 v0.12.4](#2022-12-19-v0124)  
+[2022-12-17 v0.12.3](#2022-12-17-v0123)  
+[2022-12-17 v0.12.2](#2022-12-17-v0122)  
+[2022-12-14 v0.12.1](#2022-12-14-v0121)  
+[2022-12-13 v0.12.0](#2022-12-13-v0120)  
+[2022-11-15 v0.11.2](#2022-11-15-v0112)  
+[2022-11-14 v0.11.1](#2022-11-14-v0111)  
+[2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
+[2022-13-06 v0.10.1](#2022-13-06-v0101)  
+[2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
+[2022-09-07 v0.9.1](#2022-09-07-v091)  
+[2022-08-22 v0.9.0](#2022-08-22-v090)  
+[2022-08-11 v0.8.3](#2022-08-11-v083)  
+[2022-08-03 v0.8.2](#2022-08-03-v082)  
+[2022-07-29 v0.8.1](#2022-07-29-v081)  
+[2022-07-24 v0.8.0](#2022-07-24-v080)  
+[2022-07-22 v0.7.1](#2022-07-22-v071)  
+[2022-07-17 v.0.7.0](#2022-07-17-v070)  
+[2021-04-02 v0.5.0](#2021-04-02-v050)  
+[2021-03-30 v0.4.2](#2021-03-30-v042)  
+[2021-03-23 v0.4.1](#2021-03-23-v041)  
+[2021-03-14 v0.4.0](#2021-03-14-v040)  
+[2021-03-10 v0.3.7](#2021-03-10-v037)  
+[2021-03-05 v0.3.6](#2021-03-05-v036)  
+[2021-03-05 v0.3.5](#2021-03-05-v035)  
+[2021-03-03 v0.3.4](#2021-03-03-v034)  
+[2021-03-02 v0.3.3](#2021-03-02-v033)  
+[2021-02-25 v0.3.2](#2021-02-25-v032)  
+[2021-02-23 v0.3.1](#2021-02-23-v031)  
+[2021-02-22 v0.3.0](#2021-02-22-v030)  
+[2021-02-20 v0.2.2](#2021-02-20-v022)  
 [2021-02-18 v0.2.0](#2021-02-18-v020)  
 [Bead1](#bead1)  
-[2021-02-20 v0.2.2](#2021-02-20-v022)  
-[2021-02-22 v0.3.0](#2021-02-22-v030)  
-[2021-02-23 v0.3.1](#2021-02-23-v031)  
-[2021-02-25 v0.3.2](#2021-02-25-v032)  
-[2021-03-02 v0.3.3](#2021-03-02-v033)  
-[2021-03-03 v0.3.4](#2021-03-03-v034)  
-[2021-03-05 v0.3.5](#2021-03-05-v035)  
-[2021-03-05 v0.3.6](#2021-03-05-v036)  
-[2021-03-10 v0.3.7](#2021-03-10-v037)  
-[2021-03-14 v0.4.0](#2021-03-14-v040)  
-[2021-03-23 v0.4.1](#2021-03-23-v041)  
-[2021-03-30 v0.4.2](#2021-03-30-v042)  
-[2021-04-02 v0.5.0](#2021-04-02-v050)  
-[2022-07-17 v.0.7.0](#2022-07-17-v070)  
-[2022-07-22 v0.7.1](#2022-07-22-v071)  
-[2022-07-24 v0.8.0](#2022-07-24-v080)  
-[2022-07-29 v0.8.1](#2022-07-29-v081)  
-[2022-08-03 v0.8.2](#2022-08-03-v082)  
-[2022-08-11 v0.8.3](#2022-08-11-v083)  
-[2022-08-22 v0.9.0](#2022-08-22-v090)  
-[2022-09-07 v0.9.1](#2022-09-07-v091)  
-[2022-10-30 v 0.10.0](#2022-10-30-v-0100)  
-[2022-13-06 v0.10.1](#2022-13-06-v0101)  
-[2022-13-06 v 0.11.0](#2022-13-06-v-0110)  
-[2022-11-14 v0.11.1](#2022-11-14-v0111)  
-[2022-11-15 v0.11.2](#2022-11-15-v0112)  
-[2022-12-13 v0.12.0](#2022-12-13-v0120)  
-[2022-12-14 v0.12.1](#2022-12-14-v0121)  
-[2022-12-17 v0.12.2](#2022-12-17-v0122)  
-[2022-12-17 v0.12.3](#2022-12-17-v0123)  
-[2022-12-19 v0.12.4](#2022-12-19-v0124)  
-[2022-12-19 v0.12.5](#2022-12-19-v0125)  
-[2022-12-20 v0.13.0](#2022-12-20-v0130)  
-[2022-12-22 v0.13.1](#2022-12-22-v0131)  
-[2023-01-08 v0.13.2](#2023-01-08-v0132)  
-[2023-01-08 v0.13.3](#2023-01-08-v0133)  
-[2023-01-22 v0.14.0](#2023-01-22-v0140)  
-[2023-01-22 v0.14.1](#2023-01-22-v0141)  
-[2023-01-28 v0.14.2](#2023-01-28-v0142)  
-[2023-02-11 v0.14.3](#2023-02-11-v0143)  
-[2023-02-11 v0.14.4](#2023-02-11-v0144)  
-[2023-02-19 v0.14.5](#2023-02-19-v0145)  
-[2023-04-09 v0.14.6](#2023-04-09-v0146)  
-[2023-04-13 v0.15.0](#2023-04-13-v0150)  
-[2023-04-13 v0.15.1](#2023-04-13-v0151)  
-[2023-05-05 v0.15.2](#2023-05-05-v0152)  
-[2023-05-10 v0.15.3](#2023-05-10-v0153)  
+[2021-02-14 v0.1.10](#2021-02-14-v0110)  
+[2021-02-10 v0.1.9](#2021-02-10-v019)  
+[2021-02-08](#2021-02-08)  
+[2021-02-06](#2021-02-06)  
+[2021-02-05](#2021-02-05)  
+[2021-02-04](#2021-02-04)  
+[2021-02-3](#2021-02-3)  
+[2021-02-02](#2021-02-02)  
+[2021-01-31](#2021-01-31)  
+[2021-01-27 Redesign](#2021-01-27-redesign)  
+[2021-01-24 Adding tests](#2021-01-24-adding-tests)  
+[2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
-# 2021-01-22 Collection spun out of Raku-Alt-Documentation
-*  this had been planned.
+# 2023-06-25 v0.15.5
+*  improve TestPlugin to pass new syntax of config files
 
-*  tests are needed for Collection.pm6
+*  add tests of TestPlugin
 
-# 2021-01-24 Adding tests
-*  t/01-sanity only has use-ok
+# 2023-06-05 v0.15.4
+*  add commentary to Progress module
 
-*  meta-ok in xt
+# 2023-05-10 v0.15.3
+*  fix tests to match new Pod::From::Cache
 
-*  other tests
+# 2023-05-05 v0.15.2
+*  add commit bit id for the mode-cache, which gives the commit level for the tooling.
 
-# 2021-01-27 Redesign
-*  plugin management made constistent
+# 2023-04-13 v0.15.1
+*  chomp lf off commit id
 
-*  rewritten README to include new design
+# 2023-04-13 v0.15.0
+*  add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
 
-*  test written for process upto milestone pre-render, passing
+# 2023-04-09 v0.14.6
+*  revert change in v0.16.5 source-root and mode-root are again relative.
 
-*  Exceptions spun into separate file
+*  If ProcessedPod fails, report the file that caused the error.
 
-# 2021-01-31
-*  Compilation milestone adds plugins to convert collected data into compiled data.
+# 2023-02-19 v0.14.5
+*  make source-root and mode-root parameters to Setup callable absolute references so they can actually be used
 
-*  All tests working
+# 2023-02-11 v0.14.4
+*  add no-status to all milestones to pass to plugins
 
-*  API mostly complete
+# 2023-02-11 v0.14.3
+*  make all options to collect explicitly Bool
 
-*  TODO add a sorting key to config where the order of the files to be completed is important.
+# 2023-01-28 v0.14.2
+*  help and more-help options added
 
-# 2021-02-02
-*  extra test in compilation, routine plugin
+*  collect should now work without parameters
 
-*  changes needed after Pod::Render refactoring
+	*  refresh requires a collection mode to be specified
 
-*  now render will also call a program with $pr, this is so that it can interogate the config files of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in a template.
+# 2023-01-22 v0.14.1
+*  add $template-debug option
 
-# 2021-02-3
-*  add mode-name key to ProcessedPod object
+# 2023-01-22 v0.14.0
+*  move TestPlugin from raku-collection-plugin-development to collection
 
-*  defined functionality of the return value of a render closure.
+# 2023-01-08 v0.13.3
+*  crop long items in progress to last 45 chars
 
-*  ensure that plugins are called in the order specified. manage-plugins uses an array of pairs, not a Hash
+# 2023-01-08 v0.13.2
+*  improve debugging info
 
-# 2021-02-04
-*  add dump-at functionality
+# 2022-12-22 v0.13.1
+*  correct regex for @withs
 
-*  addd test of dump-at
+# 2022-12-20 v0.13.0
+*  spin counter off into its own Module, to make it possible for plugins to use it
 
-# 2021-02-05
-*  improve min-templates
+*  allow 'with-only' to be in Collection config file.
 
-# 2021-02-06
-*  added cro-run plugin, added %config<completion-options> to completion plugin signature.
+# 2022-12-19 v0.12.5
+*  another try at getting counter right
 
-# 2021-02-08
-*  remove dependency on PrettyDump
+# 2022-12-19 v0.12.4
+*  fix thinko
 
-*  add updater script for Containerising Collection.
+# 2022-12-17 v0.12.3
+*  extend overwrite in counter
 
-# 2021-02-10 v0.1.9
-*  add to description of Configuration
+# 2022-12-17 v0.12.2
+*  more work on counter
 
-*  enforce action of without processing on caches
+# 2022-12-14 v0.12.1
+*  make counter nicer with times over 1min.
 
-# 2021-02-14 v0.1.10
-*  getting without processing logic right.
+*  fix call to counter in rendering section
 
-# 2021-02-18 v0.2.0
-*  added functionality for storage and processing of non-Pod6 content files
+# 2022-12-13 v0.12.0
+*  fix templates in tests to match Raku::Pod::Render v 4.2
 
-*  added tests of functionality, tests passing.
+*  allow for asset transfers from compilation callables if the return value is an array of triples.
 
-# bead1
+# 2022-11-15 v0.11.2
+*  move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
 
-2021-02-19 v0.2.1
+*  add test to ensure Mode config transferred to a render plugin
 
-*  mode level control options in config should be enforced
+# 2022-11-14 v0.11.1
+*  change implementation of passing options to plugins.
 
-*  extra test in report completion
+	*  instead of passing a Hash to plugin callables, the data from the plugin's config is already stored in the data section, and so is available from the instance of ProcessedPod that is passed to each plugin (except for Completion plugins).
 
-# 2021-02-20 v0.2.2
-*  make sure asset output paths synchronise
+	*  when a plugin is added to the ProcessedPod instance, the Mode config data is checked and overides the plugin config keys, when needed.
 
-*  add new debug-when/verbose-when options to command-line check
+*  change README & tests
 
-# 2021-02-22 v0.3.0
-*  changed the return value from a render plugin to a list of triples, not a list of pairs
+*  add test to see whether a Mode configured plugin option is picked up
 
-*  changed the tests accordingly
+# 2022-13-06 v 0.11.0
+*  allow for plugin-specific config data to be contained in Mode configs, by generalising completion-options
 
-# 2021-02-23 v0.3.1
-*  refactor to ensure that only changed files are re-rendered, but information of non-rendered files is cached
+*  change all plugin requirements to need %plugin-options
 
-*  change the input type of completion plugin
+*  rename completion-options to plugin-options in Completion milestone
 
-# 2021-02-25 v0.3.2
-*  add in a progress statement about rendered files in place of a spinner
+*  change the README to reflect this
 
-*  correct error about where processed/symbol structures are stored.
+*  fix all tests to comply with new plugin requirements
 
-# 2021-03-02 v0.3.3
-*  META6 path changes to reflect repository name
+*  add a test to check this
 
-# 2021-03-03 v0.3.4
-*  Change of storing cache, using Libarchive.
+*  allow for :no-refresh to be passed from CLI to sub refresh
 
-*  Added timing information when !no-status
+*  make :no-refresh & without-processing & recompile to be mandatory Level-one options
 
-# 2021-03-05 v0.3.5
-*  Added method add(fn,:alias) to Post-Cache role.
+# 2022-13-06 v0.10.1
+*  change to error report
 
-*  allows for the change in the name of the filename without affecting the underlying Cache
+*  minor change to xt/75*
 
-*  added tests & modified README
+*  improve error handling in Mode
 
-*  fixed output of timing information
+*  make RefreshPlugin observe :no-refresh config option
 
-# 2021-03-05 v0.3.6
-*  Added :with-only<filename> that runs the whole of Collect but with only one file
-
-*  added tests for :debug-when and :with-only
-
-# 2021-03-10 v0.3.7
-*  add backtrace to plugin error response.
-
-# 2021-03-14 v0.4.0
-*  remove %processed as input to completion plugin. Intermediate data not needed at completion. Hence it is not necessary to cache intermediate data except for rendering collection documents.
-
-# 2021-03-23 v0.4.1
-*  correct without-processing logic
-
-# 2021-03-30 v0.4.2
-*  add anti-alias method to Post-cache
-
-*  remove trace statement
-
-*  make it possible for a report plugin to return a Pair with '' key.
-
-*  add asset-db method to return the whole database for analysis
-
-# 2021-04-02 v0.5.0
-*  enforce no-status (= quiet) and collection-info (= verbose) on plugins
-
-*  change README (and some editing) to reflect this
-
-*  change logic for rendering collection content when there is change to sources, but no change to collection
-
-*  added date/time output when starting
-
-*  change counter to put heading into state
-
-# 2022-07-17 v.0.7.0
-*  prepare for fez
-
-*  change to github workflow testing
-
-*  remove Docker implementation
-
-*  refactor tests
-
-	*  rename raku files, change tests to reflect this too
-
-	*  test post-cache role separately
-
-	*  add clean up test
-
-	*  add preserve-state archive test
-
-*  Refactor Post-cache Role
-
-	*  rename methods to better reflect their actions,
-
-	*  add inline documentation
-
-*  rewrite README to only provide a reference to Raku-Documentation
-
-*  add no-preserve-state option to prevent archiving if need be
-
-# 2022-07-22 v0.7.1
-*  move up test for without-processing so no checking of caches
-
-*  revise no-preserve-state test.
-
-# 2022-07-24 v0.8.0
-*  revise report plugin spec so that one plugin can produce multiple report files
-
-*  report plugin returns an Array of Pairs, not just a Pair
-
-*  change test accordingly
-
-*  revise post-cache documentation
-
-*  change no-report & no-completion to without-* to be consistent with without-processing
-
-*  remove no-cache, as its not in get-config
-
-*  Revise milestone handling
-
-*  collect process can be stopped before AND after each stage
-
-*  change :end to :after to be compatible with :before
-
-*  :after implies no plugins triggered for a milestone, before implies plugins triggered
-
-*  dump-at implies plugins triggered
-
-*  change tests to reflect new specifications
-
-*  milestone information object includes plugins-used array of hashes
-
-*  revise README documentation
-
-# 2022-07-29 v0.8.1
-*  Do not fail if plugin misspelt / doesnt exist
-
-*  writes name to STDERR and continues
-
-*  Ignore milestone if it is not a key 'plugins-required'
-
-# 2022-08-03 v0.8.2
-*  small changes in no-preserve-state and full render logic
-
-*  remove preserve-state archive if it exists and if no-preserve-state
-
-# 2022-08-11 v0.8.3
-*  move some config logic to after mode config loaded
-
-# 2022-08-22 v0.9.0
-*  create transfer plugin type for transfer milestone
-
-*  modify README about Transfer milestone
-
-*  add tests for transfer plugins
-
-*  error: Exceptions options made consistent with module.
-
-*  changed config for test suite so that no-preserve-state is True
+# 2022-10-30 v 0.10.0
+*  review to ensure compliance with Render::Pod v 4
 
 # 2022-09-07 v0.9.1
 *  distinguish between 'plugin' and 'callable' at a milestone for that plugin.
@@ -334,131 +225,250 @@
 
 *  fixed the anomalous exit after git cloning
 
-# 2022-10-30 v 0.10.0
-*  review to ensure compliance with Render::Pod v 4
+# 2022-08-22 v0.9.0
+*  create transfer plugin type for transfer milestone
 
-# 2022-13-06 v0.10.1
-*  change to error report
+*  modify README about Transfer milestone
 
-*  minor change to xt/75*
+*  add tests for transfer plugins
 
-*  improve error handling in Mode
+*  error: Exceptions options made consistent with module.
 
-*  make RefreshPlugin observe :no-refresh config option
+*  changed config for test suite so that no-preserve-state is True
 
-# 2022-13-06 v 0.11.0
-*  allow for plugin-specific config data to be contained in Mode configs, by generalising completion-options
+# 2022-08-11 v0.8.3
+*  move some config logic to after mode config loaded
 
-*  change all plugin requirements to need %plugin-options
+# 2022-08-03 v0.8.2
+*  small changes in no-preserve-state and full render logic
 
-*  rename completion-options to plugin-options in Completion milestone
+*  remove preserve-state archive if it exists and if no-preserve-state
 
-*  change the README to reflect this
+# 2022-07-29 v0.8.1
+*  Do not fail if plugin misspelt / doesnt exist
 
-*  fix all tests to comply with new plugin requirements
+*  writes name to STDERR and continues
 
-*  add a test to check this
+*  Ignore milestone if it is not a key 'plugins-required'
 
-*  allow for :no-refresh to be passed from CLI to sub refresh
+# 2022-07-24 v0.8.0
+*  revise report plugin spec so that one plugin can produce multiple report files
 
-*  make :no-refresh & without-processing & recompile to be mandatory Level-one options
+*  report plugin returns an Array of Pairs, not just a Pair
 
-# 2022-11-14 v0.11.1
-*  change implementation of passing options to plugins.
+*  change test accordingly
 
-	*  instead of passing a Hash to plugin callables, the data from the plugin's config is already stored in the data section, and so is available from the instance of ProcessedPod that is passed to each plugin (except for Completion plugins).
+*  revise post-cache documentation
 
-	*  when a plugin is added to the ProcessedPod instance, the Mode config data is checked and overides the plugin config keys, when needed.
+*  change no-report & no-completion to without-* to be consistent with without-processing
 
-*  change README & tests
+*  remove no-cache, as its not in get-config
 
-*  add test to see whether a Mode configured plugin option is picked up
+*  Revise milestone handling
 
-# 2022-11-15 v0.11.2
-*  move add-plugin to top of plugin processing so that plugin config is available to render milestone callable
+*  collect process can be stopped before AND after each stage
 
-*  add test to ensure Mode config transferred to a render plugin
+*  change :end to :after to be compatible with :before
 
-# 2022-12-13 v0.12.0
-*  fix templates in tests to match Raku::Pod::Render v 4.2
+*  :after implies no plugins triggered for a milestone, before implies plugins triggered
 
-*  allow for asset transfers from compilation callables if the return value is an array of triples.
+*  dump-at implies plugins triggered
 
-# 2022-12-14 v0.12.1
-*  make counter nicer with times over 1min.
+*  change tests to reflect new specifications
 
-*  fix call to counter in rendering section
+*  milestone information object includes plugins-used array of hashes
 
-# 2022-12-17 v0.12.2
-*  more work on counter
+*  revise README documentation
 
-# 2022-12-17 v0.12.3
-*  extend overwrite in counter
+# 2022-07-22 v0.7.1
+*  move up test for without-processing so no checking of caches
 
-# 2022-12-19 v0.12.4
-*  fix thinko
+*  revise no-preserve-state test.
 
-# 2022-12-19 v0.12.5
-*  another try at getting counter right
+# 2022-07-17 v.0.7.0
+*  prepare for fez
 
-# 2022-12-20 v0.13.0
-*  spin counter off into its own Module, to make it possible for plugins to use it
+*  change to github workflow testing
 
-*  allow 'with-only' to be in Collection config file.
+*  remove Docker implementation
 
-# 2022-12-22 v0.13.1
-*  correct regex for @withs
+*  refactor tests
 
-# 2023-01-08 v0.13.2
-*  improve debugging info
+	*  rename raku files, change tests to reflect this too
 
-# 2023-01-08 v0.13.3
-*  crop long items in progress to last 45 chars
+	*  test post-cache role separately
 
-# 2023-01-22 v0.14.0
-*  move TestPlugin from raku-collection-plugin-development to collection
+	*  add clean up test
 
-# 2023-01-22 v0.14.1
-*  add $template-debug option
+	*  add preserve-state archive test
 
-# 2023-01-28 v0.14.2
-*  help and more-help options added
+*  Refactor Post-cache Role
 
-*  collect should now work without parameters
+	*  rename methods to better reflect their actions,
 
-	*  refresh requires a collection mode to be specified
+	*  add inline documentation
 
-# 2023-02-11 v0.14.3
-*  make all options to collect explicitly Bool
+*  rewrite README to only provide a reference to Raku-Documentation
 
-# 2023-02-11 v0.14.4
-*  add no-status to all milestones to pass to plugins
+*  add no-preserve-state option to prevent archiving if need be
 
-# 2023-02-19 v0.14.5
-*  make source-root and mode-root parameters to Setup callable absolute references so they can actually be used
+# 2021-04-02 v0.5.0
+*  enforce no-status (= quiet) and collection-info (= verbose) on plugins
 
-# 2023-04-09 v0.14.6
-*  revert change in v0.16.5 source-root and mode-root are again relative.
+*  change README (and some editing) to reflect this
 
-*  If ProcessedPod fails, report the file that caused the error.
+*  change logic for rendering collection content when there is change to sources, but no change to collection
 
-# 2023-04-13 v0.15.0
-*  add commit bit id and render date/time to 'generation-data' namespace, so its available to plugins.
+*  added date/time output when starting
 
-# 2023-04-13 v0.15.1
-*  chomp lf off commit id
+*  change counter to put heading into state
 
-# 2023-05-05 v0.15.2
-*  add commit bit id for the mode-cache, which gives the commit level for the tooling.
+# 2021-03-30 v0.4.2
+*  add anti-alias method to Post-cache
 
-# 2023-05-10 v0.15.3
+*  remove trace statement
+
+*  make it possible for a report plugin to return a Pair with '' key.
+
+*  add asset-db method to return the whole database for analysis
+
+# 2021-03-23 v0.4.1
+*  correct without-processing logic
+
+# 2021-03-14 v0.4.0
+*  remove %processed as input to completion plugin. Intermediate data not needed at completion. Hence it is not necessary to cache intermediate data except for rendering collection documents.
+
+# 2021-03-10 v0.3.7
+*  add backtrace to plugin error response.
+
+# 2021-03-05 v0.3.6
+*  Added :with-only<filename> that runs the whole of Collect but with only one file
+
+*  added tests for :debug-when and :with-only
+
+# 2021-03-05 v0.3.5
+*  Added method add(fn,:alias) to Post-Cache role.
+
+*  allows for the change in the name of the filename without affecting the underlying Cache
+
+*  added tests & modified README
+
+*  fixed output of timing information
+
+# 2021-03-03 v0.3.4
+*  Change of storing cache, using Libarchive.
+
+*  Added timing information when !no-status
+
+# 2021-03-02 v0.3.3
+*  META6 path changes to reflect repository name
+
+# 2021-02-25 v0.3.2
+*  add in a progress statement about rendered files in place of a spinner
+
+*  correct error about where processed/symbol structures are stored.
+
+# 2021-02-23 v0.3.1
+*  refactor to ensure that only changed files are re-rendered, but information of non-rendered files is cached
+
+*  change the input type of completion plugin
+
+# 2021-02-22 v0.3.0
+*  changed the return value from a render plugin to a list of triples, not a list of pairs
+
+*  changed the tests accordingly
+
+# 2021-02-20 v0.2.2
+*  make sure asset output paths synchronise
+
+*  add new debug-when/verbose-when options to command-line check
+
+# 2021-02-18 v0.2.0
+*  added functionality for storage and processing of non-Pod6 content files
+
+*  added tests of functionality, tests passing.
+
+# bead1
+
+2021-02-19 v0.2.1
+
+*  mode level control options in config should be enforced
+
+*  extra test in report completion
+
+# 2021-02-14 v0.1.10
+*  getting without processing logic right.
+
+# 2021-02-10 v0.1.9
+*  add to description of Configuration
+
+*  enforce action of without processing on caches
+
+# 2021-02-08
+*  remove dependency on PrettyDump
+
+*  add updater script for Containerising Collection.
+
+# 2021-02-06
+*  added cro-run plugin, added %config<completion-options> to completion plugin signature.
+
+# 2021-02-05
+*  improve min-templates
+
+# 2021-02-04
+*  add dump-at functionality
+
+*  addd test of dump-at
+
+# 2021-02-3
+*  add mode-name key to ProcessedPod object
+
+*  defined functionality of the return value of a render closure.
+
+*  ensure that plugins are called in the order specified. manage-plugins uses an array of pairs, not a Hash
+
+# 2021-02-02
+*  extra test in compilation, routine plugin
+
+*  changes needed after Pod::Render refactoring
+
+*  now render will also call a program with $pr, this is so that it can interogate the config files of other plugins to see if they provide css, scripts, etc, as these need to be included in files to be included in a template.
+
+# 2021-01-31
+*  Compilation milestone adds plugins to convert collected data into compiled data.
+
+*  All tests working
+
+*  API mostly complete
+
+*  TODO add a sorting key to config where the order of the files to be completed is important.
+
+# 2021-01-27 Redesign
+*  plugin management made constistent
+
+*  rewritten README to include new design
+
+*  test written for process upto milestone pre-render, passing
+
+*  Exceptions spun into separate file
+
+# 2021-01-24 Adding tests
+*  t/01-sanity only has use-ok
+
+*  meta-ok in xt
+
+*  other tests
+
+# 2021-01-22 Collection spun out of Raku-Alt-Documentation
 
 
-*  fix tests to match new Pod::From::Cache
+*  this had been planned.
+
+*  tests are needed for Collection.pm6
 
 
 
 
 
 ----
-Rendered from CHANGELOG at 2023-05-10T20:51:43Z
+Rendered from CHANGELOG at 2023-06-25T10:43:29Z

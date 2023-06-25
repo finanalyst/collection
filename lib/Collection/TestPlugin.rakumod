@@ -8,6 +8,7 @@ unit module Collection::TestPlugin;
 
 # several subs are taken from Jonathan Stowe's Test::Meta module.
 our $TESTING = False;
+our $TEST_OUT = False;
 
 sub test-plugin is export {
     my %config;
@@ -39,6 +40,7 @@ sub test-plugin is export {
 
 sub my-diag(Str $mess) {
     diag $mess unless $TESTING;
+    say $mess if $TEST_OUT;
 }
 
 our sub check-name(%config --> Bool) {
@@ -316,9 +318,26 @@ our sub check-otherkey(%config --> Bool) {
         name version auth authors license
         custom-raku template-raku information
     >;
-    for %config.keys.grep(none(@specified)) {
-        next if %config<information> and $_ ~~ any(%config<information>.list);
-        $rc &&= check-file(%config{$_}, :extra("in key ｢$_｣"));
+    for %config.keys.grep(none(@specified)) -> $k-name {
+        # skip if key is in the information list
+        next if %config<information> and $k-name ~~ any(%config<information>.list);
+        # skip if key is a boolean
+        next if %config{$k-name} ~~ Bool;
+        # skip if key is an array of arrays
+        next if %config{$k-name} ~~ Positional and %config{$k-name}[0] ~~ Array;
+        # if key is an array, then test each item
+        if %config{$k-name} ~~ Positional {
+            unless %config{ $k-name }.elems {
+                my-diag("Key ｢$k-name｣ does not provide any information.");
+                $rc = False;
+            }
+            for %config{ $k-name }.list {
+                $rc &&= check-file($_, :extra("in key ｢$k-name｣"));
+            }
+        }
+        else {
+            $rc &&= check-file(%config{$k-name}, :extra("in key ｢$k-name｣"));
+        }
     }
     $rc
 }

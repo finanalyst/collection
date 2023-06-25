@@ -1,8 +1,9 @@
 use v6.d;
 use Test;
 use Collection::TestPlugin;
+use Test::Output;
 
-plan 4;
+plan 6;
 
 constant DIR = 'xt/plugin-test-dir';
 
@@ -15,5 +16,10 @@ ok Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc>,) ), 'other k
 nok Collection::TestPlugin::check-otherkey( %( :css(),) ), 'other keys, traps not pointing to a filename';
 ok Collection::TestPlugin::check-otherkey( %( :css(), :information<css>) ), 'allow empty key if in information list';
 ok Collection::TestPlugin::check-otherkey( %( :css("not a filename here"), :information<css>) ), 'dont check Str val of key if in information list';
+ok Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc custom.raku>,) ), 'other keys, if a list, should each be a filename';
+
+$Collection::TestPlugin::TEST_OUT = True;
+output-like { Collection::TestPlugin::check-otherkey( %( :css<README.rakudoc another.js>,) )},
+        / 'another.js' /, 'traps wrong file';
 
 done-testing;
