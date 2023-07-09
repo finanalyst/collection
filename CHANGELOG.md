@@ -3,7 +3,8 @@
 
 
 ## Table of Contents
-[2023-0704 v0.15.6](#2023-0704-v0156)  
+[2023-07-09 v0.15.7](#2023-07-09-v0157)  
+[2023-07-04 v0.15.6](#2023-07-04-v0156)  
 [2023-06-25 v0.15.5](#2023-06-25-v0155)  
 [2023-06-05 v0.15.4](#2023-06-05-v0154)  
 [2023-05-10 v0.15.3](#2023-05-10-v0153)  
@@ -69,7 +70,10 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
-# 2023-0704 v0.15.6
+# 2023-07-09 v0.15.7
+*  chop item name if too long and add ... to front.
+
+# 2023-07-04 v0.15.6
 *  remove Terminal Spinners from Progress module
 
 *  make Progress module more responsive to terminal width.
@@ -477,4 +481,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2023-07-04T12:13:22Z
+Rendered from CHANGELOG at 2023-07-09T11:13:53Z

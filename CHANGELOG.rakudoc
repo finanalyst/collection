@@ -2,7 +2,10 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
-=head1 2023-0704 v0.15.6
+=head1 2023-07-09 v0.15.7
+=item chop item name if too long and add ... to front.
+
+=head1 2023-07-04 v0.15.6
 =item remove Terminal Spinners from Progress module
 =item make Progress module more responsive to terminal width.
 
