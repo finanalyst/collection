@@ -71,7 +71,7 @@ multi sub counter( :@items, :$dec = False, :$header) is export {
         return
     }
     my $inf = @s-items[$item];
-    $inf = '... ' ~ $inf.substr( * - $text-len - 4 ) if $inf.chars > $text-len;
+    $inf = '... ' ~ $inf.substr( * - $text-len + 4 ) if $inf.chars > ( $text-len - 4 );
     print BEG ~ $inf.fmt("%-{$text-len}s") ~ '[' ~ $bar.fmt("%-{$bar-len - 2}s") ~ ']' ~ RET;
 }
 sub line-width( --> Int ) {

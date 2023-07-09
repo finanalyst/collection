@@ -2,6 +2,9 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2023-07-09 v0.15.8
+=item if leng item within 4 of text length, there is an error. Fixed
+
 =head1 2023-07-09 v0.15.7
 =item chop item name if too long and add ... to front.
 
