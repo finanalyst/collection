@@ -15,7 +15,9 @@
     "Archive::Libarchive"
   ],
   "build-depends": [],
-  "test-depends": [],
+  "test-depends": [
+    "License::SPDX:ver<3.21.0+>"
+  ],
   "provides": {
     "Collection": "lib/Collection.rakumod",
     "Collection::Entities": "lib/Collection/Entities.rakumod",
