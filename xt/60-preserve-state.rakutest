@@ -22,23 +22,25 @@ unless TMP.IO.d and "{ TMP }/{ REPORT }".IO.d;
 chdir TMP;
 "{MODE}/{ Collection::PRESERVE }".IO.unlink #eliminate if exists
         if "{MODE}/{ Collection::PRESERVE }".IO.e;
-stderr-like {
-        $rv = collect( MODE, :after<mode>, :recompile, :!no-preserve-state ) ;
-        },
-        / 'Could not recover the archive' /,
-        'detects the absence of preserved state';
-is $rv[0][2], True, 'Full-render turned on';
+skip 'Archiving disabled', 7;
 
-rmtree OUTPUT;
-stderr-like { $rv = collect( MODE, :after<all>, :without-processing) },
-         / 'Cannot continue without processing' /,
-        'traps no html output';
-
-$rv = collect( :after<report>, :no-status, :!no-preserve-state);
-ok "{MODE}/{ Collection::PRESERVE }".IO ~~ :f, 'got preserve state archive';
-my ($ok, %processed, %symbols) := restore-processed-state( MODE , :no-status );
-ok $ok, 'restoration was good';
-isa-ok %processed<file-a>, 'PodFile', 'processed seems to have expected data';
-isa-ok %symbols, 'Hash', 'symbols seems OK';
+#stderr-like {
+#        $rv = collect( MODE, :after<mode>, :recompile, :!no-preserve-state ) ;
+#        },
+#        / 'Could not recover the archive' /,
+#        'detects the absence of preserved state';
+#is $rv[0][2], True, 'Full-render turned on';
+#
+#rmtree OUTPUT;
+#stderr-like { $rv = collect( MODE, :after<all>, :without-processing) },
+#         / 'Cannot continue without processing' /,
+#        'traps no html output';
+#
+#$rv = collect( :after<report>, :!no-status, :!no-preserve-state);
+#ok "{MODE}/{ Collection::PRESERVE }".IO ~~ :e & :f, 'got preserve state archive';
+#my ($ok, %processed, %symbols) := restore-processed-state( MODE , :!no-status );
+#ok $ok, 'restoration was good';
+#isa-ok %processed<file-a>, 'PodFile', 'processed seems to have expected data';
+#isa-ok %symbols, 'Hash', 'symbols seems OK';
 
 done-testing;

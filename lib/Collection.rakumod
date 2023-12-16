@@ -543,51 +543,56 @@ multi sub collect(Str:D $mode,
 }
 
 sub restore-processed-state($mode, :$no-status --> Array) is export {
-    use Archive::Libarchive;
-    use Archive::Libarchive::Constants;
-    my $file = "$*CWD/$mode/{ PRESERVE }";
-    my $ok = $file.IO ~~ :e & :f;
-    note "Could not recover the archive with processed state ｢$file｣. Turning on full-render."
-        unless $ok or $no-status;
-    return [$ok] unless $ok;
-    my Archive::Libarchive $arc .= new(
-    :operation(LibarchiveExtract),
-    :$file
-    );
-    my %rv;
-    use MONKEY-SEE-NO-EVAL;
-    my Archive::Libarchive::Entry $e .= new;
-    say "Recovering processed state" unless $no-status;
-    my $timer = now;
-    while $arc.next-header($e) {
-        if $e.pathname eq 'processed-state' {
-            %rv = EVAL $arc.read-file-content($e)
-        }
-        else { $arc.data-skip }
-    }
-    say "Recovery took { now - $timer } secs" unless $no-status;
-    [$ok, %rv<processed>, %rv<symbols>]
+    note "Archiving disabled as too inefficient" unless $no-status;
+    return [False];
+#    use Archive::Libarchive;
+#    use Archive::Libarchive::Constants;
+#    my $file = "$*CWD/$mode/{ PRESERVE }";
+#    my $ok = $file.IO ~~ :e & :f;
+#    note "Could not recover the archive with processed state ｢$file｣. Turning on full-render."
+#        unless $ok or $no-status;
+#    return [$ok] unless $ok;
+#    my Archive::Libarchive $arc .= new(
+#    :operation(LibarchiveExtract),
+#    :$file
+#    );
+#    my %rv;
+#    use MONKEY-SEE-NO-EVAL;
+#    my Archive::Libarchive::Entry $e .= new;
+#    say "Recovering processed state" unless $no-status;
+#    my $timer = now;
+#    while $arc.next-header($e) {
+#        say "At $?LINE e ", $e;
+#        if $e.pathname eq 'processed-state' {
+#            %rv = EVAL $arc.read-file-content($e)
+#        }
+#        else { $arc.data-skip }
+#    }
+#    say "Recovery took { now - $timer } secs" unless $no-status;
+#    [$ok, %rv<processed>, %rv<symbols>]
 }
 sub save-processed-state($mode, %processed, %symbols, :$no-status) {
-    use Archive::Libarchive;
-    my Archive::Libarchive $arc;
-    say "Saving processed state to archive" unless $no-status;
-    my $timer = now;
-    my $file = "$*CWD/$mode/{ PRESERVE }";
-    try {
-        $arc .= new(
-                :operation(LibarchiveOverwrite),
-                :$file,
-                );
-        my Buf $buffer .= new: %(:%processed, :%symbols).raku.encode;
-        $arc.write-header('processed-state', :size($buffer.bytes), :atime(now.Int), :mtime(now.Int), :ctime(now.Int));
-        $arc.write-data($buffer);
-        $arc.close;
-        CATCH {
-            default { say "Exception saving processed state: ", .Str }
-        }
-    }
-    say "Saving state took { now - $timer } secs" unless $no-status;
+    note "Archiving is disabled as too inefficient" unless $no-status;
+    return;
+#    use Archive::Libarchive;
+#    my Archive::Libarchive $arc;
+#    say "Saving processed state to archive" unless $no-status;
+#    my $timer = now;
+#    my $file = "$*CWD/$mode/{ PRESERVE }";
+#    try {
+#        $arc .= new(
+#                :operation(LibarchiveOverwrite),
+#                :$file,
+#                );
+#        my Buf $buffer .= new: %(:%processed, :%symbols).raku.encode;
+#        $arc.write-header('processed-state', :size($buffer.bytes), :atime(now.Int), :mtime(now.Int), :ctime(now.Int));
+#        $arc.write-data($buffer);
+#        $arc.close;
+#        CATCH {
+#            default { say "Exception saving processed state: ", .Str }
+#        }
+#    }
+#    say "Saving state took { now - $timer } secs" unless $no-status;
 }
 sub plugin-confs(:$mile, :%config, :$mode, :$collection-info) {
     return [] without %config<plugins-required>{$mile};

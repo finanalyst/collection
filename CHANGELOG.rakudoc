@@ -2,6 +2,11 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2023-12-16 v0.15.9
+=item allow '#' at start of a plugin to disable it.
+=item disable preserve-state and archiving
+=item remove dependency on Archive::Libarchive
+
 =head1 2023-07-09 v0.15.8
 =item if leng item within 4 of text length, there is an error. Fixed
 

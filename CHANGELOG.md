@@ -3,6 +3,7 @@
 
 
 ## Table of Contents
+[2023-12-16 v0.15.9](#2023-12-16-v0159)  
 [2023-07-09 v0.15.8](#2023-07-09-v0158)  
 [2023-07-09 v0.15.7](#2023-07-09-v0157)  
 [2023-07-04 v0.15.6](#2023-07-04-v0156)  
@@ -71,6 +72,13 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
+# 2023-12-16 v0.15.9
+*  allow '#' at start of a plugin to disable it.
+
+*  disable preserve-state and archiving
+
+*  remove dependency on Archive::Libarchive
+
 # 2023-07-09 v0.15.8
 *  if leng item within 4 of text length, there is an error. Fixed
 
@@ -485,4 +493,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2023-07-09T20:49:55Z
+Rendered from CHANGELOG at 2023-12-16T22:15:01Z

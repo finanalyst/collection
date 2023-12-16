@@ -81,6 +81,7 @@ multi sub refresh(Str:D :$collection = $*CWD.Str, Bool :$test = False, :$no-refr
         my @required = (gather for %config<plugins-required>.values { take .list.Slip }).unique;
         my $format = %config<plugin-format>;
         for @required -> $plug {
+            next if $plug.starts-with('#');
             with %plugins{$mode}{$plug} {
                 my $n-plug = %plugins{$mode}{$plug}<name> // $plug;
                 my $n-auth = %plugins{$mode}{$plug}<auth> // 'collection';
