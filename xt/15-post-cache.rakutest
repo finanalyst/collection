@@ -22,7 +22,7 @@ throws-like { $rv = Pod::From::Cache.new(
         :doc-source<sources>,
         :cache-path<cache>
         :progress(Nil) ) but Post-cache },
-    X::AdHoc,
+     X::Pod::From::Cache::NoSources,
     'traps lack of sources',
     message => / 'No pod sources in' /;
 
@@ -71,7 +71,7 @@ isa-ok $rv.pod('new-file')[0], Pod::Block, 'adding file and getting back from ca
 isa-ok $rv.pod('sources/file-a.rakudoc')[0], Pod::Block, 'existing files in cache available';
 nok $rv.pod('sources/file-b.rakudoc'), 'file-b blocked from cache access';
 like $rv.pod('Sources/file-b.rakudoc')[0].contents[0].contents[0].contents, / 'file-b' / , 'alias has expected content';
-throws-like { $rv.pod('Sources/file-c.rakudoc') }, X::AdHoc,
+throws-like { $rv.pod('Sources/file-c.rakudoc') }, X::Pod::From::Cache::NoPodInCache,
         message => / 'Has the path changed' /,
         'nothing available in cache with new name';
 throws-like { $rv.add-alias('new-file', :alias<New-File>) }, X::Collection::Post-cache-illegal-alias,
