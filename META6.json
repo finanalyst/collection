@@ -1,7 +1,7 @@
 {
   "name": "Collection",
   "description": "Collects a collection of content files in Rakudoc (aka POD6) files and creates output based on configuration files",
-  "version": "0.15.10",
+  "version": "0.16.0",
   "perl": "6.d",
   "authors": [
     "Richard Hainsworth, aka finanalyst"
@@ -15,7 +15,8 @@
   ],
   "build-depends": [],
   "test-depends": [
-    "License::SPDX:ver<3.21.0+>"
+    "License::SPDX:ver<3.21.0+>",
+    "Test::Run"
   ],
   "provides": {
     "Collection": "lib/Collection.rakumod",

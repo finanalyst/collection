@@ -322,7 +322,7 @@ multi sub collect(Str:D $mode,
                 :obtain(%config<mode-obtain> // ()), :refresh(%config<mode-refresh> // ()),
                 :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
                 :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
-                                                    );
+        );
         my Bool $source-changes = ?(+$cache.list-changed-files);
         my Bool $collection-changes = ?(+$mode-cache.list-changed-files);
         my %processed;
@@ -483,10 +483,12 @@ multi sub collect(Str:D $mode,
                         .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
                         if $stage eq 'sources' {
                             .pod-file.path = $cache.behind-alias($fn);
+                            .pod-file.last-edited = $cache.last-edited(.pod-file.path);
                             .process-pod($cache.pod($fn));
                         }
                         else {
                             .pod-file.path = $mode-cache.behind-alias($fn);
+                            .pod-file.last-edited = $mode-cache.last-edited(.pod-file.path);
                             .process-pod($mode-cache.pod($fn));
                         }
                         .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));

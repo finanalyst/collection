@@ -2,6 +2,12 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2024-04-13 v0.16.0
+=item add data to new PodF last-edited attribute from new C<Pod::From::Cache> update
+
+=head1 2024-04-13 v0.15.10
+=item change tests to match reversion on C<Pod::From::Cache>
+
 =head1 2023-12-16 v0.15.9
 =item allow '#' at start of a plugin to disable it.
 =item disable preserve-state and archiving

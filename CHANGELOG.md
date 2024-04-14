@@ -1,8 +1,10 @@
-# Changlog
+        # Changlog
 >Changes in the Collection distribution
 
 
 ## Table of Contents
+[2024-04-13 v0.16.0](#2024-04-13-v0160)  
+[2024-04-13 v0.15.10](#2024-04-13-v01510)  
 [2023-12-16 v0.15.9](#2023-12-16-v0159)  
 [2023-07-09 v0.15.8](#2023-07-09-v0158)  
 [2023-07-09 v0.15.7](#2023-07-09-v0157)  
@@ -72,6 +74,12 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
+# 2024-04-13 v0.16.0
+*  add data to new PodF last-edited attribute from new `Pod::From::Cache` update
+
+# 2024-04-13 v0.15.10
+*  change tests to match reversion on `Pod::From::Cache`
+
 # 2023-12-16 v0.15.9
 *  allow '#' at start of a plugin to disable it.
 
@@ -493,4 +501,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2023-12-16T22:15:01Z
+Rendered from CHANGELOG at 2024-04-14T09:52:58Z
