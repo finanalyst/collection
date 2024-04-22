@@ -7,8 +7,9 @@ class X::Collection::PostCache::VersionDataMissing is Exception {
 class X::Collection::PostCache::VersionErr is Exception {
     has $.err;
     has $.stage;
+    has $.proc;
     method message {
-        "Versioning at stage ｢$.stage｣ failed with: ", $.err
+        "Versioning at stage ｢$.stage｣ failed after run ｢$.proc｣ with: ", $.err
     }
 }
 

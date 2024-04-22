@@ -3,6 +3,7 @@
 
 
 ## Table of Contents
+[2024-04-22 v0.17.1](#2024-04-22-v0171)  
 [2024-04-18 v0.17.0](#2024-04-18-v0170)  
 [2024-04-13 v0.16.0](#2024-04-13-v0160)  
 [2024-04-13 v0.15.10](#2024-04-13-v01510)  
@@ -75,6 +76,9 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
+# 2024-04-22 v0.17.1
+*  add `$proc` data to Exception message
+
 # 2024-04-18 v0.17.0
 *  refactor because versioning data should be handled by Collection, not `Pod::From::Cache`
 
@@ -525,4 +529,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2024-04-22T12:40:53Z
+Rendered from CHANGELOG at 2024-04-22T13:33:22Z

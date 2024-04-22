@@ -92,7 +92,7 @@ role Post-cache is export {
     #| returns version data for the repo, such as commit-id
     multi method last-version( @version-data ) {
         my $proc = run @version-data, :err, :out;
-        X::Collection::PostCache::VersionErr.new( :stage<Repo>, :err( $proc.err.slurp(:close))).throw
+        X::Collection::PostCache::VersionErr.new( :stage<Repo>, :$proc, :err( $proc.err.slurp(:close))).throw
             if $proc.exitcode;
         $proc.out.slurp(:close).trim.comb(/ <-["]>+ /)[0]
     }

@@ -2,6 +2,9 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2024-04-22 v0.17.1
+=item add C<$proc> data to Exception message
+
 =head1 2024-04-18 v0.17.0
 =item refactor because versioning data should be handled by Collection, not C<Pod::From::Cache>
 =item git type commands to get repo level and per-file versioning data is passed from a config option
