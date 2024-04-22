@@ -2,8 +2,28 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2024-04-18 v0.17.0
+=item refactor because versioning data should be handled by Collection, not C<Pod::From::Cache>
+=item git type commands to get repo level and per-file versioning data is passed from a config option
+=item the data is generated in the Post-Cache role, which is in Collection
+=item the per-file data is added to the PodFile instance when the source is rendered, as part of the
+PodFile.config data
+=item C<debug-when> & C<verbose-when> were modified to take a sequence from a string, not just one file name. In line
+with C<with-only>
+
+=item the per-file data can be accessed directly as PodFile config data is automatically made
+available via the C<%prm<config>> parameter.
+
+=item the config files of the Collection and the templates will need to be changed.
+=item good versioning data will not be available unless the method add-versioning-data is called
+so calling for versionning will generate C<unknown> or C<Not available> rather than throwing
+exceptions to ensure some backwards compatibility
+
 =head1 2024-04-13 v0.16.0
 =item add data to new PodF last-edited attribute from new C<Pod::From::Cache> update
+=item generate per file and per repo commit-id and last-edited data.
+=item change 'last-edited' to 'commit-data'.
+=item move the git string to generate 'commit-data' to a top-level configuration.
 
 =head1 2024-04-13 v0.15.10
 =item change tests to match reversion on C<Pod::From::Cache>

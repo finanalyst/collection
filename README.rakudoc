@@ -639,11 +639,12 @@ B<debug-when & verbose-when>
 
 ProcessedPod uses C<debug> and C<verbose>, which provide information about which blocks are processed (debug),
 and the result after the application of the template (verbose). This is a lot of information and generally, it is only
-one file that is of interest.
+a few files that are of interest.
 
-These two flags take a string, eg., C<:debug-when<Introduction.pod6> >, and when the filename matches
-the string, then the debug/verbose flag is set for that file only. (verbose is only effective when
-debug is True).
+These two flags take a string, eg., C<:debug-when<Introduction.pod6> > or C<:debug-when<101 about> >, and when the string matches
+the filename, then the debug/verbose flag is set for that file only.
+
+Note C<verbose> is B<only> effective when C<debug> is True.
 
 =end item
 =begin item
@@ -1287,6 +1288,20 @@ underlying Cache or database have content,
 =item throw a NoPodInCache Exception if there is no pod associated with either the database
 or the underlying cache. If the original filename is used after an alias have been generated,
 the Exception will also be thrown.
+
+=head2 multi method last-version( @version-data )
+
+The C<@version-data> contains an array of strings to be given to a C<run> sub. Typically it is a call to C<git revparse>.
+The return value is the result of the command to the Operating System.
+
+=head multi method last-version( @per-file-version, $fn, $doc-source, :debug)
+
+The C<@per-file-version> array of strings is appended by the value of $fn, changed to the underlying source if it is an alias.
+
+Typically, the string is a git command. However, the git command in particular runs on a directory, but the source file may be
+in a sub-directory, which needs to be stripped, so C<$doc-source> is provided to enable the correct filename.
+
+C<:debug> generates information about the C<run> command, if true.
 
 =head1 Asset-cache methods
 

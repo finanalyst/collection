@@ -89,6 +89,29 @@ role Post-cache is export {
         if %!aliases{$fn}:exists { %!aliases{$fn} }
         else { $fn }
     }
+    #| returns version data for the repo, such as commit-id
+    multi method last-version( @version-data ) {
+        my $proc = run @version-data, :err, :out;
+        X::Collection::PostCache::VersionErr.new( :stage<Repo>, :err( $proc.err.slurp(:close))).throw
+            if $proc.exitcode;
+        $proc.out.slurp(:close).trim.comb(/ <-["]>+ /)[0]
+    }
+
+    multi method last-version( @per-file-version, $fn is copy, $doc-source, :$debug = False ) {
+        if %!aliases{ $fn }:exists {
+            $fn = %!aliases{ $fn }
+        }
+        else {
+            return "｢$fn｣ is unknown source"
+                unless $fn ~~ any(self.sources.list)
+        }
+        $fn = $fn.IO.relative($doc-source).Str;
+        my $proc = run (@per-file-version, $fn), :err, :out;
+        say("fn ｢$fn｣ process run was:", $proc) if $debug;
+        X::Collection::PostCache::VersionErr.new( :stage<File>, :err( $proc.err.slurp(:close))).throw
+            if $proc.exitcode;
+        $proc.out.slurp(:close).trim.comb(/ <-["]>+ /)[0] // 'Unavailable'
+    }
 }
 
 #| Class to provide access to other collection resources, such as images, which are common to the collection,
@@ -292,6 +315,11 @@ multi sub collect(Str:D $mode,
                 :ignore(%config<ignore> // ()),
                 :extensions(%config<extensions> // <pod6 rakudoc>)
         );
+        #| checks to see if version strings set up, if not leave undefined
+        my $version-data;
+        $version-data = %config<source-versioning> if %config<source-versioning>:exists;
+        my $pf-version-data;
+        $pf-version-data = %config<source-per-file-versioning> if %config<source-per-file-versioning>:exists;
         $ret-after = ?($after ~~ /:i Source /);
         $ret-before = ?($before ~~ /:i Mode /); # call-plugins False because there are no plugins valid here
         $rv = milestone('Mode', :with($cache), :@dump-at, :$collection-info, :$no-status, :@plugins-used, :!call-plugins );
@@ -323,6 +351,11 @@ multi sub collect(Str:D $mode,
                 :cache-path("$mode/" ~ %config<mode-cache>), :doc-source("$mode/" ~ %config<mode-sources>),
                 :ignore(%config<mode-ignore> // ()), :extensions(%config<mode-extensions> // ())
         );
+        #| checks to see if version strings set up, if not leave undefined
+        my $mode-version-data;
+        $mode-version-data = %config<mode-source-versioning> if %config<mode-source-versioning>:exists;
+        my $mode-pf-version-data;
+        $mode-pf-version-data = %config<mode-source-per-file-versioning> if %config<mode-source-per-file-versioning>:exists;
         my Bool $source-changes = ?(+$cache.list-changed-files);
         my Bool $collection-changes = ?(+$mode-cache.list-changed-files);
         my %processed;
@@ -379,9 +412,23 @@ multi sub collect(Str:D $mode,
             $pr.templates(~@templates[0]);
             for @templates[1 .. *- 1] { $pr.modify-templates(~$_, :path("$mode/templates")) }
             $pr.add-data('mode-name', $mode);
+            my $commit-id;
+            my $mode-commit-id;
+            with $version-data {
+                $commit-id = $cache.last-version($version-data),
+            }
+            else {
+                $commit-id = 'Not available'
+            }
+            with $mode-version-data {
+                $mode-commit-id = $mode-cache.last-version($mode-version-data),
+            }
+            else {
+                $mode-commit-id = 'Not available'
+            }
             $pr.add-data('generation-data', %(
-                commit-id => $cache.source-last-commit.chomp,
-                mode-commit-id => $mode-cache.source-last-commit.chomp.subst(/ 'git commit failed' /, 'Not a git repo'),
+                :$commit-id,
+                :$mode-commit-id,
                 :$g-date,
                 :$g-time,
             ));
@@ -390,6 +437,8 @@ multi sub collect(Str:D $mode,
             $pr.add-data('image-manager', %(:manager($image-manager), :dest-dir(%config<asset-out-path>)));
             my @files;
             my @withs = $with-only.comb( / \S+ /);
+            my @debugs = $debug-when.comb( / \S+ /);
+            my @verboses = $verbose-when.comb( / \S+ /);
             for <sources mode> -> $stage {
                 if $stage eq 'sources' {
                     $ret-after = ?($after ~~ /:i Setup /);
@@ -479,18 +528,24 @@ multi sub collect(Str:D $mode,
                     $image-manager.current-file = $short;
                     with $pr {
                         .pod-file.name = $short;
-                        .debug = ?($debug-when and $fn ~~ / $debug-when /);
-                        .verbose = ?($verbose-when and $fn ~~ / $verbose-when /);
+                        .debug = @debugs.grep( -> $s { $fn ~~ / $s / } ).so;
+                        .verbose = @verboses.grep( -> $s { $fn ~~ / $s / } ).so;
                         if $stage eq 'sources' {
                             .pod-file.path = $cache.behind-alias($fn);
-                            .pod-file.last-edited = $cache.last-edited(.pod-file.path);
+                            .pod-file.last-edited =
+                                $cache.last-version($pf-version-data,$fn, %config<sources>, :debug( .debug ))
+                                 if $pf-version-data;
                             .process-pod($cache.pod($fn));
                         }
                         else {
                             .pod-file.path = $mode-cache.behind-alias($fn);
-                            .pod-file.last-edited = $mode-cache.last-edited(.pod-file.path);
+                            .pod-file.last-edited
+                                = $mode-cache.last-version($mode-pf-version-data, $fn, %config<mode> ~ '/' ~ %config<mode-sources>, :debug( .debug ))
+                                 if $mode-pf-version-data;
                             .process-pod($mode-cache.pod($fn));
                         }
+                        say "path { .pod-file.path } last-edited { .pod-file.last-edited }"
+                            if .debug;
                         .file-wrap(:filename("$mode/%config<destination>/$short"), :ext(%config<output-ext>));
                         %processed{$short} = .emit-and-renew-processed-state;
                         .debug = .verbose = False;

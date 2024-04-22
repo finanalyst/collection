@@ -1,5 +1,17 @@
 use v6.*;
 
+class X::Collection::PostCache::VersionDataMissing is Exception {
+    method message { 'No version data available - has ｢add-versioning-data｣ method been called?' }
+}
+
+class X::Collection::PostCache::VersionErr is Exception {
+    has $.err;
+    has $.stage;
+    method message {
+        "Versioning at stage ｢$.stage｣ failed with: ", $.err
+    }
+}
+
 class X::Collection::Post-cache-alias-overwrite is Exception {
     has $.fn;
     has $.alias;

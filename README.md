@@ -1,9 +1,10 @@
-![github-tests-passing-badge](https://github.com/finanalyst/collection/actions/workflows/test.yaml/badge.svg)
-# Raku Collection Module
+        # Raku Collection Module
 >
-> **Description** Software to collect content files written in Rakudoc (aka POD6) and render them in a chosen format. Extensive use is made of plugins to customise the rendering. A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc files that describe the whole collection of sources (mode-sources), eg. the landing page (index.html) of a website, or the Contents page of the same sources in book form. The collection process is in stages at the start of which plugin callables (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
+> **DESCRIPTION** # DESCRIPTION
+Software to collect content files written in Rakudoc (aka POD6) and render them in a chosen format. Extensive use is made of plugins to customise the rendering. A distinction is made between the Rakudoc files for the main content (sources) and the Rakudoc files that describe the whole collection of sources (mode-sources), eg. the landing page (_index.html_) of a website, or the Contents page of the same sources in book form. The collection process is in stages at the start of which plugin callables (Raku programs) can be added that transform intermediate data or add templates, or add new Pod::Blocks for the rendering.
 
-> **Author** Richard Hainsworth aka finanalyst
+> **AUTHOR** # AUTHOR
+Richard Hainsworth aka finanalyst
 
 
 ----
@@ -42,6 +43,9 @@
 [Transfer](#transfer)  
 [Report](#report)  
 [Completion](#completion)  
+[Plugin development](#plugin-development)  
+[Collection plugin specification](#collection-plugin-specification)  
+[Collection plugin tests](#collection-plugin-tests)  
 [Plugin updating](#plugin-updating)  
 [Mapping released plugins to mode directories](#mapping-released-plugins-to-mode-directories)  
 [Released plugins directory](#released-plugins-directory)  
@@ -56,6 +60,8 @@
 [multi method add-alias(Str $fn, Str :alias! --&gt; Pod::From::Cache)](#multi-method-add-aliasstr-fn-str-alias----podfromcache)  
 [method behind-alias(Str $fn --&gt; Str )](#method-behind-aliasstr-fn----str-)  
 [method pod(Str $fn)](#method-podstr-fn)  
+[multi method last-version( @version-data )](#multi-method-last-version-version-data-)  
+[Head](#head)  
 [Asset-cache methods](#asset-cache-methods)  
 [Copyright and License](#copyright-and-license)  
 
@@ -579,9 +585,11 @@ If **without-processing** is set, then the **Report** stage is skipped. If, howe
 
 *  **debug-when & verbose-when**
 
-ProcessedPod uses `debug` and `verbose`, which provide information about which blocks are processed (debug), and the result after the application of the template (verbose). This is a lot of information and generally, it is only one file that is of interest.
+ProcessedPod uses `debug` and `verbose`, which provide information about which blocks are processed (debug), and the result after the application of the template (verbose). This is a lot of information and generally, it is only a few files that are of interest.
 
-These two flags take a string, eg., `:debug-when<Introduction.pod6> `, and when the filename matches the string, then the debug/verbose flag is set for that file only. (verbose is only effective when debug is True).
+These two flags take a string, eg., `:debug-when<Introduction.pod6> ` or `:debug-when<101 about> `, and when the string matches the filename, then the debug/verbose flag is set for that file only.
+
+Note `verbose` is **only** effective when `debug` is True.
 
 *  **collection-info**
 
@@ -788,6 +796,105 @@ As for Setup
 As for Setup
 
 There is no return value specified for this plugin type.
+
+# Plugin development
+There is a separate development distribution `raku-collection-plugin-development`, which contains several tools for adding and testing plugins. However, a single plugin can be tested using the module `Collection::TestPlugin`, which is included in this distribution.
+
+## Collection plugin specification
+All Collection plugins must conform to the following rules
+
+*  The plugin name must:
+
+	*  start with a letter
+
+	*  followed by at least one \w or \-
+
+	*  not contain \_ or \.
+
+	*  thus a name matches / <alpha> <[\w] + [\-] - [\_]>+ /
+
+*  The plugin directory contains
+
+	*  `config.raku`, which is a file that evaluates to a Raku hash.
+
+	*  README.rakudoc
+
+	*  t/01-basic.rakutest
+
+*  The `config.raku` file must contain the following keys
+
+	*  `name`. This is the released name of the plugin. It will be possible for a new plugin to have the same functionality as another, while extending or changing the output. For more detail, see [Collection plugin management system](Collection plugin management system.md). Typically, the name of the plugin will match the name of the sub-directory it is in.
+
+	*  `version`. This point to a Str in the format \d+\.\d+\.\d+ which matches the semantic version conventions.
+
+	*  `auth`. This points to a Str that is consistent with the Raku 'auth' conventions.
+
+	*  `license`. Points to a SPDX license type.
+
+	*  `authors`. This points to a sequence of names of people who are the authors of the plugin.
+
+	*  one or more of `render setup report compilation completion`
+
+		*  If render then
+
+			*  the render key may be a boolean
+
+			*  or the render key is a Str which must
+
+				*  be a filename in the directory
+
+				*  be a raku program that evaluated to a callable
+
+				*  the callable has a signature defined for render callables
+
+			*  the key `custom-raku`
+
+				*  must exist
+
+				*  must either be empty, viz. `custom-raku()`
+
+				*  or must have a Str value
+
+				*  if it has a Str value and the key `:information` does contain `custom-raku` then it is treated as if `custom-raku` is empty
+
+				*  if it has a Str value and the key `:information` does NOT contain `custom-raku` then the Str value should
+
+					*  point to a file name in the current directory
+
+					*  and the filename should contain a Raku program that evaluates to an Array.
+
+			*  the key `template-raku`
+
+				*  must exist
+
+				*  must either be empty, viz. `template-raku()`
+
+				*  or must have a Str value
+
+				*  if it has a Str value and the key `:information` does contain `template-raku` then it is treated as if `template-raku` is empty
+
+				*  if it has a Str value and the key `:information` does NOT contain `template-raku` then the Str value should
+
+					*  point to a file name in the current directory
+
+					*  and the filename should contain a Raku program that evaluates to a Hash.
+
+		*  If not render, then the value must point to a Raku program and evaluate to a callable.
+
+	*  _Other key names_. If other keys are present, they must point to filenames in the current directory.
+
+	*  `information`. This key does not need to exist.
+
+		*  If it exists, then it must contain the names of other keys.
+
+		*  If a key named in the `:information` list contains a Str, the filename will NOT exist in the plugin directory, but will be generated by the plugin itself, or is used as information by the plugin.
+
+		*  This config key is intended only for plugin testing purposes.
+
+## Collection plugin tests
+This distribution contains the module `Collection::TestPlugin` with a single exported subroutine `plugin-ok`. This subroutine verifies that the plugin rules are kept for the plugin.
+
+Additional plugin specific tests should be included.
 
 # Plugin updating
 The local computer may contain
@@ -1039,6 +1146,19 @@ Will return
 
 *  throw a NoPodInCache Exception if there is no pod associated with either the database or the underlying cache. If the original filename is used after an alias have been generated, the Exception will also be thrown.
 
+## multi method last-version( @version-data )
+The `@version-data` contains an array of strings to be given to a `run` sub. Typically it is a call to `git revparse`. The return value is the result of the command to the Operating System.
+
+# head
+
+multi method last-version( @per-file-version, $fn, $doc-source, :debug)
+
+The `@per-file-version` array of strings is appended by the value of $fn, changed to the underlying source if it is an alias.
+
+Typically, the string is a git command. However, the git command in particular runs on a directory, but the source file may be in a sub-directory, which needs to be stripped, so `$doc-source` is provided to enable the correct filename.
+
+`:debug` generates information about the `run` command, if true.
+
 # Asset-cache methods
 Asset-cache handles content that is not in Pod6 form. The instance of the Asset-cache class is passed via the plugin-data interface of `ProcessedPod`, so it is available to all plugin callables after the setup milestone, for example in the plugin callable:
 
@@ -1102,4 +1222,4 @@ The basename for the assets is set in the Top level configuration in the option 
 
 
 ----
-Rendered from README at 2022-12-22T15:48:21Z
+Rendered from README at 2024-04-22T12:38:14Z

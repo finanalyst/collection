@@ -3,6 +3,7 @@
 
 
 ## Table of Contents
+[2024-04-18 v0.17.0](#2024-04-18-v0170)  
 [2024-04-13 v0.16.0](#2024-04-13-v0160)  
 [2024-04-13 v0.15.10](#2024-04-13-v01510)  
 [2023-12-16 v0.15.9](#2023-12-16-v0159)  
@@ -74,8 +75,31 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
+# 2024-04-18 v0.17.0
+*  refactor because versioning data should be handled by Collection, not `Pod::From::Cache`
+
+*  git type commands to get repo level and per-file versioning data is passed from a config option
+
+*  the data is generated in the Post-Cache role, which is in Collection
+
+*  the per-file data is added to the PodFile instance when the source is rendered, as part of the PodFile.config data
+
+*  `debug-when` & `verbose-when` were modified to take a sequence from a string, not just one file name. In line with `with-only`
+
+*  the per-file data can be accessed directly as PodFile config data is automatically made available via the `%prm<config>` parameter.
+
+*  the config files of the Collection and the templates will need to be changed.
+
+*  good versioning data will not be available unless the method add-versioning-data is called so calling for versionning will generate `unknown` or `Not available` rather than throwing exceptions to ensure some backwards compatibility
+
 # 2024-04-13 v0.16.0
 *  add data to new PodF last-edited attribute from new `Pod::From::Cache` update
+
+*  generate per file and per repo commit-id and last-edited data.
+
+*  change 'last-edited' to 'commit-data'.
+
+*  move the git string to generate 'commit-data' to a top-level configuration.
 
 # 2024-04-13 v0.15.10
 *  change tests to match reversion on `Pod::From::Cache`
@@ -501,4 +525,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2024-04-14T09:52:58Z
+Rendered from CHANGELOG at 2024-04-22T12:40:53Z
