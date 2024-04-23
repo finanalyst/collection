@@ -9,7 +9,7 @@ class X::Collection::PostCache::VersionErr is Exception {
     has $.stage;
     has $.proc;
     method message {
-        "Versioning at stage ｢$.stage｣ failed after run ｢$.proc｣ with: ", $.err
+        "Versioning at stage ｢$.stage｣ failed after run ｢{$.proc}｣ with: ", $.err
     }
 }
 
