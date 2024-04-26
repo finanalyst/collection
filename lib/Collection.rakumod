@@ -688,7 +688,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< setup completion >),
                          :$no-status
                          --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    my %options = %( :$collection-info, :$no-status );
+    my %options = %( :$collection-info, :$no-status, :$mode );
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         # only run callable and closure within the directory of the plugin
         my $path = "$mode/plugins/$plug".IO.absolute;
@@ -710,7 +710,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'render', :$with,
                          :$no-status
                         --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    my %options = %( :$collection-info, :$no-status);
+    my %options = %( :$collection-info, :$no-status, :$mode);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/plugins/$plug".IO.absolute;
         # ensure plugin callables get config data possibly modified by Mode config
@@ -752,7 +752,7 @@ multi sub manage-plugins(Str:D $mile where *eq 'report', :$with,
                          :$no-status
                          --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    my %options = %( :$collection-info, :$no-status);
+    my %options = %( :$collection-info, :$no-status, :$mode);
     mkdir "$mode/%config<report-path>" unless "$mode/%config<report-path>".IO.d;
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/plugins/$plug".IO.absolute;
@@ -787,7 +787,7 @@ multi sub manage-plugins(Str:D $mile where *~~ any(< transfer compilation >),
          :$no-status
         --> Array ) {
     my @valids = plugin-confs(:$mile, :%config, :$mode, :$collection-info);
-    my %options = %( :$collection-info, :$no-status);
+    my %options = %( :$collection-info, :$no-status, :$mode);
     for @valids -> (:key($plug), :value(%plugin-conf)) {
         my $path = "$mode/plugins/$plug".IO.absolute;
         my $callable = "$path/{ %plugin-conf{$mile} }".IO.absolute;

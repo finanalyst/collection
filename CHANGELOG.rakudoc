@@ -2,6 +2,10 @@
 =TITLE Changlog
 =SUBTITLE Changes in the Collection distribution
 
+=head1 2024-04-26 v0.17.4
+=item add mode name as data sent to plugins, helps with directory location
+=head1 2024-04-23 v0.17.2 & 3
+=item changes to Exceptions
 =head1 2024-04-22 v0.17.1
 =item add C<$proc> data to Exception message
 

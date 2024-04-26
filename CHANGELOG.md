@@ -3,6 +3,8 @@
 
 
 ## Table of Contents
+[2024-04-26 v0.17.4](#2024-04-26-v0174)  
+[2024-04-23 v0.17.2 &amp; 3](#2024-04-23-v0172--3)  
 [2024-04-22 v0.17.1](#2024-04-22-v0171)  
 [2024-04-18 v0.17.0](#2024-04-18-v0170)  
 [2024-04-13 v0.16.0](#2024-04-13-v0160)  
@@ -76,6 +78,12 @@
 [2021-01-22 Collection spun out of Raku-Alt-Documentation](#2021-01-22-collection-spun-out-of-raku-alt-documentation)  
 
 ----
+# 2024-04-26 v0.17.4
+*  add mode name as data sent to plugins, helps with directory location
+
+# 2024-04-23 v0.17.2 &amp; 3
+*  changes to Exceptions
+
 # 2024-04-22 v0.17.1
 *  add `$proc` data to Exception message
 
@@ -529,4 +537,4 @@
 
 
 ----
-Rendered from CHANGELOG at 2024-04-22T13:33:22Z
+Rendered from CHANGELOG at 2024-04-26T09:03:36Z
